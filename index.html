@@ -8,7 +8,7 @@
         :root {
             --matrix-blue: #007acc;
             --matrix-glow: rgba(0, 122, 204, 0.6);
-            --dark-core: #060b13;
+            --dark-core: #03060a;
         }
 
         body, html {
@@ -28,98 +28,97 @@
 
         .terminal {
             width: 100%; max-width: 650px;
-            background: rgba(4, 8, 15, 0.85);
+            background: rgba(4, 8, 15, 0.9);
             border: 1px solid var(--matrix-blue);
-            box-shadow: 0 0 40px var(--matrix-glow);
-            padding: 25px; border-radius: 4px; backdrop-filter: blur(10px);
+            box-shadow: 0 0 50px var(--matrix-glow);
+            padding: 30px; border-radius: 4px; backdrop-filter: blur(15px);
+            position: relative;
         }
+
+        /* Линия сканирования */
+        .terminal::after {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: rgba(0, 122, 204, 0.2);
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan { from { top: 0; } to { top: 100%; } }
 
         .terminal-header {
             border-bottom: 1px solid var(--matrix-blue);
-            padding-bottom: 10px; margin-bottom: 20px;
+            padding-bottom: 12px; margin-bottom: 25px;
             font-size: 0.85rem; color: var(--matrix-blue);
             display: flex; justify-content: space-between;
+            font-weight: bold; letter-spacing: 1px;
         }
 
-        /* Индикатор слотов */
         #slots-info {
             position: fixed; top: 20px; right: 20px;
-            background: rgba(255, 50, 50, 0.2);
-            border: 1px solid #ff3333; padding: 10px;
+            background: rgba(255, 30, 30, 0.15);
+            border: 1px solid #ff3333; padding: 12px;
             font-size: 0.8rem; color: #ff3333; z-index: 10;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
         }
 
-        /* Живая лента */
-        #live-notifications {
-            position: fixed; bottom: 20px; left: 20px;
-            z-index: 10; display: flex; flex-direction: column; gap: 10px;
-        }
-        .notify-toast {
-            background: rgba(0, 122, 204, 0.2);
-            border-left: 3px solid var(--matrix-blue);
-            padding: 10px 15px; font-size: 0.75rem;
-            animation: slideIn 0.5s ease, fadeOut 0.5s ease 4.5s forwards;
-        }
-
-        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes fadeOut { to { opacity: 0; } }
-
-        /* Экраны */
-        .step-input { display: flex; flex-direction: column; gap: 15px; }
-        .step-input h2 { margin: 0; font-size: 1.3rem; color: var(--matrix-blue); text-shadow: 0 0 10px var(--matrix-glow); }
-
+        .step-input h2 { margin: 0 0 15px; font-size: 1.4rem; color: var(--matrix-blue); text-transform: uppercase; }
+        
         input[type="text"] {
-            background: #000; border: 1px solid var(--matrix-blue);
-            padding: 12px; color: #fff; font-family: monospace; outline: none;
+            width: 100%; background: #000; border: 1px solid var(--matrix-blue);
+            padding: 15px; color: #fff; font-family: monospace; outline: none;
+            box-sizing: border-box; font-size: 1.1rem;
         }
 
         .action-btn {
-            background: var(--matrix-blue); color: #000; border: none;
-            padding: 15px; font-weight: bold; cursor: pointer; text-transform: uppercase;
+            width: 100%; background: var(--matrix-blue); color: #000; border: none;
+            padding: 18px; font-weight: bold; cursor: pointer; text-transform: uppercase;
+            margin-top: 15px; transition: 0.3s;
         }
+        .action-btn:hover { background: #fff; box-shadow: 0 0 20px #fff; }
 
-        .step-loading { display: none; flex-direction: column; height: 300px; }
+        .step-loading { display: none; flex-direction: column; height: 320px; }
         .log-display {
             flex-grow: 1; background: #000; border: 1px solid #112233;
-            padding: 15px; overflow-y: auto; font-size: 0.85rem; color: #aaddff;
-            display: flex; flex-direction: column; gap: 6px;
+            padding: 15px; overflow-y: auto; font-size: 0.9rem; color: #aaddff;
+            display: flex; flex-direction: column; gap: 8px;
         }
+        .log-success { color: #00ff66; font-weight: bold; }
 
-        .log-row { opacity: 0; animation: fadeIn 0.1s forwards; }
-        .log-success { color: #00ff66; }
-        @keyframes fadeIn { to { opacity: 1; } }
-
-        .step-final { display: none; text-align: center; flex-direction: column; gap: 15px; }
-        .timer-box { font-size: 1.5rem; color: #ff3333; font-weight: bold; }
+        .step-final { display: none; text-align: center; flex-direction: column; gap: 20px; }
+        .timer-box { font-size: 2rem; color: #ff3333; font-weight: bold; text-shadow: 0 0 10px red; }
         
         .final-link {
             display: inline-block; background: var(--matrix-blue); color: #000;
-            text-decoration: none; padding: 18px 30px; font-weight: bold;
-            box-shadow: 0 0 20px var(--matrix-glow); animation: pulse 1.5s infinite;
+            text-decoration: none; padding: 20px 40px; font-weight: bold;
+            font-size: 1.2rem; box-shadow: 0 0 30px var(--matrix-glow);
+            animation: pulse 1.5s infinite;
         }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+
+        #live-notifications { position: fixed; bottom: 20px; left: 20px; z-index: 10; }
+        .notify-toast {
+            background: rgba(0, 122, 204, 0.1); border-left: 4px solid var(--matrix-blue);
+            padding: 12px; margin-top: 10px; font-size: 0.8rem;
+            animation: slide 0.5s ease; backdrop-filter: blur(5px);
+        }
+        @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(0); } }
     </style>
 </head>
 <body>
 
     <canvas id="bg-canvas"></canvas>
-    <div id="slots-info">СВОБОДНЫХ СЛОТОВ: <span id="slot-count">3</span>/100</div>
+    <div id="slots-info">СЛОТОВ: <span id="slot-count">3</span>/100</div>
     <div id="live-notifications"></div>
 
     <div class="main-container">
         <div class="terminal">
             <div class="terminal-header">
-                <span>SYS_EXPLOIT // ULTIMATE_GEN</span>
-                <span id="live-time">00:00:00</span>
+                <span>CORE_BYPASS // v7.0</span>
+                <span id="user-ip-header">SECURE_CONNECT</span>
             </div>
 
             <div id="block-input" class="step-input">
-                <h2>Инициализация шлюза</h2>
-                <div class="input-group" style="display:flex; flex-direction:column; gap:5px;">
-                    <label style="font-size:0.8rem; color:#888;">ВВЕДИТЕ ВАШ ID ИЛИ ЮЗЕРНЕЙМ:</label>
-                    <input type="text" id="target-input" placeholder="@username" autocomplete="off">
-                </div>
-                <button class="action-btn" onclick="startExploit()">Запустить процесс</button>
+                <h2>Инициализация...</h2>
+                <input type="text" id="target-input" placeholder="@username или ID" autocomplete="off">
+                <button class="action-btn" onclick="startExploit()">Начать генерацию</button>
             </div>
 
             <div id="block-loading" class="step-loading">
@@ -127,136 +126,116 @@
             </div>
 
             <div id="block-final" class="step-final">
-                <div style="color:#00ff66; font-weight:bold; font-size: 1.2rem;">✓ ДОСТУП СФОРМИРОВАН</div>
-                <p style="font-size: 0.85rem;">Токен привязан к <span id="display-username" style="color:var(--matrix-blue);"></span>. Подтвердите владение аккаунтом в Telegram для завершения.</p>
+                <div style="color:#00ff66; font-size: 1.3rem;">✓ ДОСТУП АКТИВИРОВАН</div>
                 <div class="timer-box" id="countdown">05:00</div>
-                <a href="https://t.me/mirieli1977" target="_blank" class="final-link" onclick="vibrate(50)">ПОЛУЧИТЬ ДОСТУП В TELEGRAM</a>
+                <a href="https://t.me/mirieli1977" target="_blank" class="final-link">ПОЛУЧИТЬ В TELEGRAM</a>
             </div>
         </div>
     </div>
 
     <script>
-        let userCity = "Unknown";
-        let userIP = "Checking...";
+        let userCity = "Moscow";
+        let userIP = "127.0.0.1";
 
-        // Определение IP и Города
-        fetch('https://ipapi.co/json/').then(res => res.json()).then(data => {
-            userCity = data.city || "Unknown";
-            userIP = data.ip || "Unknown";
-        }).catch(() => { userCity = "Moscow"; userIP = "188.162.3.11"; });
+        // Попытка получить реальный IP
+        fetch('https://api.ipify.org?format=json')
+            .then(r => r.json())
+            .then(d => {
+                userIP = d.ip;
+                document.getElementById('user-ip-header').innerText = "IP: " + d.ip;
+            });
 
-        // Звук терминала
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playBeep() {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'square'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.05);
-        }
-
-        // Вибрация
-        function vibrate(ms) { if (navigator.vibrate) navigator.vibrate(ms); }
-
-        // Огонь (Canvas)
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+
         let particles = [];
-        class Particle {
+        class Flame {
             constructor() { this.reset(); }
             reset() {
-                this.x = Math.random() * canvas.width; this.y = canvas.height + 20;
-                this.size = Math.random() * 15 + 5; this.speedY = Math.random() * 3 + 2;
-                this.life = 1; this.decay = Math.random() * 0.01 + 0.005;
+                this.x = Math.random() * canvas.width;
+                this.y = canvas.height + 50;
+                this.speed = Math.random() * 3 + 1;
+                this.radius = Math.random() * 30 + 10;
+                this.opacity = Math.random() * 0.5 + 0.1;
             }
-            update() { this.y -= this.speedY; this.life -= this.decay; if (this.life <= 0) this.reset(); }
             draw() {
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(0, 150, 255, ${this.life * 0.4})`;
+                this.y -= this.speed;
+                this.opacity -= 0.003;
+                if (this.opacity <= 0) this.reset();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 122, 255, ${this.opacity})`;
+                ctx.shadowBlur = 20; ctx.shadowColor = "#007acc";
                 ctx.fill();
             }
         }
-        for (let i = 0; i < 60; i++) particles.push(new Particle());
-        function animate() {
-            ctx.fillStyle = '#060b13'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => { p.update(); p.draw(); });
-            requestAnimationFrame(animate);
+        for(let i=0; i<60; i++) particles.push(new Flame());
+        function anim() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            particles.forEach(p => p.draw());
+            requestAnimationFrame(anim);
         }
-        animate();
+        anim();
 
-        // Динамика слотов
-        setInterval(() => {
-            const s = document.getElementById('slot-count');
-            let val = parseInt(s.innerText);
-            if (val > 1 && Math.random() > 0.8) s.innerText = val - 1;
-        }, 5000);
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function beep() {
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.type='sine'; o.frequency.setValueAtTime(600, audioCtx.currentTime);
+            g.gain.setValueAtTime(0.02, audioCtx.currentTime);
+            o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+0.05);
+        }
 
         function startExploit() {
             const input = document.getElementById('target-input').value.trim();
             if(!input) return;
-            vibrate(100);
-            document.getElementById('display-username').innerText = input;
             document.getElementById('block-input').style.display = 'none';
             document.getElementById('block-loading').style.display = 'flex';
             
             const logBox = document.getElementById('log-box');
             const logs = [
-                "> Инициализация модулей...",
-                `> Определение узла... Найдено: ${userCity}`,
-                `> Запрос доступа для IP: ${userIP}`,
-                "> Обход прокси-защиты...",
-                "> Синхронизация потоков данных...",
-                `> Ключ доступа для ${input} сгенерирован.`,
-                "[OK] Верификация пройдена успешно."
+                "> Подключение к прокси...",
+                `> ВХОДНОЙ УЗЕЛ: ${userIP}`,
+                `> ПРОВЕРКА АККАУНТА: ${input}`,
+                "> Сбор метаданных сессии...",
+                "> Взлом протокола авторизации...",
+                "> ГЕНЕРАЦИЯ ПРИВАТНОГО КЛЮЧА...",
+                "[OK] ТОКЕН УСПЕШНО СОЗДАН."
             ];
 
             let i = 0;
-            const timer = setInterval(() => {
+            const t = setInterval(() => {
                 if(i < logs.length) {
-                    playBeep();
+                    beep();
                     const p = document.createElement('p');
-                    p.className = 'log-row';
-                    if(logs[i].includes('[OK]')) p.className += ' log-success';
+                    p.className = logs[i].includes('[OK]') ? 'log-success' : '';
                     p.innerText = logs[i];
                     logBox.appendChild(p);
                     logBox.scrollTop = logBox.scrollHeight;
                     i++;
                 } else {
-                    clearInterval(timer);
-                    vibrate([100, 50, 100]);
+                    clearInterval(t);
                     setTimeout(() => {
                         document.getElementById('block-loading').style.display = 'none';
                         document.getElementById('block-final').style.display = 'flex';
-                        startTimer();
-                    }, 800);
+                        let s = 300;
+                        setInterval(() => {
+                            let m = Math.floor(s/60); let sc = s%60;
+                            document.getElementById('countdown').innerText = `0${m}:${sc<10?'0'+sc:sc}`;
+                            if(s>0) s--;
+                        }, 1000);
+                    }, 1000);
                 }
-            }, 700);
+            }, 800);
         }
 
-        function startTimer() {
-            let sec = 300;
-            const countdown = document.getElementById('countdown');
-            setInterval(() => {
-                let m = Math.floor(sec / 60); let s = sec % 60;
-                countdown.innerText = `0${m}:${s < 10 ? '0'+s : s}`;
-                if(sec > 0) sec--;
-            }, 1000);
-        }
-
-        // Live Notifications
-        const names = ['@alex_77', '@user_vlp', '@kristi_key', '@dark_lord', '@sam_crypto'];
-        function showNotify() {
-            const container = document.getElementById('live-notifications');
-            const n = document.createElement('div');
-            n.className = 'notify-toast';
-            n.innerText = `Пользователь ${names[Math.floor(Math.random()*names.length)]} получил токен`;
-            container.appendChild(n);
-            setTimeout(() => n.remove(), 5000);
-            setTimeout(showNotify, Math.random() * 5000 + 4000);
-        }
-        showNotify();
+        const nicks = ['@dark_hacker', '@user_ton', '@crypto_vlad', '@bot_gen', '@admin_01'];
+        setInterval(() => {
+            const c = document.getElementById('live-notifications');
+            const d = document.createElement('div'); d.className = 'notify-toast';
+            d.innerText = `Пользователь ${nicks[Math.floor(Math.random()*nicks.length)]} получил доступ`;
+            c.appendChild(d); setTimeout(() => d.remove(), 4000);
+        }, 5000);
     </script>
 </body>
 </html>
