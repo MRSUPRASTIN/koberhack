@@ -3,261 +3,305 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NET-RUNNER // DECENTRALIZED TERMINAL</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <title>CELL-NET // EXPLOIT INTERFACE</title>
     <style>
         :root {
-            --accent-blue: #007acc;
-            --deep-glow: rgba(0, 122, 204, 0.4);
-            --bg-dark: #060b13;
-            --text-cyan: #aaddff;
+            --matrix-blue: #007acc;
+            --matrix-glow: rgba(0, 122, 204, 0.6);
+            --dark-core: #060b13;
         }
 
         body, html {
             margin: 0;
             padding: 0;
-            background-color: var(--bg-dark);
+            background-color: var(--dark-core);
             color: #fff;
             font-family: 'Courier New', monospace;
-            overflow-x: hidden;
-            scroll-behavior: smooth;
+            overflow: hidden;
+            height: 100vh;
         }
 
-        /* Задний фон — динамическая сетка */
-        #grid-bg {
-            position: fixed;
+        /* Задний фон */
+        #bg-canvas {
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1;
-            background-image: 
-                linear-gradient(rgba(0, 122, 204, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 122, 204, 0.03) 1px, transparent 1px);
-            background-size: 30px 30px;
+            z-index: 1;
+            opacity: 0.15;
         }
 
-        /* Большое пространство для скроллителлинга (прогрева) */
-        .scroll-wrapper {
+        /* Главный контейнер */
+        .main-container {
             position: relative;
-            height: 250vh; 
-        }
-
-        /* Фиксированная секция анимации */
-        .sticky-container {
-            position: sticky;
-            top: 0;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
-        /* Экран-терминал, где меняются кадры при скролле */
-        .visual-display {
-            width: 90%;
-            max-width: 750px;
-            height: 380px;
-            border: 1px solid var(--accent-blue);
-            background: rgba(2, 4, 8, 0.95);
-            box-shadow: 0 0 25px var(--deep-glow);
-            border-radius: 4px;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .frame-content {
+        /* Окно terminal */
+        .terminal {
             width: 100%;
-            height: 100%;
+            max-width: 650px;
+            background: rgba(4, 8, 15, 0.9);
+            border: 1px solid var(--matrix-blue);
+            box-shadow: 0 0 30px var(--matrix-glow);
             padding: 25px;
             box-sizing: border-box;
+            border-radius: 4px;
+        }
+
+        .terminal-header {
+            border-bottom: 1px solid var(--matrix-blue);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            color: var(--matrix-blue);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Экран 1: Ввод данных */
+        .step-input {
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            gap: 15px;
         }
 
-        .system-title {
-            font-size: 1.1rem;
-            color: var(--accent-blue);
-            margin-bottom: 30px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+        .step-input h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.3rem;
+            color: var(--matrix-blue);
+            text-shadow: 0 0 10px var(--matrix-glow);
         }
 
-        .scroll-status {
-            margin-top: 20px;
-            font-size: 0.85rem;
-            color: #555;
-            text-transform: uppercase;
-        }
-
-        /* Нижняя конверсионная секция */
-        .action-section {
-            min-height: 100vh;
+        .input-group {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #02050a;
-            border-top: 1px solid var(--accent-blue);
-            padding: 40px 20px;
-            box-sizing: border-box;
+            flex-direction: column;
+            gap: 5px;
         }
 
-        .conversion-box {
-            width: 100%;
-            max-width: 550px;
-            background: var(--bg-dark);
-            border: 1px solid var(--accent-blue);
-            padding: 30px;
-            border-radius: 4px;
-            box-shadow: 0 0 30px rgba(0, 122, 204, 0.15);
+        .input-group label {
+            font-size: 0.85rem;
+            color: #888;
         }
 
-        .input-style {
-            width: 100%;
+        input[type="text"] {
             background: #000;
-            border: 1px solid var(--accent-blue);
-            padding: 14px;
+            border: 1px solid var(--matrix-blue);
+            padding: 12px;
             color: #fff;
             font-family: monospace;
             font-size: 1rem;
-            box-sizing: border-box;
-            margin-top: 10px;
-            margin-bottom: 20px;
             outline: none;
         }
 
-        .input-style:focus {
-            box-shadow: 0 0 10px var(--accent-blue);
+        input[type="text"]:focus {
+            box-shadow: 0 0 10px var(--matrix-glow);
         }
 
-        .tg-redirect-btn {
-            display: block;
-            width: 100%;
-            background: var(--accent-blue);
+        .action-btn {
+            background: var(--matrix-blue);
             color: #000;
-            text-align: center;
-            text-decoration: none;
-            padding: 16px;
+            border: none;
+            padding: 15px;
+            font-family: monospace;
             font-weight: bold;
             font-size: 1.1rem;
-            box-sizing: border-box;
-            text-transform: uppercase;
-            transition: all 0.2s ease;
             cursor: pointer;
-            border: none;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
         }
 
-        .tg-redirect-btn:hover {
+        .action-btn:hover {
             background: #fff;
             box-shadow: 0 0 15px #fff;
         }
 
-        /* Стили логов */
-        .log-line { margin: 4px 0; font-size: 0.9rem; color: var(--text-cyan); }
+        /* Экран 2: Хакер-Лог Лоадер */
+        .step-loading {
+            display: none;
+            flex-direction: column;
+            height: 300px;
+        }
+
+        .log-display {
+            flex-grow: 1;
+            background: #000;
+            border: 1px solid #112233;
+            padding: 15px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            color: #aaddff;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .log-row {
+            opacity: 0;
+            animation: fadeIn 0.1s forwards;
+        }
+
         .log-success { color: #00ff66; }
-        .log-accent { color: #ffcc00; }
+        .log-warn { color: #ffcc00; }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        /* Экран 3: Направленный результат */
+        .step-final {
+            display: none;
+            text-align: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .success-icon {
+            font-size: 2rem;
+            color: #00ff66;
+            text-shadow: 0 0 15px rgba(0,255,102,0.4);
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .final-link {
+            display: inline-block;
+            background: var(--matrix-blue);
+            color: #000;
+            text-decoration: none;
+            padding: 18px 30px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 0 20px var(--matrix-glow);
+            animation: pulse 1.5s infinite;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
     </style>
 </head>
 <body>
 
-    <div id="grid-bg"></div>
+    <canvas id="bg-canvas"></canvas>
 
-    <!-- БЛОК 1: СКРОЛЛИТЕЛЛИНГ (Плавный прогрев пользователя при прокрутке) -->
-    <div class="scroll-wrapper" id="scrollArea">
-        <div class="sticky-container">
-            <div class="system-title" id="top-status">CORE::CONNECTING_TO_NODES</div>
-            
-            <div class="visual-display">
-                <div class="frame-content" id="terminal-screen">
-                    <!-- Кадры генерируются через JS на основе скролла -->
+    <div class="main-container">
+        <div class="terminal">
+            <div class="terminal-header">
+                <span>SYS_EXPLOIT // V.4.82</span>
+                <span id="live-time">ONLINE</span>
+            </div>
+
+            <!-- Шаг 1: Форма захвата внимания -->
+            <div id="block-input" class="step-input">
+                <h2>Инициализация сетевого шлюза</h2>
+                <p style="color: #aaa; margin: 0 0 10px 0; font-size: 0.9rem;">Укажите цель или ваш идентификатор для привязки прокси-сервера и генерации токена доступа.</p>
+                
+                <div class="input-group">
+                    <label>ВВЕДИТЕ ID / ТЕГ / ТЕЛЕГРАМ ЮЗЕРНЕЙМ:</label>
+                    <input type="text" id="target-input" placeholder="@username или ID" autocomplete="off">
+                </div>
+
+                <button class="action-btn" onclick="startExploit()">Запустить генератор</button>
+            </div>
+
+            <!-- Шаг 2: Симуляция "взлома" (удерживает юзера) -->
+            <div id="block-loading" class="step-loading">
+                <div class="log-display" id="log-box">
+                    <!-- Сюда сыплются логи -->
                 </div>
             </div>
 
-            <div class="scroll-status">Листайте вниз для синхронизации потоков данных ↓</div>
+            <!-- Шаг 3: Слив трафика на целевой канал -->
+            <div id="block-final" class="step-final">
+                <div class="success-icon">✓ ТОКЕН СГЕНЕРИРОВАН СИНХРОННО</div>
+                <p>Привязка сессии для аккаунта <span id="display-username" style="color: var(--matrix-blue); font-weight: bold;"></span> успешно завершена. Для активации доступа и получения логов перейдите в привязанное сообщество Telegram.</p>
+                
+                <a href="https://t.me/mirieli1977" target="_blank" class="final-link">ПОДКЛЮЧИТЬСЯ В TELEGRAM</a>
+            </div>
         </div>
     </div>
 
-    <!-- БЛОК 2: АКТИВАЦИЯ И СЛИВ ТРАФИКА -->
-    <section class="action-section" id="target-section">
-        <div class="conversion-box">
-            <h2 style="margin-top: 0; color: var(--accent-blue); font-size: 1.4rem;">СИНХРОНИЗАЦИЯ ЗАВЕРШЕНА</h2>
-            <p style="color: #888; font-size: 0.9rem; line-height: 1.4;">Для верификации сессии, генерации инвайт-токена и привязки вашего аккаунта введите ваш логин/идентификатор:</p>
-            
-            <input type="text" class="input-style" id="user-login" placeholder="@username или ID" autocomplete="off">
-            
-            <button class="tg-redirect-btn" onclick="redirectToChannel()">Активировать в Telegram</button>
-        </div>
-    </section>
-
     <script>
-        // Кадры скроллителлинга (эмуляция генерации сетевых пакетов)
-        const frames = [
-            `<div class="log-line">[ NETWORK ] Инициализация защищенного шлюза...</div>
-             <div class="log-line">[ STATUS ] Ожидание входящих запросов от прокси.</div>`,
-            
-            `<div class="log-line">[ NETWORK ] Подключение к распределенной сети TON...</div>
-             <div class="log-line">[ OK ] Связь установлена через локальные ноды.</div>
-             <div class="log-line">[ DATA ] Проверка целостности хэш-таблиц...</div>`,
-            
-            `<div class="log-line">[ STREAMS ] Перехват пакетов данных запущен...</div>
-             <div class="log-line log-accent">[ PROGRESS ] Парсинг сегментов: 38%</div>
-             <div class="log-line">> Извлечение временных конфигурационных файлов...</div>`,
-            
-            `<div class="log-line">[ STREAMS ] Анализ алгоритмов шифрования...</div>
-             <div class="log-line log-success">[ SUCCESS ] Уязвимость в генерации seed-структуры найдена.</div>
-             <div class="log-line log-accent">[ PROGRESS ] Компиляция эксплоита: 74%</div>`,
-            
-            `<div class="log-line log-success">[ SUCCESS ] Токен доступа успешно сгенерирован в памяти.</div>
-             <div class="log-line">[ SYSTEM ] Выделение приватного виртуального канала...</div>
-             <div class="log-line log-accent">> Готовность к перенаправлению на шлюз аутентификации.</div>`
+        // Скрипт фоновой сетки (Киберпанк/Глубокий синий)
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        function drawGrid() {
+            ctx.fillStyle = '#060b13';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'rgba(0, 122, 204, 0.05)';
+            ctx.lineWidth = 1;
+            const size = 40;
+            for(let x=0; x<canvas.width; x+=size) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+            for(let y=0; y<canvas.height; y+=size) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
+        }
+        drawGrid();
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; drawGrid(); });
+
+        // Логика переключения шагов и имитации
+        const logs = [
+            { text: "> Соединение с центральным узлом...", type: "normal" },
+            { text: "> Поиск уязвимостей в протоколе SSL...", type: "normal" },
+            { text: "[OK] Уязвимость CVE-2026-3821 обнаружена!", type: "success" },
+            { text: "> Обход брандмауэра Cloudflare...", type: "normal" },
+            { text: "[WARN] Срабатывание защиты системы. Меняем прокси...", type: "warn" },
+            { text: "> Подключение к туннелю через Frankfurt-Node-4...", type: "normal" },
+            { text: "[OK] Сессия стабилизирована.", type: "success" },
+            { text: "> Извлечение базы данных хэш-таблиц...", type: "normal" },
+            { text: "> Расшифровка токена сессии через алгоритм SHA-256...", type: "normal" },
+            { text: "> Generation персонального ключа доступа...", type: "normal" },
+            { text: "[OK] Пакеты успешно сформированы и упакованы.", type: "success" }
         ];
 
-        const screen = document.getElementById('terminal-screen');
-        const topStatus = document.getElementById('top-status');
-        const scrollArea = document.getElementById('scrollArea');
+        function startExploit() {
+            const input = document.getElementById('target-input').value.trim();
+            if(!input) { alert('Введите корректные данные!'); return; }
 
-        // Рендерим стартовый кадр
-        screen.innerHTML = frames[0];
+            // Записываем введенное имя в финальное окно
+            document.getElementById('display-username').innerText = input;
 
-        // Логика пошагового скролла (чистый JS без тяжелых библиотек для мгновенной загрузки)
-        window.addEventListener('scroll', () => {
-            const rect = scrollArea.getBoundingClientRect();
-            const totalScroll = rect.height - window.innerHeight;
-            const currentProgress = Math.abs(rect.top) / totalScroll;
+            // Переключаем экран на логи
+            document.getElementById('block-input').style.display = 'none';
+            document.getElementById('block-loading').style.display = 'flex';
 
-            // Ограничиваем прогресс от 0 до 1
-            const safeProgress = Math.max(0, Math.min(1, currentProgress));
-            
-            // Находим индекс текущего кадра
-            const frameIndex = Math.floor(safeProgress * (frames.length - 1));
-            screen.innerHTML = frames[frameIndex];
+            const logBox = document.getElementById('log-box');
+            let currentLog = 0;
 
-            // Динамически меняем верхний заголовок
-            if (frameIndex === frames.length - 1) {
-                topStatus.innerText = "CORE::READY_FOR_VERIFICATION";
-                topStatus.style.color = "#00ff66";
-            } else {
-                topStatus.innerText = `CORE::PROCESSING_PACKETS_[${frameIndex + 1}/${frames.length}]`;
-                topStatus.style.color = "var(--accent-blue)";
+            function printLog() {
+                if (currentLog < logs.length) {
+                    const logData = logs[currentLog];
+                    const p = document.createElement('p');
+                    p.className = 'log-row';
+                    if(logData.type === 'success') p.className += ' log-success';
+                    if(logData.type === 'warn') p.className += ' log-warn';
+                    
+                    // Подставляем юзернейм в логи для реалистичности
+                    p.innerText = logData.text.replace('базы данных', `базы данных для ${input}`);
+                    
+                    logBox.appendChild(p);
+                    logBox.scrollTop = logBox.scrollHeight;
+                    currentLog++;
+                    setTimeout(printLog, 400 + Math.random() * 300); // Случайная задержка
+                } else {
+                    // Конец логов -> переключаем на кнопку слива
+                    setTimeout(() => {
+                        document.getElementById('block-loading').style.display = 'none';
+                        document.getElementById('block-final').style.display = 'flex';
+                    }, 800);
+                }
             }
-        });
-
-        // Функция редиректа на твой канал с проверкой ввода
-        function redirectToChannel() {
-            const loginInput = document.getElementById('user-login').value.trim();
-            if (!loginInput) {
-                alert('Пожалуйста, введите ваш ID или Юзернейм для завершения сессии!');
-                return;
-            }
-            
-            // Сливаем трафик на указанный тобой канал
-            window.location.href = "https://t.me/mirieli1977";
+            printLog();
         }
     </script>
 </body>
