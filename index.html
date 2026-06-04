@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CELL-NET // SATELLITE_LINK</title>
+    <title>CELL-NET // SATELLITE_CONTROL</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
@@ -29,47 +29,43 @@
 
         .terminal {
             width: 100%; max-width: 600px;
-            background: rgba(2, 5, 10, 0.9);
+            background: rgba(2, 5, 10, 0.95);
             border: 1px solid var(--matrix-blue);
             box-shadow: 0 0 50px var(--matrix-glow);
             padding: 20px; border-radius: 4px; backdrop-filter: blur(10px);
         }
 
-        /* КОНТЕЙНЕР ДЛЯ РЕАЛЬНОЙ КАРТЫ */
-        #map-container {
+        /* КОНТЕЙНЕР КАРТЫ */
+        #map-module {
             display: none;
             width: 100%;
             height: 250px;
             margin-bottom: 15px;
             border: 1px solid var(--matrix-blue);
             position: relative;
-            filter: brightness(0.8) contrast(1.2) sepia(0.5) hue-rotate(180deg); /* Хакерский фильтр */
+            filter: brightness(0.7) contrast(1.2) hue-rotate(180deg); /* Синий хакерский стиль */
         }
 
-        #map { width: 100%; height: 100%; }
+        #map-view { width: 100%; height: 100%; background: #000; }
 
-        /* Эффект сетки поверх карты */
-        .map-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        .scan-overlay {
+            position: absolute; top:0; left:0; width:100%; height:100%;
             z-index: 1000; pointer-events: none;
-            background: 
-                linear-gradient(rgba(0, 122, 204, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 122, 204, 0.1) 1px, transparent 1px);
-            background-size: 20px 20px;
+            background: linear-gradient(rgba(0,122,204,0.1) 50%, transparent 50%);
+            background-size: 100% 4px;
         }
 
-        .scan-line {
-            position: absolute; top: 0; left: 0; width: 100%; height: 4px;
-            background: var(--matrix-blue); box-shadow: 0 0 20px var(--matrix-blue);
-            z-index: 1001; animation: scan 3s linear infinite;
+        .scanner-bar {
+            position: absolute; top:0; left:0; width:100%; height:2px;
+            background: var(--matrix-blue); box-shadow: 0 0 15px var(--matrix-blue);
+            z-index: 1001; animation: scanMove 3s infinite linear;
         }
-
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        @keyframes scanMove { 0% { top: 0; } 100% { top: 100%; } }
 
         .terminal-header {
             border-bottom: 1px solid var(--matrix-blue);
             padding-bottom: 8px; margin-bottom: 15px;
-            display: flex; justify-content: space-between; font-size: 0.7rem;
+            display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--matrix-blue);
         }
 
         input[type="text"] {
@@ -79,19 +75,19 @@
 
         .action-btn {
             width: 100%; background: var(--matrix-blue); color: #000; border: none;
-            padding: 15px; font-weight: bold; cursor: pointer; margin-top: 10px;
+            padding: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase;
         }
 
-        .log-display {
-            height: 120px; background: #000; border: 1px solid #112233;
-            padding: 10px; overflow-y: auto; font-size: 0.8rem; color: #aaddff; margin-top: 10px;
+        .log-box {
+            height: 100px; background: #000; border: 1px solid #112233;
+            padding: 10px; overflow-y: auto; font-size: 0.75rem; color: #aaddff; margin-top: 10px;
         }
 
-        .step-final { display: none; text-align: center; padding: 20px; }
-        .timer { font-size: 2.5rem; color: #ff3333; font-weight: bold; }
+        .step-final { display: none; text-align: center; }
+        .timer { font-size: 2.5rem; color: #ff3333; font-weight: bold; margin: 15px 0; }
         .final-link {
             display: block; background: #00ff66; color: #000; padding: 20px;
-            text-decoration: none; font-weight: bold; margin-top: 15px; border-radius: 4px;
+            text-decoration: none; font-weight: bold; border-radius: 4px;
         }
     </style>
 </head>
@@ -102,121 +98,118 @@
     <div class="main-container">
         <div class="terminal">
             <div class="terminal-header">
-                <span>SATELLITE_UPLINK_v4.2</span>
-                <span id="status">IDLE</span>
+                <span>GEO_RECON_UNIT_v4</span>
+                <span id="st-text">SYSTEM_READY</span>
             </div>
 
-            <div id="block-input">
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <img src="https://2ip.io/ru/privacy/bar/26098820_297f2a.png" alt="GEO_BAR">
+            <div id="block-input" style="text-align: center;">
+                <div style="margin-bottom: 15px; border: 1px solid #333; display: inline-block;">
+                    <img src="https://2ip.io/ru/privacy/bar/26098820_297f2a.png" alt="IP_DATA">
                 </div>
-                <input type="text" id="target-input" placeholder="ВВЕДИТЕ @USERNAME">
-                <button class="action-btn" onclick="startTracking()">НАЙТИ ОБЪЕКТ</button>
+                <input type="text" id="target-input" placeholder="ВВЕДИТЕ @USERNAME ЦЕЛИ">
+                <button class="action-btn" onclick="initHack()">УСТАНОВИТЬ СЛЕЖКУ</button>
             </div>
 
             <div id="block-loading" style="display: none;">
-                <div id="map-container">
-                    <div id="map"></div>
-                    <div class="map-overlay"></div>
-                    <div class="scan-line"></div>
+                <div id="map-module">
+                    <div id="map-view"></div>
+                    <div class="scan-overlay"></div>
+                    <div class="scanner-bar"></div>
                 </div>
-                <div class="log-display" id="log-box"></div>
+                <div class="log-box" id="logs"></div>
             </div>
 
             <div id="block-final" class="step-final">
-                <div style="color: #00ff66;">ОБЪЕКТ ЗАПЕЛЕНГОВАН</div>
-                <div class="timer" id="countdown">05:00</div>
-                <a href="https://t.me/mirieli1977" target="_blank" class="final-link">ПОЛУЧИТЬ ДАННЫЕ В TELEGRAM</a>
+                <div style="color: #00ff66; font-weight: bold;">ЦЕЛЬ ЗАФИКСИРОВАНА: ТРАФИК ПЕРЕХВАЧЕН</div>
+                <div class="timer" id="timer">05:00</div>
+                <a href="https://t.me/mirieli1977" target="_blank" class="final-link">ПОЛУЧИТЬ ПОЛНЫЙ ДОСТУП</a>
             </div>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Анимация фона (Огонь)
+        // Анимация синего огня на фоне
         const cvs = document.getElementById('bg-canvas');
         const ctx = cvs.getContext('2d');
         cvs.width = window.innerWidth; cvs.height = window.innerHeight;
         let particles = [];
-        class Fire {
+        class Particle {
             constructor() { this.init(); }
             init() {
                 this.x = Math.random() * cvs.width; this.y = cvs.height + 20;
-                this.s = Math.random() * 15 + 5; this.a = Math.random() * 0.4;
+                this.s = Math.random() * 10 + 5; this.a = Math.random() * 0.4;
+                this.v = Math.random() * 1.5 + 0.5;
+            }
+            update() {
+                this.y -= this.v; this.a -= 0.002;
+                if(this.a <= 0) this.init();
             }
             draw() {
-                this.y -= 2; this.a -= 0.003;
-                if(this.a <= 0) this.init();
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.s, 0, Math.PI*2);
-                ctx.fillStyle = `rgba(0, 100, 255, ${this.a})`; ctx.fill();
+                ctx.fillStyle = `rgba(0, 122, 255, ${this.a})`; ctx.fill();
             }
         }
-        for(let i=0; i<50; i++) particles.push(new Fire());
-        function anim() {
+        for(let i=0; i<60; i++) particles.push(new Particle());
+        function render() {
             ctx.fillStyle = '#010205'; ctx.fillRect(0,0,cvs.width,cvs.height);
-            particles.forEach(p => p.draw());
-            requestAnimationFrame(anim);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(render);
         }
-        anim();
+        render();
 
-        // Инициализация карты (Leaflet)
-        let map;
-        function initMap() {
-            // Координаты центра (например, Сан-Франциско как на твоем скрине)
-            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([37.7749, -122.4194], 16);
-            
-            // Слой спутника Esri
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                maxZoom: 19
-            }).addTo(map);
-
-            // Метка объекта
-            L.circleMarker([37.7749, -122.4194], { color: 'red', radius: 10 }).addTo(map);
-        }
-
-        function startTracking() {
+        // Логика карты
+        function initHack() {
             const user = document.getElementById('target-input').value;
             if(!user) return;
 
             document.getElementById('block-input').style.display = 'none';
             document.getElementById('block-loading').style.display = 'block';
-            document.getElementById('status').innerText = 'SCANNING...';
+            document.getElementById('st-text').innerText = 'LINKING_SATELLITE...';
 
-            initMap();
+            // Инициализация Leaflet (спутниковые снимки Esri)
+            const map = L.map('map-view', { zoomControl: false, attributionControl: false }).setView([37.7749, -122.4194], 16);
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
+            
+            // Красный маркер цели
+            L.circleMarker([37.7749, -122.4194], { color: 'red', radius: 12, fillOpacity: 0.5 }).addTo(map);
 
             const logs = [
-                "> Подключение к группировке спутников...",
-                "> Поиск сигнала GPS/ГЛОНАСС...",
-                `> Триангуляция пользователя ${user}...`,
-                "> Найдено совпадение: Сектор 7G",
-                "> Захват видеопотока...",
-                "[OK] КООРДИНАТЫ ПЕРЕДАНЫ."
+                "> Запрос доступа к спутнику Esri-14...",
+                "> Поиск координат по IP узла...",
+                `> Триангуляция объекта ${user}...`,
+                "> Точка выхода: Сан-Франциско, Market St.",
+                "> Перехват пакетов данных...",
+                "[OK] СОЕДИНЕНИЕ УСТАНОВЛЕНО."
             ];
 
             let i = 0;
-            const t = setInterval(() => {
+            const logDiv = document.getElementById('logs');
+            const interval = setInterval(() => {
                 if(i < logs.length) {
                     const p = document.createElement('div');
                     p.innerText = logs[i];
-                    document.getElementById('log-box').appendChild(p);
+                    logDiv.appendChild(p);
+                    logDiv.scrollTop = logDiv.scrollHeight;
                     i++;
                 } else {
-                    clearInterval(t);
+                    clearInterval(interval);
                     setTimeout(() => {
                         document.getElementById('block-loading').style.display = 'none';
                         document.getElementById('block-final').style.display = 'block';
                         startTimer();
                     }, 2000);
                 }
-            }, 1000);
+            }, 900);
         }
 
         function startTimer() {
-            let s = 300;
+            let t = 300;
+            const el = document.getElementById('timer');
             setInterval(() => {
-                let m = Math.floor(s/60), sec = s%60;
-                document.getElementById('countdown').innerText = `0${m}:${sec<10?'0'+sec:sec}`;
-                if(s>0) s--;
+                let m = Math.floor(t/60), s = t%60;
+                el.innerText = `0${m}:${s<10?'0'+s:s}`;
+                if(t > 0) t--;
             }, 1000);
         }
     </script>
