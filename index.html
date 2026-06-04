@@ -3,154 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hacker ScrollAnimation</title>
+    <title>CELL-NET // EXPLOIT INTERFACE</title>
     <style>
         :root {
-            --neon-green: #00ff41;
-            --dark-bg: #050505;
+            --matrix-blue: #007acc;
+            --matrix-glow: rgba(0, 122, 204, 0.6);
+            --dark-core: #060b13;
         }
 
         body, html {
             margin: 0;
             padding: 0;
-            background-color: var(--dark-bg);
-            color: var(--neon-green);
+            background-color: var(--dark-core);
+            color: #fff;
             font-family: 'Courier New', monospace;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Задний фон */
+        #bg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.15;
+        }
+
+        /* Главный контейнер */
+        .main-container {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 20px;
             box-sizing: border-box;
         }
 
-        /* Контейнер, который задает длину прокрутки (чем больше высота, тем медленнее анимация) */
-        .scroll-space {
-            height: 400vh;
-            position: relative;
-        }
-
-        /* Фиксированная секция, где происходит вся магия */
-        .sticky-viewport {
-            position: sticky;
-            top: 0;
+        /* Окно терминала */
+        .terminal {
             width: 100%;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            max-width: 650px;
+            background: rgba(4, 8, 15, 0.9);
+            border: 1px solid var(--matrix-blue);
+            box-shadow: 0 0 30px var(--matrix-glow);
+            padding: 25px;
+            box-sizing: border-box;
+            border-radius: 4px;
         }
 
         .terminal-header {
-            font-size: 1.2rem;
+            border-bottom: 1px solid var(--matrix-blue);
+            padding-bottom: 10px;
             margin-bottom: 20px;
+            font-size: 0.85rem;
+            color: var(--matrix-blue);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Экран 1: Ввод данных */
+        .step-input {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .step-input h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.3rem;
+            color: var(--matrix-blue);
+            text-shadow: 0 0 10px var(--matrix-glow);
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        input[type="text"] {
+            background: #000;
+            border: 1px solid var(--matrix-blue);
+            padding: 12px;
+            color: #fff;
+            font-family: monospace;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            box-shadow: 0 0 10px var(--matrix-glow);
+        }
+
+        .action-btn {
+            background: var(--matrix-blue);
+            color: #000;
+            border: none;
+            padding: 15px;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 8px var(--neon-green);
         }
 
-        /* Экран, в котором меняются кадры */
-        .animation-screen {
-            width: 85vw;
-            max-width: 900px;
-            height: 50vh;
-            border: 2px solid var(--neon-green);
-            box-shadow: 0 0 25px rgba(0, 255, 65, 0.2);
+        .action-btn:hover {
+            background: #fff;
+            box-shadow: 0 0 15px #fff;
+        }
+
+        /* Экран 2: Хакер-Лог Лоадер */
+        .step-loading {
+            display: none;
+            flex-direction: column;
+            height: 300px;
+        }
+
+        .log-display {
+            flex-grow: 1;
             background: #000;
+            border: 1px solid #112233;
+            padding: 15px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            color: #aaddff;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            flex-direction: column;
+            gap: 6px;
         }
 
-        .animation-screen svg {
-            width: 100%;
-            height: 100%;
-            transition: all 0.1s ease;
+        .log-row {
+            opacity: 0;
+            animation: fadeIn 0.1s forwards;
         }
 
-        .scroll-tip {
-            margin-top: 20px;
-            font-size: 0.9rem;
-            animation: blink 1.5s infinite;
+        .log-success { color: #00ff66; }
+        .log-warn { color: #ffcc00; }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        /* Экран 3: Финал (Конверсия трафика) */
+        .step-final {
+            display: none;
+            text-align: center;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+        .success-icon {
+            font-size: 3rem;
+            color: #00ff66;
+            text-shadow: 0 0 15px rgba(0,255,102,0.4);
         }
 
-        /* Секция под анимацией */
-        .footer-info {
-            height: 100vh;
-            background: #000;
-            border-top: 2px solid var(--neon-green);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
+        .final-link {
+            display: inline-block;
+            background: #00ff66;
+            color: #000;
+            text-decoration: none;
+            padding: 18px 30px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 0 20px rgba(0,255,102,0.4);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
         }
     </style>
 </head>
 <body>
 
-    <div class="scroll-space" id="scrollTrigger">
-        <div class="sticky-viewport">
-            <div class="terminal-header" id="status">STATUS: INITIALIZING EXPLOIT...</div>
-            
-            <div class="animation-screen" id="screen">
-                <!-- Сюда скрипт вставляет кадры -->
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="main-container">
+        <div class="terminal">
+            <div class="terminal-header">
+                <span>SYS_EXPLOIT // V.4.82</span>
+                <span id="live-time">ONLINE</span>
             </div>
 
-            <div class="scroll-tip">КРУТИ КОЛЕСО МЫШКИ ВНИЗ ДЛЯ СКАНИРОВАНИЯ</div>
+            <!-- Шаг 1: Форма захвата внимания -->
+            <div id="block-input" class="step-input">
+                <h2>Инициализация сетевого шлюза</h2>
+                <p style="color: #aaa; margin: 0 0 10px 0; font-size: 0.9rem;">Укажите цель или ваш идентификатор для привязки прокси-сервера и генерации токена доступа.</p>
+                
+                <div class="input-group">
+                    <label>ВВЕДИТЕ ID / ТЕГ / ТЕЛЕГРАМ ЮЗЕРНЕЙМ:</label>
+                    <input type="text" id="target-input" placeholder="@username или ID" autocomplete="off">
+                </div>
+
+                <button class="action-btn" onclick="startExploit()">Запустить генератор</button>
+            </div>
+
+            <!-- Шаг 2: Симуляция "взлома" (удерживает юзера) -->
+            <div id="block-loading" class="step-loading">
+                <div class="log-display" id="log-box">
+                    <!-- Сюда сыплются логи -->
+                </div>
+            </div>
+
+            <!-- Шаг 3: Слив трафика (Кнопка на твой ресурс) -->
+            <div id="block-final" class="step-final">
+                <div class="success-icon">✓ ВЗЛОМ УСПЕШНО ЗАВЕРШЕН</div>
+                <p>Доступ к логам и сгенерированному токену открыт. Для подтверждения сессии и вывода данных перейдите в официальный терминал управления.</p>
+                
+                <!-- ЗАМЕНИ ССЫЛКУ НИЖЕ НА СВОЙ ТГ КАНАЛ ИЛИ БОТ -->
+                <a href="https://t.me/ТВОЙ_КАНАЛ_ИЛИ_БОТ" target="_blank" class="final-link">ПОЛУЧИТЬ ДОСТУП В TELEGRAM</a>
+            </div>
         </div>
     </div>
 
-    <section class="footer-info">
-        <div>[ СИСТЕМА ПОЛНОСТЬЮ СКОМПРОМЕТИРОВАНА ]</div>
-    </section>
-
     <script>
-        // Кадры анимации (вместо папки с картинками из видео — SVG-код прямо тут)
-        const frames = [
-            `<svg viewBox="0 0 800 400"><text x="50" y="200" fill="#00ff41" font-size="30" font-family="monospace">[ ] Скан портов: ожидание...</text></svg>`,
-            `<svg viewBox="0 0 800 400"><text x="50" y="200" fill="#00ff41" font-size="30" font-family="monospace">[.] Скан портов: 22/tcp OPEN</text></svg>`,
-            `<svg viewBox="0 0 800 400"><text x="50" y="200" fill="#00ff41" font-size="30" font-family="monospace">[..] Подбор пароля брутфорсом...</text><rect x="50" y="240" width="150" height="20" fill="#00ff41"/></svg>`,
-            `<svg viewBox="0 0 800 400"><text x="50" y="200" fill="#00ff41" font-size="30" font-family="monospace">[...] Брутфорс: 45% подобрано</text><rect x="50" y="240" width="350" height="20" fill="#00ff41"/></svg>`,
-            `<svg viewBox="0 0 800 400"><text x="50" y="200" fill="#00ff41" font-size="30" font-family="monospace">[....] Инъекция шелл-кода...</text><rect x="50" y="240" width="600" height="20" fill="#00ff41"/></svg>`,
-            `<svg viewBox="0 0 800 400"><text x="50" y="150" fill="#ff0000" font-size="40" font-family="monospace" font-weight="bold">ACCESS GRANTED</text><text x="50" y="220" fill="#ff0000" font-size="20" font-family="monospace">Загрузка ядра управления...</text></svg>`
+        // Скрипт фоновой сетки (Киберпанк/Глубокий синий)
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        function drawGrid() {
+            ctx.fillStyle = '#060b13';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'rgba(0, 122, 204, 0.05)';
+            ctx.lineWidth = 1;
+            const size = 40;
+            for(let x=0; x<canvas.width; x+=size) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+            for(let y=0; y<canvas.height; y+=size) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
+        }
+        drawGrid();
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; drawGrid(); });
+
+        // Логика переключения шагов и имитации
+        const logs = [
+            { text: "> Соединение с центральным узлом...", type: "normal" },
+            { text: "> Поиск уязвимостей в протоколе SSL...", type: "normal" },
+            { text: "[OK] Уязвимость CVE-2026-3821 обнаружена!", type: "success" },
+            { text: "> Обход брандмауэра Cloudflare...", type: "normal" },
+            { text: "[WARN] Срабатывание защиты системы. Меняем прокси...", type: "warn" },
+            { text: "> Подключение к туннелю через Frankfurt-Node-4...", type: "normal" },
+            { text: "[OK] Сессия стабилизирована.", type: "success" },
+            { text: "> Извлечение базы данных хэш-таблиц...", type: "normal" },
+            { text: "> Расшифровка токена сессии через алгоритм SHA-256...", type: "normal" },
+            { text: "> Генерация персонального ключа доступа...", type: "normal" },
+            { text: "[OK] Пакеты успешно сформированы и упакованы.", type: "success" }
         ];
 
-        const totalFrames = frames.length;
-        const screen = document.getElementById('screen');
-        const statusText = document.getElementById('status');
-        const scrollTrigger = document.getElementById('scrollTrigger');
+        function startExploit() {
+            const input = document.getElementById('target-input').value.trim();
+            if(!input) { alert('Введите корректные данные!'); return; }
 
-        // Рендерим первый кадр сразу
-        screen.innerHTML = frames[0];
+            // Переключаем экран на логи
+            document.getElementById('block-input').style.display = 'none';
+            document.getElementById('block-loading').style.display = 'flex';
 
-        window.addEventListener('scroll', () => {
-            // Считаем, на сколько процентов прокручена зона анимации
-            const rect = scrollTrigger.getBoundingClientRect();
-            const scrollTotal = rect.height - window.innerHeight;
-            const scrolled = Math.abs(rect.top);
+            const logBox = document.getElementById('log-box');
+            let currentLog = 0;
 
-            // Переводим процент прокрутки в индекс кадра (от 0 до максимума)
-            let progress = scrolled / scrollTotal;
-            if (progress < 0) progress = 0;
-            if (progress > 1) progress = 1;
-
-            let frameIndex = Math.floor(progress * (totalFrames - 1));
-            
-            // Заменяем кадр в экране
-            screen.innerHTML = frames[frameIndex];
-
-            // Меняем статусную строку на ходу в зависимости от кадра
-            if (frameIndex === totalFrames - 1) {
-                statusText.innerText = "STATUS: SYSTEM CRASHED";
-                statusText.style.color = "#ff0000";
-            } else {
-                statusText.innerText = `STATUS: EXPLOITING... COMPONENT [${frameIndex + 1}/${totalFrames}]`;
-                statusText.style.color = "#00ff41";
+            function printLog() {
+                if (currentLog < logs.length) {
+                    const logData = logs[currentLog];
+                    const p = document.createElement('p');
+                    p.className = 'log-row';
+                    if(logData.type === 'success') p.className += ' log-success';
+                    if(logData.type === 'warn') p.className += ' log-warn';
+                    
+                    // Подставляем юзернейм в логи для реалистичности
+                    p.innerText = logData.text.replace('базы данных', `базы данных для ${input}`);
+                    
+                    logBox.appendChild(p);
+                    logBox.scrollTop = logBox.scrollHeight;
+                    currentLog++;
+                    setTimeout(printLog, 400 + Math.random() * 300); // Случайная задержка
+                } else {
+                    // Конец логов -> переключаем на кнопку слива
+                    setTimeout(() => {
+                        document.getElementById('block-loading').style.display = 'none';
+                        document.getElementById('block-final').style.display = 'flex';
+                    }, 800);
+                }
             }
-        });
+            printLog();
+        }
     </script>
 </body>
 </html>
