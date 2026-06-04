@@ -13,78 +13,63 @@
         }
 
         body, html {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             background-color: var(--dark-core);
-            color: #fff;
-            font-family: 'Courier New', monospace;
-            overflow: hidden;
-            height: 100vh;
+            color: #fff; font-family: 'Courier New', monospace;
+            overflow: hidden; height: 100vh;
         }
 
-        /* Задний фон с огнем */
-        #bg-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
+        #bg-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
 
         .main-container {
-            position: relative;
-            z-index: 2;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
+            position: relative; z-index: 2;
+            display: flex; align-items: center; justify-content: center;
+            height: 100vh; padding: 20px; box-sizing: border-box;
         }
 
         .terminal {
-            width: 100%;
-            max-width: 650px;
-            background: rgba(4, 8, 15, 0.8);
+            width: 100%; max-width: 650px;
+            background: rgba(4, 8, 15, 0.85);
             border: 1px solid var(--matrix-blue);
             box-shadow: 0 0 40px var(--matrix-glow);
-            padding: 25px;
-            box-sizing: border-box;
-            border-radius: 4px;
-            backdrop-filter: blur(10px); /* Чтобы огонь красиво размывался за окном */
+            padding: 25px; border-radius: 4px; backdrop-filter: blur(10px);
         }
 
         .terminal-header {
             border-bottom: 1px solid var(--matrix-blue);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            font-size: 0.85rem;
-            color: var(--matrix-blue);
-            display: flex;
-            justify-content: space-between;
+            padding-bottom: 10px; margin-bottom: 20px;
+            font-size: 0.85rem; color: var(--matrix-blue);
+            display: flex; justify-content: space-between;
         }
 
+        /* Живая лента уведомлений */
+        #live-notifications {
+            position: fixed; bottom: 20px; left: 20px;
+            z-index: 10; display: flex; flex-direction: column; gap: 10px;
+        }
+        .notify-toast {
+            background: rgba(0, 122, 204, 0.2);
+            border-left: 3px solid var(--matrix-blue);
+            padding: 10px 15px; font-size: 0.75rem;
+            color: #fff; animation: slideIn 0.5s ease, fadeOut 0.5s ease 4.5s forwards;
+            backdrop-filter: blur(5px);
+        }
+
+        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { to { opacity: 0; } }
+
+        /* Экраны */
         .step-input { display: flex; flex-direction: column; gap: 15px; }
         .step-input h2 { margin: 0; font-size: 1.3rem; color: var(--matrix-blue); text-shadow: 0 0 10px var(--matrix-glow); }
 
         input[type="text"] {
-            background: #000;
-            border: 1px solid var(--matrix-blue);
-            padding: 12px;
-            color: #fff;
-            font-family: monospace;
-            outline: none;
+            background: #000; border: 1px solid var(--matrix-blue);
+            padding: 12px; color: #fff; font-family: monospace; outline: none;
         }
 
         .action-btn {
-            background: var(--matrix-blue);
-            color: #000;
-            border: none;
-            padding: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
+            background: var(--matrix-blue); color: #000; border: none;
+            padding: 15px; font-weight: bold; cursor: pointer; text-transform: uppercase;
         }
 
         .step-loading { display: none; flex-direction: column; height: 300px; }
@@ -96,10 +81,11 @@
 
         .log-row { opacity: 0; animation: fadeIn 0.1s forwards; }
         .log-success { color: #00ff66; }
-        .log-warn { color: #ffcc00; }
         @keyframes fadeIn { to { opacity: 1; } }
 
-        .step-final { display: none; text-align: center; flex-direction: column; gap: 20px; }
+        .step-final { display: none; text-align: center; flex-direction: column; gap: 15px; }
+        .timer-box { font-size: 1.5rem; color: #ff3333; font-weight: bold; margin: 10px 0; }
+        
         .final-link {
             display: inline-block; background: var(--matrix-blue); color: #000;
             text-decoration: none; padding: 18px 30px; font-weight: bold;
@@ -111,18 +97,19 @@
 <body>
 
     <canvas id="bg-canvas"></canvas>
+    <div id="live-notifications"></div>
 
     <div class="main-container">
         <div class="terminal">
             <div class="terminal-header">
-                <span>SYS_EXPLOIT // BLUE_FIRE_EDITION</span>
-                <span id="live-time">ONLINE</span>
+                <span>SYS_EXPLOIT // TRAFFIC_GEN_V2</span>
+                <span id="live-time">00:00:00</span>
             </div>
 
             <div id="block-input" class="step-input">
                 <h2>Инициализация шлюза</h2>
                 <div class="input-group" style="display:flex; flex-direction:column; gap:5px;">
-                    <label style="font-size:0.8rem; color:#888;">ВВЕДИТЕ ID / ТЕЛЕГРАМ ЮЗЕРНЕЙМ:</label>
+                    <label style="font-size:0.8rem; color:#888;">ВВЕДИТЕ ID / ТЕЛЕГРАМ ЮЗЕРНЕЙМ ДЛЯ ПРИВЯЗКИ:</label>
                     <input type="text" id="target-input" placeholder="@username" autocomplete="off">
                 </div>
                 <button class="action-btn" onclick="startExploit()">Запустить процесс</button>
@@ -133,116 +120,106 @@
             </div>
 
             <div id="block-final" class="step-final">
-                <div style="color:#00ff66; font-weight:bold;">✓ ТОКЕН СГЕНЕРИРОВАН</div>
-                <p>Доступ для <span id="display-username" style="color:var(--matrix-blue);"></span> открыт.</p>
-                <a href="https://t.me/mirieli1977" target="_blank" class="final-link">ПЕРЕЙТИ В TELEGRAM</a>
+                <div style="color:#00ff66; font-weight:bold; font-size: 1.2rem;">✓ ДОСТУП СФОРМИРОВАН</div>
+                <p style="font-size: 0.9rem;">Токен привязан к <span id="display-username" style="color:var(--matrix-blue);"></span>. Подтвердите владение аккаунтом в Telegram для завершения.</p>
+                <div class="timer-box" id="countdown">05:00</div>
+                <a href="https://t.me/mirieli1977" target="_blank" class="final-link">ПОЛУЧИТЬ ДОСТУП В TELEGRAM</a>
             </div>
         </div>
     </div>
 
     <script>
+        // Анимация огня
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
         let particles = [];
-
         class Particle {
-            constructor() {
-                this.reset();
-            }
+            constructor() { this.reset(); }
             reset() {
                 this.x = Math.random() * canvas.width;
-                this.y = canvas.height + Math.random() * 20;
+                this.y = canvas.height + 20;
                 this.size = Math.random() * 15 + 5;
                 this.speedY = Math.random() * 3 + 2;
-                this.speedX = (Math.random() - 0.5) * 2;
-                this.life = 1; // 100% жизни
-                this.decay = Math.random() * 0.01 + 0.005;
+                this.life = 1; this.decay = Math.random() * 0.01 + 0.005;
             }
-            update() {
-                this.y -= this.speedY;
-                this.x += this.speedX;
-                this.life -= this.decay;
-                if (this.life <= 0) this.reset();
-            }
+            update() { this.y -= this.speedY; this.life -= this.decay; if (this.life <= 0) this.reset(); }
             draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
-                // Градиент для эффекта огня
-                let alpha = this.life * 0.6;
-                ctx.fillStyle = `rgba(0, 150, 255, ${alpha})`;
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = "rgba(0, 100, 255, 0.8)";
-                ctx.fill();
-                ctx.shadowBlur = 0; // Сброс тени для производительности
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 150, 255, ${this.life * 0.5})`;
+                ctx.shadowBlur = 15; ctx.shadowColor = "rgba(0, 100, 255, 0.8)";
+                ctx.fill(); ctx.shadowBlur = 0;
             }
         }
-
-        for (let i = 0; i < 100; i++) {
-            particles.push(new Particle());
+        for (let i = 0; i < 80; i++) particles.push(new Particle());
+        function draw() {
+            ctx.fillStyle = '#060b13'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(draw);
         }
+        draw();
 
-        function drawScene() {
-            ctx.fillStyle = '#060b13';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Сетка
-            ctx.strokeStyle = 'rgba(0, 122, 204, 0.05)';
-            for(let x=0; x<canvas.width; x+=50) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
-            for(let y=0; y<canvas.height; y+=50) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
-
-            // Огонь
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            requestAnimationFrame(drawScene);
+        // Живая лента
+        const names = ['@doker_88', '@miron_v', '@crypto_king', '@ton_master', '@user_44', '@ivan_hack'];
+        function showNotify() {
+            const container = document.getElementById('live-notifications');
+            const n = document.createElement('div');
+            n.className = 'notify-toast';
+            n.innerText = `Пользователь ${names[Math.floor(Math.random()*names.length)]} получил доступ`;
+            container.appendChild(n);
+            setTimeout(() => n.remove(), 5000);
+            setTimeout(showNotify, Math.random() * 4000 + 3000);
         }
-        drawScene();
+        showNotify();
 
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-
-        // Логика работы
-        const logs = [
-            { text: "> Соединение...", type: "normal" },
-            { text: "[OK] Уязвимость найдена!", type: "success" },
-            { text: "> Обход защиты...", type: "normal" },
-            { text: "[OK] Сессия стабильна.", type: "success" },
-            { text: "> Извлечение данных...", type: "normal" },
-            { text: "> Шифрование токена...", type: "normal" },
-            { text: "[OK] Готово.", type: "success" }
-        ];
-
+        // Таймер и логика
         function startExploit() {
             const input = document.getElementById('target-input').value.trim();
             if(!input) return;
             document.getElementById('display-username').innerText = input;
             document.getElementById('block-input').style.display = 'none';
             document.getElementById('block-loading').style.display = 'flex';
+            
             const logBox = document.getElementById('log-box');
-            let currentLog = 0;
-            function printLog() {
-                if (currentLog < logs.length) {
+            const logs = [
+                "> Инициализация...",
+                "> Поиск шлюза в вашем регионе...",
+                `> Обнаружен узел (Россия/Москва)...`,
+                "> Синхронизация с базой данных...",
+                "> Обход 2FA протоколов...",
+                `> Токен для ${input} сгенерирован.`,
+                "[OK] Система готова к выдаче."
+            ];
+
+            let i = 0;
+            const timer = setInterval(() => {
+                if(i < logs.length) {
                     const p = document.createElement('p');
-                    p.className = 'log-row ' + (logs[currentLog].type === 'success' ? 'log-success' : '');
-                    p.innerText = logs[currentLog].text;
+                    p.className = 'log-row';
+                    if(logs[i].includes('[OK]')) p.className += ' log-success';
+                    p.innerText = logs[i];
                     logBox.appendChild(p);
                     logBox.scrollTop = logBox.scrollHeight;
-                    currentLog++;
-                    setTimeout(printLog, 500);
+                    i++;
                 } else {
-                    setTimeout(() => {
-                        document.getElementById('block-loading').style.display = 'none';
-                        document.getElementById('block-final').style.display = 'flex';
-                    }, 800);
+                    clearInterval(timer);
+                    document.getElementById('block-loading').style.display = 'none';
+                    document.getElementById('block-final').style.display = 'flex';
+                    startTimer();
                 }
-            }
-            printLog();
+            }, 600);
+        }
+
+        function startTimer() {
+            let sec = 300;
+            const countdown = document.getElementById('countdown');
+            const t = setInterval(() => {
+                let m = Math.floor(sec / 60);
+                let s = sec % 60;
+                countdown.innerText = `0${m}:${s < 10 ? '0'+s : s}`;
+                if(sec <= 0) clearInterval(t);
+                sec--;
+            }, 1000);
         }
     </script>
 </body>
