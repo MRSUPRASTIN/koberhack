@@ -29,7 +29,6 @@
             width: 100%;
             height: 100%;
             z-index: 1;
-            opacity: 0.15;
         }
 
         /* Главный контейнер */
@@ -48,12 +47,13 @@
         .terminal {
             width: 100%;
             max-width: 650px;
-            background: rgba(4, 8, 15, 0.9);
+            background: rgba(4, 8, 15, 0.85);
             border: 1px solid var(--matrix-blue);
             box-shadow: 0 0 30px var(--matrix-glow);
             padding: 25px;
             box-sizing: border-box;
             border-radius: 4px;
+            backdrop-filter: blur(5px);
         }
 
         .terminal-header {
@@ -200,7 +200,6 @@
                 <span id="live-time">ONLINE</span>
             </div>
 
-            <!-- Шаг 1: Форма захвата внимания -->
             <div id="block-input" class="step-input">
                 <h2>Инициализация сетевого шлюза</h2>
                 <p style="color: #aaa; margin: 0 0 10px 0; font-size: 0.9rem;">Укажите цель или ваш идентификатор для привязки прокси-сервера и генерации токена доступа.</p>
@@ -213,14 +212,10 @@
                 <button class="action-btn" onclick="startExploit()">Запустить генератор</button>
             </div>
 
-            <!-- Шаг 2: Симуляция "взлома" (удерживает юзера) -->
             <div id="block-loading" class="step-loading">
-                <div class="log-display" id="log-box">
-                    <!-- Сюда сыплются логи -->
-                </div>
+                <div class="log-display" id="log-box"></div>
             </div>
 
-            <!-- Шаг 3: Слив трафика на целевой канал -->
             <div id="block-final" class="step-final">
                 <div class="success-icon">✓ ТОКЕН СГЕНЕРИРОВАН СИНХРОННО</div>
                 <p>Привязка сессии для аккаунта <span id="display-username" style="color: var(--matrix-blue); font-weight: bold;"></span> успешно завершена. Для активации доступа и получения логов перейдите в привязанное сообщество Telegram.</p>
@@ -231,25 +226,70 @@
     </div>
 
     <script>
-        // Скрипт фоновой сетки (Киберпанк/Глубокий синий)
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        function drawGrid() {
+        let particles = [];
+
+        class FireParticle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = canvas.height + Math.random() * 100;
+                this.size = Math.random() * 20 + 10;
+                this.speedY = Math.random() * 2 + 1;
+                this.opacity = 1;
+                this.color = `rgba(0, ${Math.floor(Math.random() * 150 + 100)}, 255,`; 
+            }
+            update() {
+                this.y -= this.speedY;
+                this.opacity -= 0.005;
+                if (this.size > 0.5) this.size -= 0.1;
+            }
+            draw() {
+                ctx.fillStyle = this.color + this.opacity + ')';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initFire() {
+            for (let i = 0; i < 50; i++) {
+                particles.push(new FireParticle());
+            }
+        }
+
+        function animate() {
             ctx.fillStyle = '#060b13';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = 'rgba(0, 122, 204, 0.05)';
+            
+            // Сетка
+            ctx.strokeStyle = 'rgba(0, 122, 204, 0.08)';
             ctx.lineWidth = 1;
-            const size = 40;
-            for(let x=0; x<canvas.width; x+=size) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
-            for(let y=0; y<canvas.height; y+=size) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
-        }
-        drawGrid();
-        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; drawGrid(); });
+            for(let x=0; x<canvas.width; x+=40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+            for(let y=0; y<canvas.height; y+=40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
 
-        // Логика переключения шагов и имитации
+            // Огонь
+            if (particles.length < 150) particles.push(new FireParticle());
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].opacity <= 0) {
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
         const logs = [
             { text: "> Соединение с центральным узлом...", type: "normal" },
             { text: "> Поиск уязвимостей в протоколе SSL...", type: "normal" },
@@ -267,17 +307,11 @@
         function startExploit() {
             const input = document.getElementById('target-input').value.trim();
             if(!input) { alert('Введите корректные данные!'); return; }
-
-            // Записываем введенное имя в финальное окно
             document.getElementById('display-username').innerText = input;
-
-            // Переключаем экран на логи
             document.getElementById('block-input').style.display = 'none';
             document.getElementById('block-loading').style.display = 'flex';
-
             const logBox = document.getElementById('log-box');
             let currentLog = 0;
-
             function printLog() {
                 if (currentLog < logs.length) {
                     const logData = logs[currentLog];
@@ -285,16 +319,12 @@
                     p.className = 'log-row';
                     if(logData.type === 'success') p.className += ' log-success';
                     if(logData.type === 'warn') p.className += ' log-warn';
-                    
-                    // Подставляем юзернейм в логи для реалистичности
                     p.innerText = logData.text.replace('базы данных', `базы данных для ${input}`);
-                    
                     logBox.appendChild(p);
                     logBox.scrollTop = logBox.scrollHeight;
                     currentLog++;
-                    setTimeout(printLog, 400 + Math.random() * 300); // Случайная задержка
+                    setTimeout(printLog, 400 + Math.random() * 300);
                 } else {
-                    // Конец логов -> переключаем на кнопку слива
                     setTimeout(() => {
                         document.getElementById('block-loading').style.display = 'none';
                         document.getElementById('block-final').style.display = 'flex';
