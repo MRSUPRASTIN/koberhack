@@ -8,6 +8,7 @@
         :root {
             --matrix-blue: #007acc;
             --matrix-glow: rgba(0, 122, 204, 0.6);
+            --fire-color: rgba(0, 150, 255, 0.8);
             --dark-core: #060b13;
         }
 
@@ -21,7 +22,7 @@
             height: 100vh;
         }
 
-        /* Задний фон */
+        /* Задний фон с огнем */
         #bg-canvas {
             position: absolute;
             top: 0;
@@ -31,7 +32,6 @@
             z-index: 1;
         }
 
-        /* Главный контейнер */
         .main-container {
             position: relative;
             z-index: 2;
@@ -43,17 +43,16 @@
             box-sizing: border-box;
         }
 
-        /* Окно terminal */
         .terminal {
             width: 100%;
             max-width: 650px;
-            background: rgba(4, 8, 15, 0.85);
+            background: rgba(4, 8, 15, 0.8);
             border: 1px solid var(--matrix-blue);
-            box-shadow: 0 0 30px var(--matrix-glow);
+            box-shadow: 0 0 40px var(--matrix-glow);
             padding: 25px;
             box-sizing: border-box;
             border-radius: 4px;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(10px); /* Чтобы огонь красиво размывался за окном */
         }
 
         .terminal-header {
@@ -66,30 +65,8 @@
             justify-content: space-between;
         }
 
-        /* Экран 1: Ввод данных */
-        .step-input {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .step-input h2 {
-            margin: 0 0 10px 0;
-            font-size: 1.3rem;
-            color: var(--matrix-blue);
-            text-shadow: 0 0 10px var(--matrix-glow);
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .input-group label {
-            font-size: 0.85rem;
-            color: #888;
-        }
+        .step-input { display: flex; flex-direction: column; gap: 15px; }
+        .step-input h2 { margin: 0; font-size: 1.3rem; color: var(--matrix-blue); text-shadow: 0 0 10px var(--matrix-glow); }
 
         input[type="text"] {
             background: #000;
@@ -97,12 +74,7 @@
             padding: 12px;
             color: #fff;
             font-family: monospace;
-            font-size: 1rem;
             outline: none;
-        }
-
-        input[type="text"]:focus {
-            box-shadow: 0 0 10px var(--matrix-glow);
         }
 
         .action-btn {
@@ -110,83 +82,30 @@
             color: #000;
             border: none;
             padding: 15px;
-            font-family: monospace;
             font-weight: bold;
-            font-size: 1.1rem;
             cursor: pointer;
-            transition: all 0.2s ease;
             text-transform: uppercase;
         }
 
-        .action-btn:hover {
-            background: #fff;
-            box-shadow: 0 0 15px #fff;
-        }
-
-        /* Экран 2: Хакер-Лог Лоадер */
-        .step-loading {
-            display: none;
-            flex-direction: column;
-            height: 300px;
-        }
-
+        .step-loading { display: none; flex-direction: column; height: 300px; }
         .log-display {
-            flex-grow: 1;
-            background: #000;
-            border: 1px solid #112233;
-            padding: 15px;
-            overflow-y: auto;
-            font-size: 0.85rem;
-            color: #aaddff;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+            flex-grow: 1; background: #000; border: 1px solid #112233;
+            padding: 15px; overflow-y: auto; font-size: 0.85rem; color: #aaddff;
+            display: flex; flex-direction: column; gap: 6px;
         }
 
-        .log-row {
-            opacity: 0;
-            animation: fadeIn 0.1s forwards;
-        }
-
+        .log-row { opacity: 0; animation: fadeIn 0.1s forwards; }
         .log-success { color: #00ff66; }
         .log-warn { color: #ffcc00; }
-
         @keyframes fadeIn { to { opacity: 1; } }
 
-        /* Экран 3: Направленный результат */
-        .step-final {
-            display: none;
-            text-align: center;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .success-icon {
-            font-size: 2rem;
-            color: #00ff66;
-            text-shadow: 0 0 15px rgba(0,255,102,0.4);
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
+        .step-final { display: none; text-align: center; flex-direction: column; gap: 20px; }
         .final-link {
-            display: inline-block;
-            background: var(--matrix-blue);
-            color: #000;
-            text-decoration: none;
-            padding: 18px 30px;
-            font-weight: bold;
-            font-size: 1.2rem;
-            box-shadow: 0 0 20px var(--matrix-glow);
-            animation: pulse 1.5s infinite;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            display: inline-block; background: var(--matrix-blue); color: #000;
+            text-decoration: none; padding: 18px 30px; font-weight: bold;
+            box-shadow: 0 0 20px var(--matrix-glow); animation: pulse 1.5s infinite;
         }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.03); }
-        }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
     </style>
 </head>
 <body>
@@ -196,20 +115,17 @@
     <div class="main-container">
         <div class="terminal">
             <div class="terminal-header">
-                <span>SYS_EXPLOIT // V.4.82</span>
+                <span>SYS_EXPLOIT // BLUE_FIRE_EDITION</span>
                 <span id="live-time">ONLINE</span>
             </div>
 
             <div id="block-input" class="step-input">
-                <h2>Инициализация сетевого шлюза</h2>
-                <p style="color: #aaa; margin: 0 0 10px 0; font-size: 0.9rem;">Укажите цель или ваш идентификатор для привязки прокси-сервера и генерации токена доступа.</p>
-                
-                <div class="input-group">
-                    <label>ВВЕДИТЕ ID / ТЕГ / ТЕЛЕГРАМ ЮЗЕРНЕЙМ:</label>
-                    <input type="text" id="target-input" placeholder="@username или ID" autocomplete="off">
+                <h2>Инициализация шлюза</h2>
+                <div class="input-group" style="display:flex; flex-direction:column; gap:5px;">
+                    <label style="font-size:0.8rem; color:#888;">ВВЕДИТЕ ID / ТЕЛЕГРАМ ЮЗЕРНЕЙМ:</label>
+                    <input type="text" id="target-input" placeholder="@username" autocomplete="off">
                 </div>
-
-                <button class="action-btn" onclick="startExploit()">Запустить генератор</button>
+                <button class="action-btn" onclick="startExploit()">Запустить процесс</button>
             </div>
 
             <div id="block-loading" class="step-loading">
@@ -217,10 +133,9 @@
             </div>
 
             <div id="block-final" class="step-final">
-                <div class="success-icon">✓ ТОКЕН СГЕНЕРИРОВАН СИНХРОННО</div>
-                <p>Привязка сессии для аккаунта <span id="display-username" style="color: var(--matrix-blue); font-weight: bold;"></span> успешно завершена. Для активации доступа и получения логов перейдите в привязанное сообщество Telegram.</p>
-                
-                <a href="https://t.me/mirieli1977" target="_blank" class="final-link">ПОДКЛЮЧИТЬСЯ В TELEGRAM</a>
+                <div style="color:#00ff66; font-weight:bold;">✓ ТОКЕН СГЕНЕРИРОВАН</div>
+                <p>Доступ для <span id="display-username" style="color:var(--matrix-blue);"></span> открыт.</p>
+                <a href="https://t.me/mirieli1977" target="_blank" class="final-link">ПЕРЕЙТИ В TELEGRAM</a>
             </div>
         </div>
     </div>
@@ -233,80 +148,79 @@
 
         let particles = [];
 
-        class FireParticle {
+        class Particle {
             constructor() {
+                this.reset();
+            }
+            reset() {
                 this.x = Math.random() * canvas.width;
-                this.y = canvas.height + Math.random() * 100;
-                this.size = Math.random() * 20 + 10;
-                this.speedY = Math.random() * 2 + 1;
-                this.opacity = 1;
-                this.color = `rgba(0, ${Math.floor(Math.random() * 150 + 100)}, 255,`; 
+                this.y = canvas.height + Math.random() * 20;
+                this.size = Math.random() * 15 + 5;
+                this.speedY = Math.random() * 3 + 2;
+                this.speedX = (Math.random() - 0.5) * 2;
+                this.life = 1; // 100% жизни
+                this.decay = Math.random() * 0.01 + 0.005;
             }
             update() {
                 this.y -= this.speedY;
-                this.opacity -= 0.005;
-                if (this.size > 0.5) this.size -= 0.1;
+                this.x += this.speedX;
+                this.life -= this.decay;
+                if (this.life <= 0) this.reset();
             }
             draw() {
-                ctx.fillStyle = this.color + this.opacity + ')';
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+                // Градиент для эффекта огня
+                let alpha = this.life * 0.6;
+                ctx.fillStyle = `rgba(0, 150, 255, ${alpha})`;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = "rgba(0, 100, 255, 0.8)";
                 ctx.fill();
+                ctx.shadowBlur = 0; // Сброс тени для производительности
             }
         }
 
-        function initFire() {
-            for (let i = 0; i < 50; i++) {
-                particles.push(new FireParticle());
-            }
+        for (let i = 0; i < 100; i++) {
+            particles.push(new Particle());
         }
 
-        function animate() {
+        function drawScene() {
             ctx.fillStyle = '#060b13';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
+
             // Сетка
-            ctx.strokeStyle = 'rgba(0, 122, 204, 0.08)';
-            ctx.lineWidth = 1;
-            for(let x=0; x<canvas.width; x+=40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
-            for(let y=0; y<canvas.height; y+=40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
+            ctx.strokeStyle = 'rgba(0, 122, 204, 0.05)';
+            for(let x=0; x<canvas.width; x+=50) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+            for(let y=0; y<canvas.height; y+=50) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
 
             // Огонь
-            if (particles.length < 150) particles.push(new FireParticle());
-            for (let i = 0; i < particles.length; i++) {
-                particles[i].update();
-                particles[i].draw();
-                if (particles[i].opacity <= 0) {
-                    particles.splice(i, 1);
-                    i--;
-                }
-            }
-            requestAnimationFrame(animate);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(drawScene);
         }
-        animate();
+        drawScene();
 
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         });
 
+        // Логика работы
         const logs = [
-            { text: "> Соединение с центральным узлом...", type: "normal" },
-            { text: "> Поиск уязвимостей в протоколе SSL...", type: "normal" },
-            { text: "[OK] Уязвимость CVE-2026-3821 обнаружена!", type: "success" },
-            { text: "> Обход брандмауэра Cloudflare...", type: "normal" },
-            { text: "[WARN] Срабатывание защиты системы. Меняем прокси...", type: "warn" },
-            { text: "> Подключение к туннелю через Frankfurt-Node-4...", type: "normal" },
-            { text: "[OK] Сессия стабилизирована.", type: "success" },
-            { text: "> Извлечение базы данных хэш-таблиц...", type: "normal" },
-            { text: "> Расшифровка токена сессии через алгоритм SHA-256...", type: "normal" },
-            { text: "> Generation персонального ключа доступа...", type: "normal" },
-            { text: "[OK] Пакеты успешно сформированы и упакованы.", type: "success" }
+            { text: "> Соединение...", type: "normal" },
+            { text: "[OK] Уязвимость найдена!", type: "success" },
+            { text: "> Обход защиты...", type: "normal" },
+            { text: "[OK] Сессия стабильна.", type: "success" },
+            { text: "> Извлечение данных...", type: "normal" },
+            { text: "> Шифрование токена...", type: "normal" },
+            { text: "[OK] Готово.", type: "success" }
         ];
 
         function startExploit() {
             const input = document.getElementById('target-input').value.trim();
-            if(!input) { alert('Введите корректные данные!'); return; }
+            if(!input) return;
             document.getElementById('display-username').innerText = input;
             document.getElementById('block-input').style.display = 'none';
             document.getElementById('block-loading').style.display = 'flex';
@@ -314,16 +228,13 @@
             let currentLog = 0;
             function printLog() {
                 if (currentLog < logs.length) {
-                    const logData = logs[currentLog];
                     const p = document.createElement('p');
-                    p.className = 'log-row';
-                    if(logData.type === 'success') p.className += ' log-success';
-                    if(logData.type === 'warn') p.className += ' log-warn';
-                    p.innerText = logData.text.replace('базы данных', `базы данных для ${input}`);
+                    p.className = 'log-row ' + (logs[currentLog].type === 'success' ? 'log-success' : '');
+                    p.innerText = logs[currentLog].text;
                     logBox.appendChild(p);
                     logBox.scrollTop = logBox.scrollHeight;
                     currentLog++;
-                    setTimeout(printLog, 400 + Math.random() * 300);
+                    setTimeout(printLog, 500);
                 } else {
                     setTimeout(() => {
                         document.getElementById('block-loading').style.display = 'none';
