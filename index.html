@@ -8,7 +8,6 @@
         :root {
             --matrix-blue: #007acc;
             --matrix-glow: rgba(0, 122, 204, 0.6);
-            --fire-color: rgba(0, 150, 255, 0.8);
             --dark-core: #060b13;
         }
 
@@ -42,7 +41,15 @@
             display: flex; justify-content: space-between;
         }
 
-        /* Живая лента уведомлений */
+        /* Индикатор слотов */
+        #slots-info {
+            position: fixed; top: 20px; right: 20px;
+            background: rgba(255, 50, 50, 0.2);
+            border: 1px solid #ff3333; padding: 10px;
+            font-size: 0.8rem; color: #ff3333; z-index: 10;
+        }
+
+        /* Живая лента */
         #live-notifications {
             position: fixed; bottom: 20px; left: 20px;
             z-index: 10; display: flex; flex-direction: column; gap: 10px;
@@ -51,8 +58,7 @@
             background: rgba(0, 122, 204, 0.2);
             border-left: 3px solid var(--matrix-blue);
             padding: 10px 15px; font-size: 0.75rem;
-            color: #fff; animation: slideIn 0.5s ease, fadeOut 0.5s ease 4.5s forwards;
-            backdrop-filter: blur(5px);
+            animation: slideIn 0.5s ease, fadeOut 0.5s ease 4.5s forwards;
         }
 
         @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -84,7 +90,7 @@
         @keyframes fadeIn { to { opacity: 1; } }
 
         .step-final { display: none; text-align: center; flex-direction: column; gap: 15px; }
-        .timer-box { font-size: 1.5rem; color: #ff3333; font-weight: bold; margin: 10px 0; }
+        .timer-box { font-size: 1.5rem; color: #ff3333; font-weight: bold; }
         
         .final-link {
             display: inline-block; background: var(--matrix-blue); color: #000;
@@ -97,19 +103,20 @@
 <body>
 
     <canvas id="bg-canvas"></canvas>
+    <div id="slots-info">СВОБОДНЫХ СЛОТОВ: <span id="slot-count">3</span>/100</div>
     <div id="live-notifications"></div>
 
     <div class="main-container">
         <div class="terminal">
             <div class="terminal-header">
-                <span>SYS_EXPLOIT // TRAFFIC_GEN_V2</span>
+                <span>SYS_EXPLOIT // ULTIMATE_GEN</span>
                 <span id="live-time">00:00:00</span>
             </div>
 
             <div id="block-input" class="step-input">
                 <h2>Инициализация шлюза</h2>
                 <div class="input-group" style="display:flex; flex-direction:column; gap:5px;">
-                    <label style="font-size:0.8rem; color:#888;">ВВЕДИТЕ ID / ТЕЛЕГРАМ ЮЗЕРНЕЙМ ДЛЯ ПРИВЯЗКИ:</label>
+                    <label style="font-size:0.8rem; color:#888;">ВВЕДИТЕ ВАШ ID ИЛИ ЮЗЕРНЕЙМ:</label>
                     <input type="text" id="target-input" placeholder="@username" autocomplete="off">
                 </div>
                 <button class="action-btn" onclick="startExploit()">Запустить процесс</button>
@@ -121,15 +128,38 @@
 
             <div id="block-final" class="step-final">
                 <div style="color:#00ff66; font-weight:bold; font-size: 1.2rem;">✓ ДОСТУП СФОРМИРОВАН</div>
-                <p style="font-size: 0.9rem;">Токен привязан к <span id="display-username" style="color:var(--matrix-blue);"></span>. Подтвердите владение аккаунтом в Telegram для завершения.</p>
+                <p style="font-size: 0.85rem;">Токен привязан к <span id="display-username" style="color:var(--matrix-blue);"></span>. Подтвердите владение аккаунтом в Telegram для завершения.</p>
                 <div class="timer-box" id="countdown">05:00</div>
-                <a href="https://t.me/mirieli1977" target="_blank" class="final-link">ПОЛУЧИТЬ ДОСТУП В TELEGRAM</a>
+                <a href="https://t.me/mirieli1977" target="_blank" class="final-link" onclick="vibrate(50)">ПОЛУЧИТЬ ДОСТУП В TELEGRAM</a>
             </div>
         </div>
     </div>
 
     <script>
-        // Анимация огня
+        let userCity = "Unknown";
+        let userIP = "Checking...";
+
+        // Определение IP и Города
+        fetch('https://ipapi.co/json/').then(res => res.json()).then(data => {
+            userCity = data.city || "Unknown";
+            userIP = data.ip || "Unknown";
+        }).catch(() => { userCity = "Moscow"; userIP = "188.162.3.11"; });
+
+        // Звук терминала
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playBeep() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        // Вибрация
+        function vibrate(ms) { if (navigator.vibrate) navigator.vibrate(ms); }
+
+        // Огонь (Canvas)
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
@@ -137,63 +167,55 @@
         class Particle {
             constructor() { this.reset(); }
             reset() {
-                this.x = Math.random() * canvas.width;
-                this.y = canvas.height + 20;
-                this.size = Math.random() * 15 + 5;
-                this.speedY = Math.random() * 3 + 2;
+                this.x = Math.random() * canvas.width; this.y = canvas.height + 20;
+                this.size = Math.random() * 15 + 5; this.speedY = Math.random() * 3 + 2;
                 this.life = 1; this.decay = Math.random() * 0.01 + 0.005;
             }
             update() { this.y -= this.speedY; this.life -= this.decay; if (this.life <= 0) this.reset(); }
             draw() {
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(0, 150, 255, ${this.life * 0.5})`;
-                ctx.shadowBlur = 15; ctx.shadowColor = "rgba(0, 100, 255, 0.8)";
-                ctx.fill(); ctx.shadowBlur = 0;
+                ctx.fillStyle = `rgba(0, 150, 255, ${this.life * 0.4})`;
+                ctx.fill();
             }
         }
-        for (let i = 0; i < 80; i++) particles.push(new Particle());
-        function draw() {
+        for (let i = 0; i < 60; i++) particles.push(new Particle());
+        function animate() {
             ctx.fillStyle = '#060b13'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             particles.forEach(p => { p.update(); p.draw(); });
-            requestAnimationFrame(draw);
+            requestAnimationFrame(animate);
         }
-        draw();
+        animate();
 
-        // Живая лента
-        const names = ['@doker_88', '@miron_v', '@crypto_king', '@ton_master', '@user_44', '@ivan_hack'];
-        function showNotify() {
-            const container = document.getElementById('live-notifications');
-            const n = document.createElement('div');
-            n.className = 'notify-toast';
-            n.innerText = `Пользователь ${names[Math.floor(Math.random()*names.length)]} получил доступ`;
-            container.appendChild(n);
-            setTimeout(() => n.remove(), 5000);
-            setTimeout(showNotify, Math.random() * 4000 + 3000);
-        }
-        showNotify();
+        // Динамика слотов
+        setInterval(() => {
+            const s = document.getElementById('slot-count');
+            let val = parseInt(s.innerText);
+            if (val > 1 && Math.random() > 0.8) s.innerText = val - 1;
+        }, 5000);
 
-        // Таймер и логика
         function startExploit() {
             const input = document.getElementById('target-input').value.trim();
             if(!input) return;
+            vibrate(100);
             document.getElementById('display-username').innerText = input;
             document.getElementById('block-input').style.display = 'none';
             document.getElementById('block-loading').style.display = 'flex';
             
             const logBox = document.getElementById('log-box');
             const logs = [
-                "> Инициализация...",
-                "> Поиск шлюза в вашем регионе...",
-                `> Обнаружен узел (Россия/Москва)...`,
-                "> Синхронизация с базой данных...",
-                "> Обход 2FA протоколов...",
-                `> Токен для ${input} сгенерирован.`,
-                "[OK] Система готова к выдаче."
+                "> Инициализация модулей...",
+                `> Определение узла... Найдено: ${userCity}`,
+                `> Запрос доступа для IP: ${userIP}`,
+                "> Обход прокси-защиты...",
+                "> Синхронизация потоков данных...",
+                `> Ключ доступа для ${input} сгенерирован.`,
+                "[OK] Верификация пройдена успешно."
             ];
 
             let i = 0;
             const timer = setInterval(() => {
                 if(i < logs.length) {
+                    playBeep();
                     const p = document.createElement('p');
                     p.className = 'log-row';
                     if(logs[i].includes('[OK]')) p.className += ' log-success';
@@ -203,24 +225,38 @@
                     i++;
                 } else {
                     clearInterval(timer);
-                    document.getElementById('block-loading').style.display = 'none';
-                    document.getElementById('block-final').style.display = 'flex';
-                    startTimer();
+                    vibrate([100, 50, 100]);
+                    setTimeout(() => {
+                        document.getElementById('block-loading').style.display = 'none';
+                        document.getElementById('block-final').style.display = 'flex';
+                        startTimer();
+                    }, 800);
                 }
-            }, 600);
+            }, 700);
         }
 
         function startTimer() {
             let sec = 300;
             const countdown = document.getElementById('countdown');
-            const t = setInterval(() => {
-                let m = Math.floor(sec / 60);
-                let s = sec % 60;
+            setInterval(() => {
+                let m = Math.floor(sec / 60); let s = sec % 60;
                 countdown.innerText = `0${m}:${s < 10 ? '0'+s : s}`;
-                if(sec <= 0) clearInterval(t);
-                sec--;
+                if(sec > 0) sec--;
             }, 1000);
         }
+
+        // Live Notifications
+        const names = ['@alex_77', '@user_vlp', '@kristi_key', '@dark_lord', '@sam_crypto'];
+        function showNotify() {
+            const container = document.getElementById('live-notifications');
+            const n = document.createElement('div');
+            n.className = 'notify-toast';
+            n.innerText = `Пользователь ${names[Math.floor(Math.random()*names.length)]} получил токен`;
+            container.appendChild(n);
+            setTimeout(() => n.remove(), 5000);
+            setTimeout(showNotify, Math.random() * 5000 + 4000);
+        }
+        showNotify();
     </script>
 </body>
 </html>
