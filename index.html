@@ -9,6 +9,7 @@
             --matrix-blue: #007acc;
             --matrix-glow: rgba(0, 122, 204, 0.6);
             --dark-core: #03060a;
+            --accent-red: #ff3333;
         }
 
         body, html {
@@ -28,51 +29,75 @@
 
         .terminal {
             width: 100%; max-width: 650px;
-            background: rgba(4, 8, 15, 0.9);
+            background: rgba(4, 8, 15, 0.92);
             border: 1px solid var(--matrix-blue);
             box-shadow: 0 0 50px var(--matrix-glow);
-            padding: 30px; border-radius: 4px; backdrop-filter: blur(15px);
-            position: relative;
+            padding: 30px; border-radius: 8px; backdrop-filter: blur(15px);
+            position: relative; border-top: 4px solid var(--matrix-blue);
         }
 
-        /* Информер от 2IP */
-        .ip-informer {
-            margin-bottom: 15px;
-            border: 1px solid rgba(0, 122, 204, 0.3);
+        /* Красивая обертка для информера */
+        .informer-wrapper {
+            position: relative;
+            margin: 0 auto 20px auto;
+            padding: 10px;
+            background: rgba(0, 122, 204, 0.05);
+            border: 1px dashed var(--matrix-blue);
             display: inline-block;
-            padding: 5px;
-            background: #000;
+            transition: 0.5s;
+            animation: pulse-border 2s infinite;
+        }
+
+        .informer-wrapper::before {
+            content: "SYSTEM_SCAN_REPORT";
+            position: absolute; top: -10px; left: 10px;
+            background: var(--dark-core); padding: 0 5px;
+            font-size: 0.6rem; color: var(--matrix-blue);
+        }
+
+        .informer-wrapper img {
+            display: block;
+            filter: hue-rotate(190deg) brightness(1.1); /* Подгоняем цвет под синий стиль */
+            max-width: 100%;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @keyframes pulse-border {
+            0% { border-color: rgba(0, 122, 204, 0.3); }
+            50% { border-color: var(--matrix-blue); box-shadow: 0 0 15px var(--matrix-glow); }
+            100% { border-color: rgba(0, 122, 204, 0.3); }
         }
 
         .terminal-header {
-            border-bottom: 1px solid var(--matrix-blue);
-            padding-bottom: 12px; margin-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 122, 204, 0.3);
+            padding-bottom: 12px; margin-bottom: 25px;
             font-size: 0.85rem; color: var(--matrix-blue);
             display: flex; justify-content: space-between;
-            font-weight: bold;
+            text-transform: uppercase; letter-spacing: 2px;
         }
 
         #slots-info {
             position: fixed; top: 20px; right: 20px;
-            background: rgba(255, 30, 30, 0.15);
-            border: 1px solid #ff3333; padding: 12px;
-            font-size: 0.8rem; color: #ff3333; z-index: 10;
+            background: rgba(255, 51, 51, 0.1);
+            border: 1px solid var(--accent-red); padding: 12px;
+            font-size: 0.8rem; color: var(--accent-red); z-index: 10;
+            box-shadow: 0 0 10px rgba(255,0,0,0.2);
         }
 
-        .step-input h2 { margin: 0 0 10px; font-size: 1.3rem; color: var(--matrix-blue); }
+        .step-input h2 { margin: 0 0 15px; font-size: 1.2rem; color: #fff; text-align: center;}
         
         input[type="text"] {
             width: 100%; background: #000; border: 1px solid var(--matrix-blue);
             padding: 15px; color: #fff; font-family: monospace; outline: none;
-            box-sizing: border-box; font-size: 1.1rem; margin-bottom: 10px;
+            box-sizing: border-box; font-size: 1.1rem; text-align: center;
         }
 
         .action-btn {
             width: 100%; background: var(--matrix-blue); color: #000; border: none;
             padding: 18px; font-weight: bold; cursor: pointer; text-transform: uppercase;
-            transition: 0.3s;
+            margin-top: 15px; letter-spacing: 2px; transition: 0.3s;
         }
-        .action-btn:hover { background: #fff; box-shadow: 0 0 20px #fff; }
+        .action-btn:hover { background: #fff; box-shadow: 0 0 25px #fff; }
 
         .step-loading { display: none; flex-direction: column; height: 320px; }
         .log-display {
@@ -80,10 +105,10 @@
             padding: 15px; overflow-y: auto; font-size: 0.9rem; color: #aaddff;
             display: flex; flex-direction: column; gap: 8px;
         }
-        .log-success { color: #00ff66; font-weight: bold; }
+        .log-success { color: #00ff66; text-shadow: 0 0 5px #00ff66; }
 
-        .step-final { display: none; text-align: center; flex-direction: column; gap: 15px; }
-        .timer-box { font-size: 2rem; color: #ff3333; font-weight: bold; text-shadow: 0 0 10px red; }
+        .step-final { display: none; text-align: center; flex-direction: column; gap: 20px; }
+        .timer-box { font-size: 2.2rem; color: var(--accent-red); font-weight: bold; text-shadow: 0 0 15px red; }
         
         .final-link {
             display: inline-block; background: var(--matrix-blue); color: #000;
@@ -91,12 +116,13 @@
             font-size: 1.2rem; box-shadow: 0 0 30px var(--matrix-glow);
             animation: pulse 1.5s infinite;
         }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         #live-notifications { position: fixed; bottom: 20px; left: 20px; z-index: 10; }
         .notify-toast {
-            background: rgba(0, 122, 204, 0.1); border-left: 4px solid var(--matrix-blue);
-            padding: 12px; margin-top: 10px; font-size: 0.8rem; animation: slide 0.5s ease;
+            background: rgba(0, 122, 204, 0.15); border-left: 4px solid var(--matrix-blue);
+            padding: 12px; margin-top: 10px; font-size: 0.75rem; border-radius: 0 4px 4px 0;
+            animation: slide 0.5s ease; backdrop-filter: blur(5px);
         }
         @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(0); } }
     </style>
@@ -104,25 +130,25 @@
 <body>
 
     <canvas id="bg-canvas"></canvas>
-    <div id="slots-info">СЛОТОВ: <span id="slot-count">3</span>/100</div>
+    <div id="slots-info">АКТИВНЫЕ СЛОТЫ: <span id="slot-count">3</span>/100</div>
     <div id="live-notifications"></div>
 
     <div class="main-container">
         <div class="terminal">
             <div class="terminal-header">
-                <span>CORE_BYPASS // v8.0</span>
-                <span>SYSTEM_CHECK: OK</span>
+                <span>Network Bypass v9.0</span>
+                <span>Status: Encrypted</span>
             </div>
 
-            <div id="block-input" class="step-input">
-                <div class="ip-informer">
+            <div id="block-input" class="step-input" style="text-align: center;">
+                <div class="informer-wrapper">
                     <a href="https://2ip.io/ru/privacy/" target="_blank">
-                        <img src="https://2ip.io/ru/privacy/bar/26098820_297f2a.png" alt="2ip информер" style="max-width: 100%; display: block;">
+                        <img src="https://2ip.io/ru/privacy/bar/26098820_297f2a.png" alt="ID_DATA">
                     </a>
                 </div>
-                <h2>Авторизация узла</h2>
-                <input type="text" id="target-input" placeholder="Введите @username" autocomplete="off">
-                <button class="action-btn" onclick="startExploit()">Запустить сканирование</button>
+                <h2>Инициализация цифрового профиля</h2>
+                <input type="text" id="target-input" placeholder="ВВЕДИТЕ @USERNAME" autocomplete="off">
+                <button class="action-btn" onclick="startExploit()">Сгенерировать доступ</button>
             </div>
 
             <div id="block-loading" class="step-loading">
@@ -130,55 +156,57 @@
             </div>
 
             <div id="block-final" class="step-final">
-                <div style="color:#00ff66; font-size: 1.2rem; font-weight: bold;">✓ ДОСТУП ДЛЯ ВАШЕГО IP ОТКРЫТ</div>
-                <div class="ip-informer" style="margin: 0 auto;">
-                    <img src="https://2ip.io/ru/privacy/bar/26098820_297f2a.png" alt="2ip информер">
+                <div style="color:#00ff66; font-size: 1.1rem; letter-spacing: 1px;">ПАКЕТ ДАННЫХ СФОРМИРОВАН</div>
+                
+                <div class="informer-wrapper" style="margin: 5px auto;">
+                    <img src="https://2ip.io/ru/privacy/bar/26098820_297f2a.png" alt="ID_DATA">
                 </div>
+
                 <div class="timer-box" id="countdown">05:00</div>
-                <a href="https://t.me/mirieli1977" target="_blank" class="final-link">ПОЛУЧИТЬ В TELEGRAM</a>
-                <p style="font-size: 0.7rem; color: #666;">Подтвердите сессию, пока таймер не истек.</p>
+                <a href="https://t.me/mirieli1977" target="_blank" class="final-link">ПОДТВЕРДИТЬ В TELEGRAM</a>
+                <p style="font-size: 0.7rem; color: #555; text-transform: uppercase;">Система аннулирует доступ через 300 секунд</p>
             </div>
         </div>
     </div>
 
     <script>
+        // Анимация синего огня
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-
-        // Анимация синего огня (плазма)
         let particles = [];
         class Flame {
             constructor() { this.reset(); }
             reset() {
                 this.x = Math.random() * canvas.width;
                 this.y = canvas.height + 50;
-                this.speed = Math.random() * 2 + 1;
-                this.radius = Math.random() * 25 + 5;
-                this.opacity = Math.random() * 0.4 + 0.1;
+                this.speed = Math.random() * 1.5 + 0.5;
+                this.radius = Math.random() * 20 + 5;
+                this.opacity = Math.random() * 0.3 + 0.1;
             }
             draw() {
                 this.y -= this.speed;
-                this.opacity -= 0.002;
+                this.opacity -= 0.0015;
                 if (this.opacity <= 0) this.reset();
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(0, 150, 255, ${this.opacity})`;
+                ctx.fillStyle = `rgba(0, 122, 255, ${this.opacity})`;
                 ctx.fill();
             }
         }
-        for(let i=0; i<70; i++) particles.push(new Flame());
+        for(let i=0; i<60; i++) particles.push(new Flame());
         function anim() {
-            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = '#03060a'; ctx.fillRect(0,0,canvas.width,canvas.height);
             particles.forEach(p => p.draw());
             requestAnimationFrame(anim);
         }
         anim();
 
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // Звуковой эффект
         function beep() {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.frequency.setValueAtTime(700, audioCtx.currentTime);
+            o.frequency.setValueAtTime(400, audioCtx.currentTime);
             g.gain.setValueAtTime(0.01, audioCtx.currentTime);
             o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+0.05);
         }
@@ -191,13 +219,13 @@
             
             const logBox = document.getElementById('log-box');
             const logs = [
-                "> Анализ данных информера...",
-                "> Проверка соответствия IP...",
-                `> Цель: ${input} определена.`,
-                "> Взлом базы данных...",
-                "> Подмена токена сессии...",
-                "> Обход защиты Cloudflare...",
-                "[OK] ВЗЛОМ УСПЕШНО ЗАВЕРШЕН."
+                "> Загрузка данных информера...",
+                "> Проверка IP-адреса...",
+                "> Установка зашифрованного туннеля...",
+                `> Цель: [${input}] подтверждена.`,
+                "> Взлом базы данных хэшей...",
+                "> Обход системы верификации...",
+                "[OK] ТОКЕН ДОСТУПА ПРИВЯЗАН К ВАШЕМУ IP."
             ];
 
             let i = 0;
@@ -218,7 +246,7 @@
                         startTimer();
                     }, 1000);
                 }
-            }, 800);
+            }, 900);
         }
 
         function startTimer() {
@@ -231,14 +259,14 @@
             }, 1000);
         }
 
-        // Уведомления
-        const nicks = ['@x_hacker', '@crypto_pro', '@anon_user', '@admin_bot', '@daria_v'];
+        // Рандомные уведомления
+        const nicks = ['@hacker_v', '@pro_ton', '@crypto_user', '@anon_777', '@mir_ieli'];
         setInterval(() => {
             const c = document.getElementById('live-notifications');
             const d = document.createElement('div'); d.className = 'notify-toast';
-            d.innerText = `Пользователь ${nicks[Math.floor(Math.random()*nicks.length)]} зашел через Telegram`;
+            d.innerText = `Доступ выдан для ${nicks[Math.floor(Math.random()*nicks.length)]}`;
             c.appendChild(d); setTimeout(() => d.remove(), 4000);
-        }, 6000);
+        }, 5500);
     </script>
 </body>
 </html>
