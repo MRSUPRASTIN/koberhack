@@ -1,155 +1,426 @@
-from pathlib import Path
-
-html = r"""<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Steam Simulator L-3612</title>
-<style>
-body{margin:0;background:#111;color:#eee;font-family:Arial}
-#sky{height:65vh;position:relative;overflow:hidden;background:linear-gradient(#87b5ff,#d7e7ff)}
-#ground{position:absolute;bottom:0;width:100%;height:40%;background:#2d2d2d}
-#hud{position:absolute;left:10px;top:10px;background:#0008;padding:10px}
-#train{position:absolute;bottom:18%;left:50%;width:220px;height:40px;background:#111;border:2px solid #777;transform:translateX(-50%)}
-#smoke{position:absolute;bottom:60px;left:52%;}
-.sm{position:absolute;width:20px;height:20px;border-radius:50%;background:#bbb8}
-#panel{height:35vh;background:#222;padding:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.card{background:#333;padding:10px}
-button{width:100%;padding:10px;margin:4px 0}
-.big{font-size:36px;font-weight:bold}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>РЕТРО СИМУЛЯТОР: ПАРОВОЗ Л-3612 (Воркута — Ленинград)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body { background: #110d0a; color: #f4eccf; font-family: 'Georgia', serif; overflow: hidden; }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            border: 12px solid #2b1d14;
+        }
+
+        /* Вид из окна будки машиниста */
+        #windshield {
+            flex: 1.4;
+            background: linear-gradient(to bottom, #cf8546 0%, #e3bc76 40%, #765136 100%); /* Сепия/Ретро рассвет */
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 -30px 50px rgba(0,0,0,0.9);
+            border-bottom: 8px solid #3d2a1c;
+        }
+
+        /* Старая железная дорога */
+        #ground {
+            position: absolute;
+            bottom: 0; width: 100%; height: 45%;
+            background: linear-gradient(to bottom, #423525 0%, #1a140e 100%);
+        }
+        .rail-line { position: absolute; height: 100%; width: 8px; background: #5a5245; bottom: 0; transform-origin: top center; box-shadow: 2px 2px 10px rgba(0,0,0,0.8); }
+        #rail-left { left: 38%; transform: skewX(-40deg); }
+        #rail-right { right: 38%; transform: skewX(40deg); }
+        
+        #ties-container { position: absolute; width: 100%; height: 45%; bottom: 0; overflow: hidden; }
+        .retro-tie { position: absolute; width: 140px; height: 7px; background: #261910; left: 45%; bottom: 100%; border-radius: 2px; box-shadow: 0 4px 5px #000; }
+
+        /* Окружение: Деревянные столбы и старые ели */
+        #scenery-container { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
+        .retro-tree { position: absolute; width: 0; height: 0; border-left: 25px solid transparent; border-right: 25px solid transparent; border-bottom: 70px solid #2b3621; top: 43%; transform: scale(0.1); transform-origin: bottom center; filter: sepia(0.5); }
+        .retro-pole { position: absolute; width: 5px; height: 100px; background: #422d1b; top: 32%; transform: scale(0.1); transform-origin: bottom center; }
+        .retro-pole::after { content: ''; position: absolute; top: 10px; left: -10px; width: 25px; height: 3px; background: #22150b; }
+
+        /* Старинный вокзал */
+        #station { position: absolute; width: 400%; height: 100%; background: transparent; top: 0; left: 400%; }
+        #platform { position: absolute; bottom: 0; left: 0; width: 45%; height: 45%; background: linear-gradient(to bottom, #554638, #2a2017); border-top: 4px solid #8c7661; transform: skewX(-20deg); }
+        #station-building { position: absolute; bottom: 35%; left: 4%; background: #4a2f1b; border: 4px double #d1b894; padding: 15px 35px; color: #f4eccf; text-align: center; box-shadow: 5px 5px 15px #000; }
+        #station-title { font-size: 26px; font-weight: bold; font-family: 'Courier New', serif; letter-spacing: 2px; }
+
+        /* Механический Семафор */
+        #semafor { position: absolute; right: 15%; bottom: 22%; width: 10px; height: 150px; background: #423d33; border: 1px solid #111; }
+        #semafor-wing { position: absolute; top: 15px; left: -50px; width: 60px; height: 12px; background: #b03a2e; border: 2px solid #fff; transform-origin: right center; transform: rotate(0deg); transition: 0.5s; }
+        #semafor-lamp { position: absolute; top: 11px; left: 15px; width: 14px; height: 14px; border-radius: 50%; background: #ff3333; box-shadow: 0 0 15px #ff3333; }
+
+        /* ДУБОВАЯ ПАНЕЛЬ УПРАВЛЕНИЯ ПАРОВОЗОМ */
+        #retro-panel {
+            flex: 0.9;
+            background: linear-gradient(to bottom, #3d2616 0%, #1f120a 100%);
+            border-top: 6px solid #140b06;
+            padding: 20px 40px;
+            display: grid;
+            grid-template-columns: 1.1fr 1.3fr 1.1fr;
+            gap: 30px;
+            box-shadow: inset 0 20px 30px rgba(0,0,0,0.9);
+        }
+
+        /* Круглые механические манометры */
+        .gauge-cluster { display: flex; justify-content: space-around; align-items: center; }
+        .round-gauge {
+            width: 100px; height: 100px; border-radius: 50%;
+            background: radial-gradient(#f7f1db, #ded3b1);
+            border: 6px solid #876543; box-shadow: inset 0 0 10px rgba(0,0,0,0.4), 0 5px 10px #000;
+            position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .gauge-arrow { position: absolute; width: 3px; height: 40px; background: #b03a2e; bottom: 50%; left: 48%; transform-origin: bottom center; transform: rotate(0deg); transition: transform 0.4s cubic-bezier(0.1, 0.8, 0.3, 1); }
+        .gauge-center { position: absolute; width: 10px; height: 10px; background: #422d1b; border-radius: 50%; top: 45%; }
+        .gauge-label { font-size: 10px; color: #4a3525; font-weight: bold; margin-top: 45px; text-align: center; font-family: Arial, sans-serif; }
+        .gauge-val { font-size: 12px; font-weight: bold; color: #111; margin-top: 2px; }
+
+        /* Центральный скоростемер Гаусгельтера */
+        .center-cabinet { background: #26170c; border: 3px solid #63432b; border-radius: 5px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: inset 0 0 15px #000; }
+        .paper-screen { background: #ebdcb9; border: 2px solid #3d2716; padding: 8px; font-family: 'Courier New', monospace; color: #2b180a; font-weight: bold; box-shadow: inset 0 0 8px rgba(0,0,0,0.3); }
+        .retro-speed { font-size: 54px; font-weight: bold; text-align: center; color: #1a0f07; padding: 5px 0; border-bottom: 2px dashed #9c8459; }
+
+        /* Рычаги управления (Тяги и Кран) */
+        .lever-cluster { display: flex; justify-content: space-around; align-items: center; }
+        .retro-btn {
+            width: 90px; height: 85px; background: linear-gradient(to bottom, #875c36, #4f331b);
+            border: 3px solid #d4b285; border-radius: 4px; color: #f4eccf; font-family: 'Georgia', serif;
+            font-weight: bold; font-size: 11px; cursor: pointer; text-shadow: 1px 1px 2px #000;
+            box-shadow: 0 6px 0 #140b05, 0 10px 15px rgba(0,0,0,0.6); transition: 0.1s;
+        }
+        .retro-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #140b05, 0 4px 5px rgba(0,0,0,0.6); }
+        .retro-btn.btn-steam { background: linear-gradient(to bottom, #b84635, #692116); }
+
+        #vintage-hud { position: absolute; top: 20px; left: 20px; background: rgba(31, 18, 10, 0.9); padding: 12px 20px; border: 2px double #d1b894; border-radius: 4px; font-size: 13px; font-style: italic; box-shadow: 4px 4px 10px #000; }
+    </style>
 </head>
 <body>
-<div id="sky">
-<div id="hud">
-<div>Скорость: <span id="spd">0</span> км/ч</div>
-<div>Давление: <span id="prs">12.0</span> атм</div>
-<div>Уголь: <span id="coal">8000</span> кг</div>
-<div>Вода: <span id="water">25000</span> л</div>
-<div>Регулятор: <span id="reg">0</span>%</div>
-<div>Реверс: <span id="rev">50</span>%</div>
-<div>Станция через: <span id="dist">5000</span> м</div>
-</div>
-<div id="smoke"></div>
-<div id="train"></div>
-<div id="ground"></div>
-</div>
 
-<div id="panel">
-<div class="card">
-<h3>Тяга</h3>
-<button onclick="reg(+5)">Регулятор +</button>
-<button onclick="reg(-5)">Регулятор -</button>
-<button onclick="rev(+5)">Реверс +</button>
-<button onclick="rev(-5)">Реверс -</button>
-</div>
+<div id="game-container">
+    <!-- ВИД ИЗ БУДКИ ПАРОВОЗА -->
+    <div id="windshield">
+        <div id="ground"></div>
+        <div id="scenery-container"></div>
+        <div id="ties-container"></div>
+        <div class="rail-line" id="rail-left"></div>
+        <div class="rail-line" id="rail-right"></div>
+        
+        <!-- Историческая станция -->
+        <div id="station">
+            <div id="platform"></div>
+            <div id="station-building">
+                <div id="station-title">СТАНЦIЯ ВОРКУТА</div>
+                <div style="font-size:10px; color:#d1b894; letter-spacing:1px; margin-top:3px;">СЕВЕРНАЯ КАЗЕННАЯ Ж.Д.</div>
+            </div>
+        </div>
 
-<div class="card">
-<div class="big" id="speedCenter">0</div>
-<div>км/ч</div>
-</div>
+        <!-- Деревянный механический семафор -->
+        <div id="semafor">
+            <div id="semafor-wing"></div>
+            <div id="semafor-lamp"></div>
+        </div>
 
-<div class="card">
-<h3>Тормоза</h3>
-<button onclick="brake=1">Тормоз</button>
-<button onclick="brake=0">Отпустить</button>
-<button onclick="coal+=500">Подбросить уголь</button>
-<button onclick="water+=1000">Пополнить воду</button>
-</div>
+        <div id="vintage-hud">
+            <div>ПОЕЗДЪ: <b>№ 78 «Товарно-Пассажирскій»</b></div>
+            <div>ЛОКОМОТИВЪ: <b>ПАРОВОЗЪ СЕРIИ Л («ЛЕБЕДЯНКА»)</b></div>
+        </div>
+    </div>
+
+    <!-- ЧУГУННО-ДУБОВАЯ ПАНЕЛЬ -->
+    <div id="retro-panel">
+        <!-- Левое крыло: Круглые манометры -->
+        <div class="gauge-cluster">
+            <div class="round-gauge">
+                <div class="gauge-arrow" id="arrow-boiler"></div>
+                <div class="gauge-center"></div>
+                <div class="gauge-label">КОТЕЛЪ (Атм)</div>
+                <div class="gauge-val" id="val-boiler">14.0</div>
+            </div>
+            <div class="round-gauge">
+                <div class="gauge-arrow" id="arrow-brake"></div>
+                <div class="gauge-center"></div>
+                <div class="gauge-label">ТОРМОЗЪ (Атм)</div>
+                <div class="gauge-val" id="val-brake">0.0</div>
+            </div>
+        </div>
+
+        <!-- Центр: Скоростемер Гаусгельтера на бумажной ленте -->
+        <div class="center-cabinet">
+            <div class="paper-screen">
+                <div style="font-size:11px; color:#5c4331; border-bottom:1px dashed #7a5e48; padding-bottom:3px; display:flex; justify-content:space-between;">
+                    <span>СКОРОСТЕМЕРЪ</span><span id="retro-clock">12:00</span>
+                </div>
+                <div class="retro-speed" id="speed-text">0</div>
+                <div style="font-size:12px; margin-top:4px; display:flex; justify-content:space-between;">
+                    <span>ВЕРСТЫ ДО СЛЕД.:</span><span id="dist-text" style="color:#000;">3000 В.</span>
+                </div>
+                <div style="font-size:11px; color:#5c4331; margin-top:2px;">ПУТЬ: <span id="track-text" style="color:#a83224">ВОРКУТА — ЧУМЪ</span></div>
+            </div>
+        </div>
+
+        <!-- Правое крыло: Медные рукояти -->
+        <div class="lever-cluster">
+            <button class="retro-btn btn-steam" id="cmd-regulator">РЕГУЛЯТОРЪ<br>ПAРA (▲)</button>
+            <button class="retro-btn" id="cmd-brake">ВЕНТИЛЬ<br>ТОРМОЗА (▼)</button>
+            <button class="retro-btn" id="cmd-whistle" style="background:linear-gradient(to bottom, #d4ac0d, #9a7d0a); color:#111; border-color:#fff;">СВИСТОКЪ<br>💨</button>
+        </div>
+    </div>
 </div>
 
 <script>
-let speed=0;
-let regulator=0;
-let reverser=50;
-let brake=0;
+    // Звуковой движок старинного поезда (Шипение пара и хриплый гудок)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let steamGain = null, steamOsc = null;
 
-let pressure=12;
-let coal=8000;
-let water=25000;
-let distance=5000;
+    function initRetroSound() {
+        if (steamOsc) return;
+        // Белый шум для симуляции шипения пара в цилиндрах
+        let bufferSize = audioCtx.sampleRate * 2;
+        let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        let data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
 
-function reg(v){regulator=Math.max(0,Math.min(100,regulator+v));}
-function rev(v){reverser=Math.max(0,Math.min(100,reverser+v));}
+        steamOsc = audioCtx.createBufferSource();
+        steamOsc.buffer = buffer;
+        steamOsc.loop = true;
 
-function smoke(){
- let s=document.createElement('div');
- s.className='sm';
- document.getElementById('smoke').appendChild(s);
- let y=0,x=0;
- let t=setInterval(()=>{
-  y+=2;x+=(Math.random()-0.5)*2;
-  s.style.transform=`translate(${x}px,${-y}px)`;
-  s.style.opacity=Math.max(0,1-y/120);
-  if(y>120){clearInterval(t);s.remove();}
- },30);
-}
+        let filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass'; filter.frequency.setValueAtTime(250, audioCtx.currentTime);
 
-setInterval(()=>{
- let traction=(regulator/100)*(pressure/14)*(0.6+reverser/100);
- let resistance=0.03*speed+0.0009*speed*speed;
+        steamGain = audioCtx.createGain();
+        steamGain.gain.setValueAtTime(0, audioCtx.currentTime);
 
- speed += traction-resistance;
+        steamOsc.connect(filter); filter.connect(steamGain);
+        steamGain.connect(audioCtx.destination);
+        steamOsc.start();
 
- if(brake) speed-=1.5;
+        // Классический "чух-чух" ритм старинного паровоза
+        setInterval(() => {
+            if (speed > 5) {
+                playChukh();
+                setTimeout(() => { playChukh(); }, 220);
+            }
+        }, 800);
+    }
 
- if(speed<0)speed=0;
- if(speed>90)speed=90;
+    function playChukh() {
+        if (!steamGain) return;
+        let noise = audioCtx.createBufferSource();
+        noise.buffer = steamOsc.buffer;
+        let filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass'; filter.frequency.setValueAtTime(180 + speed * 2, audioCtx.currentTime);
+        let gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(speed * 0.006, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+        noise.start();
+    }
 
- coal-=regulator*0.05;
- water-=regulator*0.12;
+    function blowWhistle() {
+        initRetroSound();
+        // Мелодичный, глубокий трехосцилляторный гудок старого паровоза
+        let tones = [220, 330, 440];
+        tones.forEach(freq => {
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 1.5);
+        });
+    }
 
- pressure += 0.01;
- pressure -= regulator*0.015;
+    // Параметры симуляции
+    const retroRoute = [
+        { name: 'ВОРКУТА', dist: 3000 }, { name: 'ЧУМЪ', dist: 3500 },
+        { name: 'ИНТА', dist: 4000 }, { name: 'КОТЛАСЪ', dist: 4500 },
+        { name: 'ЛЕНИНГРАДЪ', dist: 5000 }
+    ];
+    let routeIdx = 0;
 
- pressure=Math.max(2,Math.min(14,pressure));
+    let speed = 0, maxSpeed = 75; // Паровоз едет неспешно, но солидно
+    let distanceToStation = 3000;
+    let boilerPressure = 14.0; // Вся сила в давлении котла!
+    let brakePressure = 0.0;
+    let state = 'wait_clear';
 
- if(coal<=0){coal=0;pressure-=0.05;}
- if(water<=0){
-   water=0;
-   alert("Авария: закончилась вода!");
-   location.reload();
- }
+    // Элементы
+    const speedText = document.getElementById('speed-text');
+    const distText = document.getElementById('dist-text');
+    const trackText = document.getElementById('track-text');
+    const stationTitle = document.getElementById('station-title');
+    const stationDiv = document.getElementById('station');
+    
+    // Стрелки манометров
+    const arrowBoiler = document.getElementById('arrow-boiler');
+    const arrowBrake = document.getElementById('arrow-brake');
+    const valBoiler = document.getElementById('val-boiler');
+    const valBrake = document.getElementById('val-brake');
 
- if(speed>0){
-   distance-=speed/3.6;
- }
+    document.getElementById('cmd-whistle').addEventListener('click', blowWhistle);
 
- if(distance<=0){
-   if(speed>10){
-      alert("Крушение на станции! Скорость была слишком высокой.");
-   }else{
-      alert("Прибытие на станцию успешно.");
-   }
-   distance=5000;
- }
+    // Открытие деревянного семафора (Крыло поднимается вверх на 45 градусов!)
+    setTimeout(() => {
+        document.getElementById('semafor-wing').style.transform = 'rotate(-45deg)';
+        document.getElementById('semafor-lamp').style.background = '#33ff33';
+        document.getElementById('semafor-lamp').style.boxShadow = '0 0 15px #33ff33';
+        state = 'go';
+    }, 2500);
 
- document.getElementById('spd').textContent=Math.round(speed);
- document.getElementById('speedCenter').textContent=Math.round(speed);
- document.getElementById('prs').textContent=pressure.toFixed(1);
- document.getElementById('coal').textContent=Math.round(coal);
- document.getElementById('water').textContent=Math.round(water);
- document.getElementById('reg').textContent=regulator;
- document.getElementById('rev').textContent=reverser;
- document.getElementById('dist').textContent=Math.max(0,Math.round(distance));
+    // Работа рычагов
+    function pullLever(action) {
+        initRetroSound();
+        if (state === 'wait_clear') return;
 
- if(speed>5 && Math.random()<0.5) smoke();
-},100);
+        if (action > 0) { // Открываем регулятор пара
+            if (boilerPressure > 4) {
+                speed = Math.min(maxSpeed, speed + 3.0);
+                boilerPressure = Math.max(2.0, boilerPressure - 0.25); // Расход пара!
+                brakePressure = Math.max(0.0, brakePressure - 0.8);
+            }
+        } else { // Зажимаем колодки ручного и парового тормоза
+            speed = Math.max(0, speed - 4.5);
+            brakePressure = Math.min(6.0, brakePressure + 1.0);
+        }
+    }
 
-document.addEventListener("keydown",e=>{
- if(e.key==="ArrowUp") reg(5);
- if(e.key==="ArrowDown") reg(-5);
- if(e.key==="ArrowLeft") rev(-5);
- if(e.key==="ArrowRight") rev(5);
- if(e.code==="Space") brake=1;
-});
-document.addEventListener("keyup",e=>{
- if(e.code==="Space") brake=0;
-});
+    document.getElementById('cmd-regulator').addEventListener('click', () => pullLever(1));
+    document.getElementById('cmd-brake').addEventListener('click', () => pullLever(-1));
+    
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp') pullLever(1);
+        if (e.key === 'ArrowDown') pullLever(-1);
+        if (e.key === 'h' || e.key === 'r') blowWhistle();
+    });
+
+    // Отрисовка старого ретро-окружения
+    let vintageObjects = [];
+    const scenery = document.getElementById('scenery-container');
+    const ties = document.getElementById('ties-container');
+
+    function createRetroFX() {
+        if (speed > 0 && Math.random() < speed * 0.004) {
+            let isLeft = Math.random() > 0.5;
+            let tree = document.createElement('div'); tree.className = 'retro-tree';
+            tree.style.left = isLeft ? '12%' : '88%';
+            scenery.appendChild(tree);
+            vintageObjects.push({ el: tree, x: isLeft ? 12 : 88, y: 43, scale: 0.1, side: isLeft ? -1 : 1, type: 'tree' });
+        }
+        if (speed > 0 && Math.random() < speed * 0.0015) {
+            let pole = document.createElement('div'); pole.className = 'retro-pole';
+            pole.style.left = '22%';
+            scenery.appendChild(pole);
+            vintageObjects.push({ el: pole, x: 22, y: 32, scale: 0.1, side: -1, type: 'pole' });
+        }
+        if (speed > 0 && Math.random() < speed * 0.06) {
+            let tie = document.createElement('div'); tie.className = 'retro-tie';
+            ties.appendChild(tie);
+            vintageObjects.push({ el: tie, x: 45, y: 0, scale: 0.1, type: 'tie' });
+        }
+    }
+
+    function animateRetroFX() {
+        for (let i = vintageObjects.length - 1; i >= 0; i--) {
+            let o = vintageObjects[i];
+            if (o.type === 'tie') {
+                o.y += speed * 0.25; o.scale += speed * 0.007;
+                o.el.style.bottom = o.y + 'px'; o.el.style.transform = `scaleX(${o.scale * 1.6})`;
+                if (o.y > 400) { o.el.remove(); vintageObjects.splice(i, 1); }
+            } else {
+                o.scale += speed * 0.0014; o.y += speed * 0.035; o.x += (speed * 0.08) * o.side;
+                o.el.style.transform = `scale(${o.scale})`; o.el.style.top = o.y + '%'; o.el.style.left = o.x + '%';
+                if (o.y > 100 || o.x < -15 || o.x > 115) { o.el.remove(); vintageObjects.splice(i, 1); }
+            }
+        }
+    }
+
+    function arriveAtOldStation() {
+        state = 'wait_clear'; speed = 0;
+        routeIdx++;
+
+        if (routeIdx >= retroRoute.length) {
+            stationTitle.innerText = "С.-ПЕТЕРБУРГЪ ВИТЕБСКІЙ";
+            trackText.innerText = "ПРИБЫТIЕ КОНЕЧНАЯ";
+            distText.innerText = "0 В.";
+            document.getElementById('semafor-wing').style.transform = 'rotate(0deg)';
+            document.getElementById('semafor-lamp').style.background = '#ff3333';
+            alert("Честь имею поздравить! Вы успешно доставили состав на Витебский вокзал Ленинграда!");
+            return;
+        }
+
+        let cur = retroRoute[routeIdx];
+        let nxt = retroRoute[routeIdx + 1] || { name: 'ФИНИШЪ' };
+        stationTitle.innerText = "СТАНЦIЯ " + cur.name;
+        trackText.innerText = `${cur.name} — ${nxt.name}`;
+        distanceToStation = cur.dist;
+
+        stationDiv.style.left = '0%';
+        document.getElementById('semafor-wing').style.transform = 'rotate(0deg)';
+        document.getElementById('semafor-lamp').style.background = '#ff3333';
+
+        // Стоянка поезда и дозаправка котла водой и углем
+        setTimeout(() => {
+            stationDiv.style.left = '400%';
+            document.getElementById('semafor-wing').style.transform = 'rotate(-45deg)';
+            document.getElementById('semafor-lamp').style.background = '#33ff33';
+            state = 'go';
+        }, 5000);
+    }
+
+    // Магистральный цикл
+    function engineLoop() {
+        if (speed > 0) {
+            distanceToStation -= (speed / 35);
+            createRetroFX(); animateRetroFX();
+            speed = Math.max(0, speed - 0.012); // Угасание хода паровоза
+        }
+
+        // Плавная регенерация пара в котле на ходу за счет работы кочегара
+        if (boilerPressure < 14.0) boilerPressure += 0.015;
+
+        // Физика тормозных колодок
+        if (brakePressure > 0) brakePressure = Math.max(0, brakePressure - 0.05);
+
+        // Обновление старых приборов (Поворот стрелок манометров)
+        speedText.innerText = Math.round(speed);
+        distText.innerText = Math.max(0, Math.round(distanceToStation)) + " В.";
+
+        valBoiler.innerText = boilerPressure.toFixed(1);
+        valBrake.innerText = brakePressure.toFixed(1);
+        
+        // Манометры: шкала вращения стрелки от -120 до 120 градусов
+        arrowBoiler.style.transform = `rotate(${(boilerPressure / 14 * 240) - 120}deg)`;
+        arrowBrake.style.transform = `rotate(${(brakePressure / 6 * 240) - 120}deg)`;
+
+        // Появление старинного перрона
+        if (distanceToStation < 250) { stationDiv.style.left = `${distanceToStation * 1.4}%`; }
+
+        // Фиксация прибытия к вокзалу
+        if (distanceToStation <= 0 && state === 'go') {
+            if (speed > 8) {
+                alert("Крушение! Паровоз протаранил тупиковый упор из-за высокой скорости!");
+                speed = 0; distanceToStation = 150;
+            } else if (speed === 0) {
+                arriveAtOldStation();
+            }
+        }
+
+        // Часы
+        let d = new Date();
+        document.getElementById('retro-clock').innerText = d.getHours() + ":" + (d.getMinutes()<10?'0':'') + d.getMinutes();
+        
+        requestAnimationFrame(engineLoop);
+    }
+
+    engineLoop();
 </script>
 </body>
-</html>"""
-path = "/mnt/data/steam_simulator.html"
-Path(path).write_text(html, encoding="utf-8")
-print(path)
+</html>
