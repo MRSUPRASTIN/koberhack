@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Симулятор вождения от первого лица</title>
+    <title>3D Симулятор вождения — Только Трасса</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background-color: #87CEEB;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
         }
         canvas {
             display: block;
@@ -19,22 +20,28 @@
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.85);
             color: #fff;
-            padding: 15px 30px;
+            padding: 15px 35px;
             border-radius: 30px;
             font-size: 24px;
             font-weight: bold;
             pointer-events: none;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            border: 2px solid #4CAF50;
+            border: 2px solid #00E676;
             letter-spacing: 1px;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+        #hud.warning {
+            border-color: #FF3D00;
+            color: #FF8A80;
         }
         #instructions {
             position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             color: #fff;
             padding: 15px;
             border-radius: 10px;
@@ -44,28 +51,36 @@
         }
         #instructions h2 {
             margin-top: 0;
-            color: #4CAF50;
+            color: #00E676;
+        }
+        .status {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 5px;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <div id="hud">Скорость: <span id="speed">0</span> км/ч</div>
+    <div id="hud">
+        <div><span id="speed">0</span> км/ч</div>
+        <div class="status" id="status-text">Система удержания: АКТИВНА</div>
+    </div>
     
     <div id="instructions">
         <h2>Управление:</h2>
-        * <b>W / Стрелка Вверх</b> — Газ<br>
-        * <b>S / Стрелка Вниз</b> — Тормоз / Назад<br>
-        * <b>A, D / Стрелки Влево, Вправо</b> — Поворот руля<br>
+        * <b>W / ↑</b> — Газ<br>
+        * <b>S / ↓</b> — Тормоз / Назад<br>
+        * <b>A, D / ←, →</b> — Поворот руля<br>
         <br>
-        <i>Свободная езда. Без штрафов и бензина!</i>
+        <i>Защита от съезда активна. Потерять трассу невозможно!</i>
     </div>
 
     <script>
         // --- Настройки сцены ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); // Небо
+        scene.background = new THREE.Color(0x87CEEB); 
         scene.fog = new THREE.FogExp2(0x87CEEB, 0.015);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -82,133 +97,131 @@
         sunLight.position.set(100, 200, 50);
         scene.add(sunLight);
 
-        // --- Физика и состояние машины ---
+        // --- Физика автомобиля ---
         const car = {
             x: 0,
             z: 0,
             speed: 0,
-            maxSpeed: 80, // Максимальная скорость вперед
-            maxReverseSpeed: -20, // Максимальная скорость назад
-            acceleration: 0.5,
-            deceleration: 0.2,
-            friction: 0.05,
+            maxSpeed: 90, 
+            maxReverseSpeed: -25, 
+            acceleration: 0.6,
+            deceleration: 0.3,
+            friction: 0.06,
             angle: 0,
-            steeringSpeed: 0.03
+            steeringSpeed: 0.025
         };
 
-        // Управление кнопками
         const keys = { w: false, a: false, s: false, d: false };
 
-        // --- Создание окружения (Земля и Дорога) ---
+        // --- Окружение и Безопасная Дорога ---
+        const roadWidth = 14; // Ширина асфальта
         const worldWidth = 400;
         const worldLength = 2000;
 
-        // Зеленая земля
+        // Трава
         const groundGeo = new THREE.PlaneGeometry(worldWidth, worldLength, 40, 100);
-        
-        // Делаем рельеф (холмы)
         const pos = groundGeo.attributes.position;
         for (let i = 0; i < pos.count; i++) {
             let x = pos.getX(i);
-            let z = pos.getY(i); // В плоскости PlaneGeometry Y — это глубина (Z в мире)
-            
-            // Оставляем центр под дорогу ровным, холмы только по бокам
-            if (Math.abs(x) > 15) {
-                let hill = Math.sin(x * 0.05) * Math.cos(z * 0.02) * 5;
-                pos.setZ(i, hill); // Меняем высоту
+            let z = pos.getY(i);
+            if (Math.abs(x) > 12) { // Холмы начинаются подальше от дороги
+                let hill = Math.sin(x * 0.05) * Math.cos(z * 0.02) * 6;
+                pos.setZ(i, hill);
             }
         }
         groundGeo.computeVertexNormals();
-
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x3B7A57, roughness: 0.9 });
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x2E6F40, roughness: 0.9 });
         const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2; // Укладываем горизонтально
+        ground.rotation.x = -Math.PI / 2;
         scene.add(ground);
 
-        // Бесконечная прямая дорога
-        const roadGeo = new THREE.PlaneGeometry(16, worldLength);
-        const roadMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.7 });
+        // Асфальтированная дорога
+        const roadGeo = new THREE.PlaneGeometry(roadWidth, worldLength);
+        const roadMat = new THREE.MeshStandardMaterial({ color: 0x282828, roughness: 0.8 });
         const road = new THREE.Mesh(roadGeo, roadMat);
         road.rotation.x = -Math.PI / 2;
-        road.position.y = 0.01; // Слегка приподнимем над травой, чтобы не мерцало
+        road.position.y = 0.01;
         scene.add(road);
 
-        // Разметка дороги (пунктир)
-        const markerCount = 100;
-        const markerGeo = new THREE.PlaneGeometry(0.3, 4);
+        // Обочины (красно-белые поребрики для визуализации границ безопасности)
+        const curbGeoLeft = new THREE.PlaneGeometry(0.5, worldLength);
+        const curbMat = new THREE.MeshStandardMaterial({ color: 0xBA1212, roughness: 0.5 }); // Красный край
+        const curbLeft = new THREE.Mesh(curbGeoLeft, curbMat);
+        curbLeft.rotation.x = -Math.PI / 2;
+        curbLeft.position.set(-roadWidth/2, 0.015, 0);
+        scene.add(curbLeft);
+
+        const curbRight = curbLeft.clone();
+        curbRight.position.x = roadWidth/2;
+        scene.add(curbRight);
+
+        // Разметка центральная
+        const markerCount = 120;
+        const markerGeo = new THREE.PlaneGeometry(0.2, 5);
         const markerMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
         const markersGroup = new THREE.Group();
 
         for(let i = 0; i < markerCount; i++) {
             const marker = new THREE.Mesh(markerGeo, markerMat);
             marker.rotation.x = -Math.PI / 2;
-            marker.position.set(0, 0.02, - (i * 20));
+            marker.position.set(0, 0.02, - (i * 18));
             markersGroup.add(marker);
         }
         scene.add(markersGroup);
 
-        // --- Декорации (Деревья по бокам) ---
+        // Деревья
         function createTree(x, z) {
             const tree = new THREE.Group();
-            
-            // Ствол
-            const trunkGeo = new THREE.CylinderGeometry(0.2, 0.4, 2, 8);
+            const trunkGeo = new THREE.CylinderGeometry(0.15, 0.3, 2, 8);
             const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5C4033 });
             const trunk = new THREE.Mesh(trunkGeo, trunkMat);
             trunk.position.y = 1;
             tree.add(trunk);
 
-            // Листва
-            const leavesGeo = new THREE.ConeGeometry(1.5, 3, 8);
-            const leavesMat = new THREE.MeshStandardMaterial({ color: 0x2E8B57, roughness: 0.6 });
+            const leavesGeo = new THREE.ConeGeometry(1.2, 2.5, 8);
+            const leavesMat = new THREE.MeshStandardMaterial({ color: 0x1E5631, roughness: 0.7 });
             const leaves = new THREE.Mesh(leavesGeo, leavesMat);
-            leaves.position.y = 3;
+            leaves.position.y = 2.8;
             tree.add(leaves);
 
             tree.position.set(x, 0, z);
             scene.add(tree);
         }
 
-        // Расставляем случайные деревья по обочинам
-        for (let i = 0; i < 150; i++) {
+        for (let i = 0; i < 180; i++) {
             let side = Math.random() > 0.5 ? 1 : -1;
-            let x = (15 + Math.random() * 80) * side;
+            let x = (12 + Math.random() * 60) * side;
             let z = -(Math.random() * (worldLength - 100));
             createTree(x, z);
         }
 
-        // --- Кабина автомобиля (Элементы первого лица) ---
-        // Самой машины снаружи мы не видим, создаем только капот и руль перед камерой
+        // --- Интерьер (Первое лицо) ---
         const dashboardGroup = new THREE.Group();
 
-        // Капот машины перед глазами
-        const hoodGeo = new THREE.BoxGeometry(2, 0.5, 2);
-        const hoodMat = new THREE.MeshStandardMaterial({ color: 0x990000, roughness: 0.3, metalness: 0.5 }); // Красный спорткар
+        const hoodGeo = new THREE.BoxGeometry(1.9, 0.45, 1.8);
+        const hoodMat = new THREE.MeshStandardMaterial({ color: 0x0077FF, roughness: 0.2, metalness: 0.7 }); // Синий капот
         const hood = new THREE.Mesh(hoodGeo, hoodMat);
-        hood.position.set(0, -0.6, -1.2);
+        hood.position.set(0, -0.55, -1.1);
         dashboardGroup.add(hood);
 
-        // Торпеда / Панель
-        const dashGeo = new THREE.BoxGeometry(2.2, 0.4, 0.5);
-        const dashMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        const dashGeo = new THREE.BoxGeometry(2.1, 0.4, 0.5);
+        const dashMat = new THREE.MeshStandardMaterial({ color: 0x151515 });
         const dash = new THREE.Mesh(dashGeo, dashMat);
-        dash.position.set(0, -0.5, -0.3);
+        dash.position.set(0, -0.5, -0.25);
         dashboardGroup.add(dash);
 
-        // Рулевое колесо
-        const wheelGeo = new THREE.TorusGeometry(0.2, 0.03, 8, 24);
-        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        const wheelGeo = new THREE.TorusGeometry(0.18, 0.025, 8, 24);
+        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x252525 });
         const steeringWheel = new THREE.Mesh(wheelGeo, wheelMat);
-        steeringWheel.position.set(-0.4, -0.35, -0.4); // Руль слева
-        steeringWheel.rotation.x = 0.3; // Наклонен к водителю
+        steeringWheel.position.set(-0.38, -0.35, -0.35);
+        steeringWheel.rotation.x = 0.3;
         dashboardGroup.add(steeringWheel);
 
         scene.add(dashboardGroup);
 
-        // Начальная позиция игрока
-        camera.position.set(-0.4, 1.2, 0); // Позиция глаз водителя (чуть слева, на высоте)
+        camera.position.set(-0.38, 1.15, 0); 
 
-        // --- Обработка ввода ---
+        // --- Управление ---
         window.addEventListener('keydown', (e) => {
             if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.w = true;
             if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.s = true;
@@ -223,79 +236,104 @@
             if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.d = false;
         });
 
-        // HTML HUD
         const speedDisplay = document.getElementById('speed');
+        const hudElement = document.getElementById('hud');
+        const statusText = document.getElementById('status-text');
 
-        // --- Главный игровой цикл ---
+        // --- Игровой цикл ---
         function animate() {
             requestAnimationFrame(animate);
 
-            // 1. Управление скоростью (Газ / Тормоз)
+            // 1. Физика скорости
             if (keys.w) {
                 if (car.speed < car.maxSpeed) car.speed += car.acceleration;
             } else if (keys.s) {
-                if (car.speed > car.maxReverseSpeed) car.speed -= car.acceleration * 1.5; // Тормозит быстрее, чем разгоняется
+                if (car.speed > car.maxReverseSpeed) car.speed -= car.acceleration * 1.5;
             } else {
-                // Плавное трение / остановка, если ничего не нажато
                 if (car.speed > 0) car.speed -= car.friction;
                 if (car.speed < 0) car.speed += car.friction;
                 if (Math.abs(car.speed) < 0.1) car.speed = 0;
             }
 
-            // 2. Поворот руля колес и анимация руля в салоне
+            // 2. Логика поворотов и «Умный возврат руля»
             let targetWheelRotation = 0;
-            if (Math.abs(car.speed) > 0.5) { // Поворачивать можно только в движении
-                const speedModifier = car.speed > 0 ? 1 : -1; // Реверс поворота при движении назад
+            
+            if (Math.abs(car.speed) > 0.5) {
+                const speedModifier = car.speed > 0 ? 1 : -1;
                 
                 if (keys.a) {
-                    car.angle += car.steeringSpeed * speedModifier * (Math.abs(car.speed) / car.maxSpeed + 0.3);
+                    car.angle += car.steeringSpeed * speedModifier;
                     targetWheelRotation = 0.8;
-                }
-                if (keys.d) {
-                    car.angle -= car.steeringSpeed * speedModifier * (Math.abs(car.speed) / car.maxSpeed + 0.3);
+                } else if (keys.d) {
+                    car.angle -= car.steeringSpeed * speedModifier;
                     targetWheelRotation = -0.8;
+                } else {
+                    // АВТОМАТИЧЕСКОЕ ВЫРАВНИВАНИЕ: если игрок бросил руль, машина стабилизирует курс параллельно дороге
+                    car.angle *= 0.92; 
+                    if (Math.abs(car.angle) < 0.001) car.angle = 0;
                 }
             }
 
-            // Плавный возврат руля в исходное положение
-            steeringWheel.rotation.z += (targetWheelRotation - steeringWheel.rotation.z) * 0.1;
+            // Плавное вращение руля в кабине
+            steeringWheel.rotation.z += (targetWheelRotation - steeringWheel.rotation.z) * 0.15;
 
-            // 3. Расчет новой позиции машины
-            // В THREE.js направление "вперед" по умолчанию идет в отрицательную сторону оси Z
+            // 3. Движение машины
             car.x += Math.sin(car.angle) * (car.speed * 0.01);
             car.z -= Math.cos(car.angle) * (car.speed * 0.01);
 
-            // Ограничение по границам мира, чтобы не улететь в пустоту
-            if (car.z < -worldLength + 50) car.z = 0; // Зацикливание дороги, едем бесконечно вперед
-            if (car.z > 10) car.z = 10;
-            if (car.x > worldWidth/2 - 5) car.x = worldWidth/2 - 5;
-            if (car.x < -worldWidth/2 + 5) car.x = -worldWidth/2 + 5;
-
-            // 4. Синхронизация камеры и кабины с координатами машины
-            camera.position.x = car.x - 0.4 * Math.cos(car.angle); // смещение под левый руль с учетом поворота
-            camera.position.z = car.z + 0.4 * Math.sin(car.angle);
+            // 4. СИСТЕМА УДЕРЖАНИЯ НА ТРАССЕ (Невидимые отбойники)
+            // Максимальное смещение от центра дороги с учётом ширины машины (~1.2 метра)
+            const maxTrackOffset = (roadWidth / 2) - 1.2; 
             
-            // Камера смотрит вперед по направлению движения машины
+            if (car.x > maxTrackOffset) {
+                car.x = maxTrackOffset; // Жесткий барьер справа
+                if(car.angle < 0) car.angle = 0; // Гасим вектор поворота наружу
+                triggerWarning(true);
+            } else if (car.x < -maxTrackOffset) {
+                car.x = -maxTrackOffset; // Жесткий барьер слева
+                if(car.angle > 0) car.angle = 0; // Гасим вектор поворота наружу
+                triggerWarning(true);
+            } else {
+                triggerWarning(false);
+            }
+
+            // Бесконечный цикл дороги по координате Z
+            if (car.z < -worldLength + 100) car.z = 0;
+            if (car.z > 10) car.z = 10;
+
+            // 5. Синхронизация камеры и кабины
+            camera.position.x = car.x - 0.38 * Math.cos(car.angle);
+            camera.position.z = car.z + 0.38 * Math.sin(car.angle);
             camera.rotation.y = car.angle;
 
-            // Привязываем торпеду и капот к камере, чтобы они двигались вместе с наклоном головы водителя
-            dashboardGroup.position.set(car.x, 1.2, car.z);
+            dashboardGroup.position.set(car.x, 1.15, car.z);
             dashboardGroup.rotation.y = car.angle;
 
-            // Обновляем HUD (округляем для красоты)
+            // Интерфейс
             speedDisplay.innerText = Math.round(Math.abs(car.speed));
 
             renderer.render(scene, camera);
         }
 
-        // Поддержка изменения размера экрана
+        // Эффект предупреждения на приборной панели
+        function triggerWarning(isRestricted) {
+            if (isRestricted) {
+                hudElement.classList.add('warning');
+                statusText.innerText = "КОРРЕКЦИЯ ТРАЕКТОРИИ!";
+                statusText.style.color = "#FF3D00";
+            } else {
+                hudElement.classList.remove('warning');
+                statusText.innerText = "Система удержания: АКТИВНА";
+                statusText.style.color = "#aaa";
+            }
+        }
+
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // Запуск
         animate();
     </script>
 </body>
