@@ -3,557 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Симулятор Автобуса PRO: Вид из кабины</title>
+    <title>3D Симулятор вождения от первого лица</title>
     <style>
         body {
             margin: 0;
-            padding: 0;
-            background-color: #1a1a1a;
+            overflow: hidden;
+            background-color: #87CEEB;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            color: white;
-            overflow: hidden;
-            user-select: none;
         }
-
-        #gameContainer {
-            position: relative;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.7);
-            border-radius: 12px;
-            overflow: hidden;
-            background-color: #000;
-        }
-
         canvas {
             display: block;
         }
-
-        #ui {
+        #hud {
             position: absolute;
-            top: 12px;
-            left: 12px;
-            right: 12px;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        .ui-card {
-            background: rgba(0, 0, 0, 0.85);
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #444;
-            font-size: 14px;
-            text-align: center;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-        }
-
-        .label {
-            font-size: 11px;
-            color: #aaa;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-
-        .value {
-            font-size: 18px;
-            font-weight: bold;
-            color: #fff;
-        }
-
-        .gold { color: #ffcc00; }
-        .green { color: #55ff55; }
-        .red { color: #ff5555; }
-
-        #fuel-bar-container {
-            width: 100%;
-            background: #333;
-            height: 8px;
-            border-radius: 4px;
-            margin-top: 5px;
-            overflow: hidden;
-        }
-        #fuel-bar {
-            height: 100%;
-            background: #ffcc00;
-            width: 100%;
-            transition: width 0.1s linear;
-        }
-
-        #message-overlay {
-            position: absolute;
-            top: 30%;
+            bottom: 20px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
             padding: 15px 30px;
-            border-radius: 20px;
-            border: 2px solid #ffcc00;
-            font-size: 20px;
+            border-radius: 30px;
+            font-size: 24px;
             font-weight: bold;
-            text-align: center;
-            display: none;
-            z-index: 20;
+            pointer-events: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 2px solid #4CAF50;
+            letter-spacing: 1px;
         }
-
-        #controls-hint {
-            margin-top: 15px;
-            color: #ccc;
-            text-align: center;
+        #instructions {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            padding: 15px;
+            border-radius: 10px;
             font-size: 14px;
-            background: #222;
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: 1px solid #333;
+            line-height: 1.5;
+            pointer-events: none;
+        }
+        #instructions h2 {
+            margin-top: 0;
+            color: #4CAF50;
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <h2 style="margin-bottom: 10px; letter-spacing: 1px;">Симулятор МосГорТранс: Кабина 1-е Лицо</h2>
-
-    <div id="gameContainer">
-        <div id="message-overlay"></div>
-        <div id="ui">
-            <div class="ui-card">
-                <div class="label">Финансы</div>
-                <div class="value gold"><span id="money">1000</span> ₽</div>
-            </div>
-            <div class="ui-card">
-                <div class="label">Пассажиры / Комфорт</div>
-                <div class="value"><span id="passengers" class="green">0</span>/20 | <span id="comfort" class="green">100</span>%</div>
-            </div>
-            <div class="ui-card">
-                <div class="label">Топливо</div>
-                <div id="fuel-bar-container"><div id="fuel-bar"></div></div>
-            </div>
-            <div class="ui-card">
-                <div class="label">Таймер маршрута</div>
-                <div class="value red"><span id="schedule">60</span> сек</div>
-            </div>
-        </div>
-        <canvas id="gameCanvas" width="900" height="450"></canvas>
+    <div id="hud">Скорость: <span id="speed">0</span> км/ч</div>
+    
+    <div id="instructions">
+        <h2>Управление:</h2>
+        * <b>W / Стрелка Вверх</b> — Газ<br>
+        * <b>S / Стрелка Вниз</b> — Тормоз / Назад<br>
+        * <b>A, D / Стрелки Влево, Вправо</b> — Поворот руля<br>
+        <br>
+        <i>Свободная езда. Без штрафов и бензина!</i>
     </div>
 
-    <div id="controls-hint">
-        <strong>Стрелка Вверх / W</strong> — Газ | <strong>Стрелка Вниз / S</strong> — Тормоз <br>
-        <strong>Стрелки Влево/Вправо (A/D)</strong> — Рулить (Смещение на дороге для заезда на остановки и объезда машин)
-    </div>
+    <script>
+        // --- Настройки сцены ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // Небо
+        scene.fog = new THREE.FogExp2(0x87CEEB, 0.015);
 
-<script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
 
-// UI элементы
-const moneyEl = document.getElementById('money');
-const passengersEl = document.getElementById('passengers');
-const comfortEl = document.getElementById('comfort');
-const fuelBar = document.getElementById('fuel-bar');
-const scheduleEl = document.getElementById('schedule');
-const msgOverlay = document.getElementById('message-overlay');
+        // --- Освещение ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
 
-// Игровая конфигурация и физика
-let money = 1000;
-let passengers = 0;
-let comfort = 100;
-let fuel = 100;
-let scheduleTime = 60;
-let gameSpeed = 0;
-let gameOver = false;
+        const sunLight = new THREE.DirectionalLight(0xfffaed, 0.8);
+        sunLight.position.set(100, 200, 50);
+        scene.add(sunLight);
 
-// Положение игрока на дороге (X: -100 левая обочина, 0 центр, 100 правая обочина)
-let playerX = 0; 
-let steerAngle = 0;
+        // --- Физика и состояние машины ---
+        const car = {
+            x: 0,
+            z: 0,
+            speed: 0,
+            maxSpeed: 80, // Максимальная скорость вперед
+            maxReverseSpeed: -20, // Максимальная скорость назад
+            acceleration: 0.5,
+            deceleration: 0.2,
+            friction: 0.05,
+            angle: 0,
+            steeringSpeed: 0.03
+        };
 
-const maxSpeed = 60; // км/ч в виртуальных единицах
-const acceleration = 0.4;
-const friction = 0.15;
-const braking = 0.8;
+        // Управление кнопками
+        const keys = { w: false, a: false, s: false, d: false };
 
-const keys = { Up: false, Down: false, Left: false, Right: false };
+        // --- Создание окружения (Земля и Дорога) ---
+        const worldWidth = 400;
+        const worldLength = 2000;
 
-// Массив объектов с Z-координатой (удаление от игрока). Z уменьшается по мере приближения к игроку.
-// Траектория смещения по X: остановки справа (X: 70), встречка слева, светофоры над дорогой.
-let entities = [
-    { type: 'stop', z: 400, x: 90, state: 'pickup', timer: 0 },
-    { type: 'traffic_light', z: 900, x: 40, state: 'green', timer: 0 },
-    { type: 'car', z: 1300, x: -40, speed: 15, color: '#ff3333' }, // Попутная машина в левой полосе
-    { type: 'gas_station', z: 1800, x: 110, timer: 0 },
-    { type: 'stop', z: 2400, x: 90, state: 'dropoff', timer: 0 },
-    { type: 'traffic_light', z: 3000, x: 40, state: 'red', timer: 0 }
-];
-
-// Декорации обочины (Деревья и дома)
-const scenery = [];
-for (let i = 0; i < 30; i++) {
-    scenery.push({
-        z: i * 100 + Math.random() * 50,
-        side: Math.random() > 0.5 ? 1 : -1, // 1 - справа, -1 - слева
-        type: Math.random() > 0.4 ? 'building' : 'tree',
-        color: `hsl(${Math.random() * 360}, 15%, 35%)`,
-        h: 80 + Math.random() * 60,
-        w: 60 + Math.random() * 40
-    });
-}
-
-// Управление
-window.addEventListener('keydown', e => {
-    if (e.key === 'ArrowUp' || e.key === 'w') keys.Up = true;
-    if (e.key === 'ArrowDown' || e.key === 's') keys.Down = true;
-    if (e.key === 'ArrowLeft' || e.key === 'a') keys.Left = true;
-    if (e.key === 'ArrowRight' || e.key === 'd') keys.Right = true;
-});
-window.addEventListener('keyup', e => {
-    if (e.key === 'ArrowUp' || e.key === 'w') keys.Up = false;
-    if (e.key === 'ArrowDown' || e.key === 's') keys.Down = false;
-    if (e.key === 'ArrowLeft' || e.key === 'a') keys.Left = false;
-    if (e.key === 'ArrowRight' || e.key === 'd') keys.Right = false;
-});
-
-function showMessage(text, duration = 2000) {
-    msgOverlay.innerHTML = text;
-    msgOverlay.style.display = 'block';
-    setTimeout(() => { msgOverlay.style.display = 'none'; }, duration);
-}
-
-// Таймер расписания
-setInterval(() => {
-    if (!gameOver) {
-        scheduleTime--;
-        scheduleEl.innerText = scheduleTime;
-        if (scheduleTime <= 0) {
-            scheduleTime = 0;
-            if (passengers > 0) {
-                money = Math.max(0, money - 5);
-                moneyEl.innerText = money;
+        // Зеленая земля
+        const groundGeo = new THREE.PlaneGeometry(worldWidth, worldLength, 40, 100);
+        
+        // Делаем рельеф (холмы)
+        const pos = groundGeo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+            let x = pos.getX(i);
+            let z = pos.getY(i); // В плоскости PlaneGeometry Y — это глубина (Z в мире)
+            
+            // Оставляем центр под дорогу ровным, холмы только по бокам
+            if (Math.abs(x) > 15) {
+                let hill = Math.sin(x * 0.05) * Math.cos(z * 0.02) * 5;
+                pos.setZ(i, hill); // Меняем высоту
             }
         }
-    }
-}, 1000);
+        groundGeo.computeVertexNormals();
 
-// Главная логика
-function update() {
-    if (gameOver) return;
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x3B7A57, roughness: 0.9 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2; // Укладываем горизонтально
+        scene.add(ground);
 
-    // --- Физика движения ---
-    if (keys.Up && fuel > 0) {
-        gameSpeed += acceleration;
-        if (gameSpeed > maxSpeed) gameSpeed = maxSpeed;
-        fuel -= 0.03;
-    } else if (keys.Down) {
-        if (gameSpeed > 30) {
-            comfort = Math.max(0, comfort - 0.4);
-            comfortEl.innerText = Math.round(comfort);
+        // Бесконечная прямая дорога
+        const roadGeo = new THREE.PlaneGeometry(16, worldLength);
+        const roadMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.7 });
+        const road = new THREE.Mesh(roadGeo, roadMat);
+        road.rotation.x = -Math.PI / 2;
+        road.position.y = 0.01; // Слегка приподнимем над травой, чтобы не мерцало
+        scene.add(road);
+
+        // Разметка дороги (пунктир)
+        const markerCount = 100;
+        const markerGeo = new THREE.PlaneGeometry(0.3, 4);
+        const markerMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+        const markersGroup = new THREE.Group();
+
+        for(let i = 0; i < markerCount; i++) {
+            const marker = new THREE.Mesh(markerGeo, markerMat);
+            marker.rotation.x = -Math.PI / 2;
+            marker.position.set(0, 0.02, - (i * 20));
+            markersGroup.add(marker);
         }
-        gameSpeed -= braking;
-        if (gameSpeed < 0) gameSpeed = 0;
-    } else {
-        if (gameSpeed > 0) gameSpeed -= friction;
-        if (gameSpeed < 0) gameSpeed = 0;
-    }
+        scene.add(markersGroup);
 
-    if (gameSpeed > 0 && fuel > 0) fuel -= 0.005;
-    fuelBar.style.width = `${Math.max(0, fuel)}%`;
+        // --- Декорации (Деревья по бокам) ---
+        function createTree(x, z) {
+            const tree = new THREE.Group();
+            
+            // Ствол
+            const trunkGeo = new THREE.CylinderGeometry(0.2, 0.4, 2, 8);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5C4033 });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 1;
+            tree.add(trunk);
 
-    if (fuel <= 0 && gameSpeed === 0) {
-        gameOver = true;
-        showMessage("<span class='red'>Закончилось топливо!<br>Игра окончена.</span>", 10000);
-        return;
-    }
+            // Листва
+            const leavesGeo = new THREE.ConeGeometry(1.5, 3, 8);
+            const leavesMat = new THREE.MeshStandardMaterial({ color: 0x2E8B57, roughness: 0.6 });
+            const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+            leaves.position.y = 3;
+            tree.add(leaves);
 
-    // --- Руление ---
-    if (keys.Left) {
-        steerAngle = Math.max(-0.5, steerAngle - 0.05);
-        playerX -= (gameSpeed * 0.08);
-    } else if (keys.Right) {
-        steerAngle = Math.min(0.5, steerAngle + 0.05);
-        playerX += (gameSpeed * 0.08);
-    } else {
-        steerAngle *= 0.7; // Возврат руля в исходное состояние
-    }
-    // Ограничение съезда с дороги
-    if (playerX < -120) playerX = -120;
-    if (playerX > 120) playerX = 120;
-
-    let speedModifier = gameSpeed * 0.1;
-
-    // --- Обновление декораций (Scenery) ---
-    scenery.forEach(s => {
-        s.z -= speedModifier;
-        if (s.z < 10) s.z += 3000; // Возврат вглубь горизонта
-    });
-
-    // --- Обновление игровых объектов (Entities) ---
-    entities.forEach(ent => {
-        // Движение объектов навстречу игроку
-        if (ent.type === 'car') {
-            ent.z -= (speedModifier - ent.speed * 0.05); // Скорость сближения
-        } else {
-            ent.z -= speedModifier;
+            tree.position.set(x, 0, z);
+            scene.add(tree);
         }
 
-        // Логика светофоров
-        if (ent.type === 'traffic_light') {
-            ent.timer++;
-            if (ent.timer > 250) {
-                ent.state = ent.state === 'green' ? 'red' : 'green';
-                ent.timer = 0;
+        // Расставляем случайные деревья по обочинам
+        for (let i = 0; i < 150; i++) {
+            let side = Math.random() > 0.5 ? 1 : -1;
+            let x = (15 + Math.random() * 80) * side;
+            let z = -(Math.random() * (worldLength - 100));
+            createTree(x, z);
+        }
+
+        // --- Кабина автомобиля (Элементы первого лица) ---
+        // Самой машины снаружи мы не видим, создаем только капот и руль перед камерой
+        const dashboardGroup = new THREE.Group();
+
+        // Капот машины перед глазами
+        const hoodGeo = new THREE.BoxGeometry(2, 0.5, 2);
+        const hoodMat = new THREE.MeshStandardMaterial({ color: 0x990000, roughness: 0.3, metalness: 0.5 }); // Красный спорткар
+        const hood = new THREE.Mesh(hoodGeo, hoodMat);
+        hood.position.set(0, -0.6, -1.2);
+        dashboardGroup.add(hood);
+
+        // Торпеда / Панель
+        const dashGeo = new THREE.BoxGeometry(2.2, 0.4, 0.5);
+        const dashMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        const dash = new THREE.Mesh(dashGeo, dashMat);
+        dash.position.set(0, -0.5, -0.3);
+        dashboardGroup.add(dash);
+
+        // Рулевое колесо
+        const wheelGeo = new THREE.TorusGeometry(0.2, 0.03, 8, 24);
+        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        const steeringWheel = new THREE.Mesh(wheelGeo, wheelMat);
+        steeringWheel.position.set(-0.4, -0.35, -0.4); // Руль слева
+        steeringWheel.rotation.x = 0.3; // Наклонен к водителю
+        dashboardGroup.add(steeringWheel);
+
+        scene.add(dashboardGroup);
+
+        // Начальная позиция игрока
+        camera.position.set(-0.4, 1.2, 0); // Позиция глаз водителя (чуть слева, на высоте)
+
+        // --- Обработка ввода ---
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.w = true;
+            if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.s = true;
+            if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.a = true;
+            if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.d = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.w = false;
+            if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.s = false;
+            if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.a = false;
+            if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.d = false;
+        });
+
+        // HTML HUD
+        const speedDisplay = document.getElementById('speed');
+
+        // --- Главный игровой цикл ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 1. Управление скоростью (Газ / Тормоз)
+            if (keys.w) {
+                if (car.speed < car.maxSpeed) car.speed += car.acceleration;
+            } else if (keys.s) {
+                if (car.speed > car.maxReverseSpeed) car.speed -= car.acceleration * 1.5; // Тормозит быстрее, чем разгоняется
+            } else {
+                // Плавное трение / остановка, если ничего не нажато
+                if (car.speed > 0) car.speed -= car.friction;
+                if (car.speed < 0) car.speed += car.friction;
+                if (Math.abs(car.speed) < 0.1) car.speed = 0;
             }
-            // Триггер проезда светофора (Z пересекает плоскость лобового стекла ~ Z=30)
-            if (ent.z < 40 && ent.z > 10 && ent.state === 'red' && gameSpeed > 5) {
-                money = Math.max(0, money - 200);
-                moneyEl.innerText = money;
-                ent.z = -10; // Убираем, чтобы повторно не штрафовать
-                showMessage("<span class='red'>Штраф за проезд на красный! -200₽</span>");
-            }
-        }
 
-        // Логика столкновений с машинами
-        if (ent.type === 'car' && ent.z < 50 && ent.z > 10) {
-            // Проверка перекрытия по горизонтали (X)
-            if (Math.abs((ent.x - playerX)) < 40) {
-                gameSpeed = Math.max(0, gameSpeed - 25);
-                money = Math.max(0, money - 300);
-                comfort = Math.max(0, comfort - 30);
-                moneyEl.innerText = money;
-                comfortEl.innerText = Math.round(comfort);
-                ent.z = -10; // Столкнулись — машина исчезает сзади
-                showMessage("<span class='red'>ДТП! Таран ТС. Штраф -300₽!</span>");
-            }
-        }
-
-        // Логика заезда на остановку
-        if ((ent.type === 'stop' || ent.type === 'used') && ent.z < 60 && ent.z > 0) {
-            // Игрок должен прижаться вплотную к правому карману (playerX должен быть от 60 до 100)
-            let isInStopPocket = (playerX > 50 && playerX < 110);
-
-            if (gameSpeed === 0 && isInStopPocket && ent.type !== 'used') {
-                ent.timer++;
-                if (ent.state === 'pickup') {
-                    if (ent.timer < 80) {
-                        showMessage(`Посадка пассажиров... ${Math.round(ent.timer/80*100)}%`);
-                    } else {
-                        let boarded = Math.floor(Math.random() * 6) + 4;
-                        passengers = Math.min(20, passengers + boarded);
-                        passengersEl.innerText = passengers;
-                        ent.type = 'used';
-                        scheduleTime = Math.min(90, scheduleTime + 40);
-                        showMessage("<span class='green'>Посадка завершена!</span>");
-                    }
-                } else if (ent.state === 'dropoff') {
-                    if (ent.timer < 80) {
-                        showMessage(`Высадка пассажиров... ${Math.round(ent.timer/80*100)}%`);
-                    } else {
-                        let left = passengers;
-                        passengers = 0;
-                        passengersEl.innerText = passengers;
-                        let earnings = Math.floor(left * 50 * (comfort / 100));
-                        money += earnings;
-                        moneyEl.innerText = money;
-                        ent.type = 'used';
-                        showMessage(`<span class='green'>Рейс завершен! Заработано: ${earnings}₽</span>`);
-                    }
+            // 2. Поворот руля колес и анимация руля в салоне
+            let targetWheelRotation = 0;
+            if (Math.abs(car.speed) > 0.5) { // Поворачивать можно только в движении
+                const speedModifier = car.speed > 0 ? 1 : -1; // Реверс поворота при движении назад
+                
+                if (keys.a) {
+                    car.angle += car.steeringSpeed * speedModifier * (Math.abs(car.speed) / car.maxSpeed + 0.3);
+                    targetWheelRotation = 0.8;
+                }
+                if (keys.d) {
+                    car.angle -= car.steeringSpeed * speedModifier * (Math.abs(car.speed) / car.maxSpeed + 0.3);
+                    targetWheelRotation = -0.8;
                 }
             }
-        }
 
-        // Логика АЗС
-        if (ent.type === 'gas_station' && ent.z < 60 && ent.z > 0 && gameSpeed === 0 && fuel < 99) {
-            if (playerX > 70 && money >= 10) {
-                fuel = Math.min(100, fuel + 1);
-                money -= 5;
-                moneyEl.innerText = money;
-                showMessage("Заправка... топливо +1%", 200);
-            }
-        }
+            // Плавный возврат руля в исходное положение
+            steeringWheel.rotation.z += (targetWheelRotation - steeringWheel.rotation.z) * 0.1;
 
-        // Возврат объектов вглубь горизонта после проезда
-        if (ent.z < 5) {
-            ent.z += 3000;
-            ent.timer = 0;
-            if (ent.type === 'used') {
-                ent.type = 'stop';
-                ent.state = Math.random() > 0.5 ? 'pickup' : 'dropoff';
-            }
-        }
-    });
+            // 3. Расчет новой позиции машины
+            // В THREE.js направление "вперед" по умолчанию идет в отрицательную сторону оси Z
+            car.x += Math.sin(car.angle) * (car.speed * 0.01);
+            car.z -= Math.cos(car.angle) * (car.speed * 0.01);
 
-    // Сортировка по Z для корректного послойного рендеринга удаленных объектов
-    scenery.sort((a, b) => b.z - a.z);
-    entities.sort((a, b) => b.z - a.z);
+            // Ограничение по границам мира, чтобы не улететь в пустоту
+            if (car.z < -worldLength + 50) car.z = 0; // Зацикливание дороги, едем бесконечно вперед
+            if (car.z > 10) car.z = 10;
+            if (car.x > worldWidth/2 - 5) car.x = worldWidth/2 - 5;
+            if (car.x < -worldWidth/2 + 5) car.x = -worldWidth/2 + 5;
 
-    draw();
-    requestAnimationFrame(update);
-}
-
-// Рендеринг псевдо-3D сцены первого лица
-function draw() {
-    // Очистка
-    ctx.fillStyle = '#7cfc00'; // Земля вокруг
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    let centerX = canvas.width / 2;
-    let horizonY = 180;
-
-    // 1. Небо
-    ctx.fillStyle = '#87ceeb';
-    ctx.fillRect(0, 0, canvas.width, horizonY);
-
-    // 2. Дорога (Перспективная трапеция)
-    ctx.fillStyle = '#444444';
-    ctx.beginPath();
-    ctx.moveTo(centerX - 40, horizonY);
-    ctx.lineTo(centerX + 40, horizonY);
-    ctx.lineTo(centerX + 350 - playerX * 2, canvas.height);
-    ctx.lineTo(centerX - 350 - playerX * 2, canvas.height);
-    ctx.fill();
-
-    // Дорожная разметка (пунктир по центру)
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 4;
-    let dashCount = 15;
-    for (let i = 0; i < dashCount; i++) {
-        let zStart = (i * 200 - (gameSpeed * 2)) % 3000;
-        if (zStart < 0) zStart += 3000;
-        if (zStart > 0) {
-            let scale = 160 / (160 + zStart);
-            let y = horizonY + (canvas.height - horizonY) * scale;
-            let currentX = centerX - playerX * scale;
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(currentX - 2, y, 4, 15 * scale);
-        }
-    }
-
-    // 3. Отрисовка декораций (Деревья, дома)
-    scenery.forEach(s => {
-        let scale = 160 / (160 + s.z);
-        let y = horizonY + (canvas.height - horizonY) * scale;
-        
-        // Позиция на обочине с учетом смещения руля
-        let sideOffset = s.side * (60 + s.w / 2);
-        let x = centerX + (sideOffset - playerX) * scale;
-
-        let renderW = s.w * scale;
-        let renderH = s.h * scale;
-
-        if (s.type === 'building') {
-            ctx.fillStyle = s.color;
-            ctx.fillRect(x - renderW/2, y - renderH, renderW, renderH);
-        } else {
-            // Дерево
-            ctx.fillStyle = '#5c4033';
-            ctx.fillRect(x - 3 * scale, y - 25 * scale, 6 * scale, 25 * scale);
-            ctx.fillStyle = '#2e8b57';
-            ctx.beginPath();
-            ctx.arc(x, y - 25 * scale, 15 * scale, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    });
-
-    // 4. Отрисовка игровых объектов (Entities)
-    entities.forEach(ent => {
-        let scale = 160 / (160 + ent.z);
-        if (scale <= 0) return;
-
-        let y = horizonY + (canvas.height - horizonY) * scale;
-        let x = centerX + (ent.x - playerX) * scale;
-
-        if (ent.type === 'stop' || ent.type === 'used') {
-            let w = 80 * scale;
-            let h = 70 * scale;
-            ctx.fillStyle = '#1e90ff';
-            ctx.fillRect(x, y - h, w, h); // Павильон
-            ctx.fillStyle = '#fff';
-            ctx.font = `${Math.floor(14 * scale)}px Arial`;
-            ctx.fillText("Остановка", x + 5 * scale, y - h + 20 * scale);
-        } 
-        else if (ent.type === 'traffic_light') {
-            let h = 90 * scale;
-            ctx.fillStyle = '#222';
-            ctx.fillRect(x, y - h, 15 * scale, 40 * scale); // Корпус
-            ctx.fillRect(x + 5 * scale, y - h + 40 * scale, 5 * scale, h - 40 * scale); // Столб
+            // 4. Синхронизация камеры и кабины с координатами машины
+            camera.position.x = car.x - 0.4 * Math.cos(car.angle); // смещение под левый руль с учетом поворота
+            camera.position.z = car.z + 0.4 * Math.sin(car.angle);
             
-            ctx.fillStyle = (ent.state === 'red') ? '#ff0000' : '#440000';
-            ctx.beginPath(); ctx.arc(x + 7.5 * scale, y - h + 10 * scale, 5 * scale, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = (ent.state === 'green') ? '#00ff00' : '#004400';
-            ctx.beginPath(); ctx.arc(x + 7.5 * scale, y - h + 30 * scale, 5 * scale, 0, Math.PI*2); ctx.fill();
-        } 
-        else if (ent.type === 'car') {
-            let w = 70 * scale;
-            let h = 45 * scale;
-            ctx.fillStyle = ent.color;
-            ctx.fillRect(x - w/2, y - h, w, h); // Кузов сзади
-            ctx.fillStyle = '#ff5500'; // Задние габариты
-            ctx.fillRect(x - w/2 + 2, y - h + 5, 8 * scale, 4 * scale);
-            ctx.fillRect(x + w/2 - 10, y - h + 5, 8 * scale, 4 * scale);
+            // Камера смотрит вперед по направлению движения машины
+            camera.rotation.y = car.angle;
+
+            // Привязываем торпеду и капот к камере, чтобы они двигались вместе с наклоном головы водителя
+            dashboardGroup.position.set(car.x, 1.2, car.z);
+            dashboardGroup.rotation.y = car.angle;
+
+            // Обновляем HUD (округляем для красоты)
+            speedDisplay.innerText = Math.round(Math.abs(car.speed));
+
+            renderer.render(scene, camera);
         }
-        else if (ent.type === 'gas_station') {
-            let w = 110 * scale;
-            let h = 90 * scale;
-            ctx.fillStyle = '#ffcc00';
-            ctx.fillRect(x, y - h, w, h);
-            ctx.fillStyle = '#fff';
-            ctx.font = `${Math.floor(12 * scale)}px Arial`;
-            ctx.fillText("АЗС БЕНЗИН", x + 10 * scale, y - h + 30 * scale);
-        }
-    });
 
-    // 5. ОРИСОВКА КАБИНЫ АВТОБУСА (ПЕРЕДНИЙ ПЛАН - 1-Е ЛИЦО)
-    ctx.save();
-    
-    // Лобовое стекло (Тёмные стойки по краям экрана)
-    ctx.fillStyle = '#2c3e50';
-    ctx.fillRect(0, 0, 40, canvas.height); // Левая стойка
-    ctx.fillRect(canvas.width - 40, 0, 40, canvas.height); // Правая стойка
-    ctx.fillRect(0, canvas.height - 110, canvas.width, 110); // Торпеда/Приборная панель
+        // Поддержка изменения размера экрана
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
-    // Приборный щиток (Спидометр)
-    ctx.fillStyle = '#111';
-    ctx.beginPath();
-    ctx.arc(centerX - 160, canvas.height - 40, 45, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#55ff55';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    ctx.fillStyle = '#fff';
-    ctx.font = '14px monospace';
-    ctx.fillText(`${Math.round(gameSpeed)} км/ч`, centerX - 185, canvas.height - 35);
-
-    // Отрисовка Руля
-    ctx.translate(centerX, canvas.height - 30);
-    ctx.rotate(steerAngle);
-    
-    ctx.strokeStyle = '#2c3e50';
-    ctx.lineWidth = 18;
-    ctx.beginPath();
-    ctx.arc(0, 0, 85, 0, Math.PI * 2); // Обод руля
-    ctx.stroke();
-
-    // Спицы руля
-    ctx.lineWidth = 12;
-    ctx.beginPath();
-    ctx.moveTo(-85, 0); ctx.lineTo(85, 0);
-    ctx.moveTo(0, 0); ctx.lineTo(0, 85);
-    ctx.stroke();
-
-    ctx.restore();
-}
-
-// Запуск игрового движка
-loop();
-
-function loop() {
-    update();
-    if (!gameOver) requestAnimationFrame(loop);
-}
-</script>
-
+        // Запуск
+        animate();
+    </script>
 </body>
 </html>
