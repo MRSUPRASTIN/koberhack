@@ -3,352 +3,428 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Симулятор вождения — Трафик и Безопасность</title>
+    <title>Симулятор Машиниста Метро</title>
     <style>
-        body {
-            margin: 0;
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body { background: #111; color: #fff; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Вид из лобового стекла */
+        #windshield {
+            flex: 2;
+            background: black;
+            position: relative;
             overflow: hidden;
-            background-color: #87CEEB;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            user-select: none;
+            border-bottom: 5px solid #333;
         }
-        canvas {
-            display: block;
+
+        /* Тоннель (рельсы и стены уходят в перспективу) */
+        .rail {
+            position: absolute;
+            bottom: 0;
+            width: 4px;
+            background: #555;
+            height: 50%;
+            transform-origin: top center;
         }
+        #rail-left { left: 45%; transform: skewX(-30deg); }
+        #rail-right { right: 45%; transform: skewX(30deg); }
+
+        /* Огни тоннеля / Станция */
+        #tunnel-environment {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        .wall-light {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: rgba(255, 200, 100, 0.5);
+            border-radius: 50%;
+            top: 40%;
+        }
+
+        /* Станция */
+        #station {
+            position: absolute;
+            width: 200%;
+            height: 100%;
+            background: linear-gradient(to bottom, #777, #444);
+            top: 0;
+            left: 150%; /* Начинается за экраном справа */
+            transform: skewX(-20deg);
+            transition: left 0.1s linear;
+            display: flex;
+            align-items: flex-end;
+            padding-bottom: 20px;
+        }
+        #station-name {
+            position: absolute;
+            top: 20%;
+            left: 10%;
+            background: #fff;
+            color: #000;
+            padding: 5px 20px;
+            font-weight: bold;
+            font-size: 24px;
+        }
+        .passenger {
+            width: 15px;
+            height: 40px;
+            background: #fff;
+            margin-right: 15px;
+            border-radius: 5px 5px 0 0;
+            display: inline-block;
+        }
+
+        /* Семафор */
+        #semaphore {
+            position: absolute;
+            left: 10%;
+            top: 30%;
+            width: 20px;
+            height: 50px;
+            background: #222;
+            border: 2px solid #444;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            padding: 4px;
+        }
+        .light { width: 12px; height: 12px; border-radius: 50%; background: #333; }
+        .light.red { background: #ff3333; box-shadow: 0 0 10px #ff3333; }
+        .light.green { background: #33ff33; box-shadow: 0 0 10px #33ff33; }
+
+        /* Кабина / Панель управления */
+        #dashboard {
+            flex: 1;
+            background: #2c3e50;
+            border-top: 4px solid #34495e;
+            padding: 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .screen {
+            background: #000;
+            border: 3px solid #7f8c8d;
+            padding: 10px;
+            border-radius: 5px;
+            min-width: 200px;
+            color: #00ff00;
+            font-family: monospace;
+            box-shadow: inset 0 0 10px rgba(0,255,0,0.5);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 5px #c0392b;
+            active-transform: translateY(4px);
+        }
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px #c0392b;
+        }
+        .btn.go { background: #2ecc71; box-shadow: 0 5px #27ae60; }
+        .btn.go:active { box-shadow: 0 1px #27ae60; }
+        .btn.door { background: #f1c40f; color: black; box-shadow: 0 5px #f39c12; }
+        .btn.door:active { box-shadow: 0 1px #f39c12; }
+
+        /* Информационное окно */
         #hud {
             position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.85);
-            color: #fff;
-            padding: 15px 35px;
-            border-radius: 30px;
-            font-size: 24px;
-            font-weight: bold;
-            pointer-events: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            border: 2px solid #00E676;
-            letter-spacing: 1px;
-            text-align: center;
-        }
-        #instructions {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 14px;
-            line-height: 1.5;
-            pointer-events: none;
-        }
-        #instructions h2 {
-            margin-top: 0;
-            color: #00E676;
-        }
-        .status {
-            font-size: 12px;
-            color: #aaa;
-            margin-top: 5px;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            text-align: right;
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <div id="hud">
-        <div><span id="speed">0</span> км/ч</div>
-        <div class="status" id="status-text">Система трафика: СТАБИЛЬНО</div>
-    </div>
-    
-    <div id="instructions">
-        <h2>Управление:</h2>
-        * <b>W / ↑</b> — Газ<br>
-        * <b>S / ↓</b> — Тормоз / Назад<br>
-        * <b>A, D / ←, →</b> — Руль<br>
-        <br>
-        <i>Попутный и встречный трафик запущен. Свободная езда!</i>
-    </div>
-
-    <script>
-        // --- Сцена ---
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); 
-        scene.fog = new THREE.FogExp2(0x87CEEB, 0.012);
-
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
-
-        // --- Освещение ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-        scene.add(ambientLight);
-        const sunLight = new THREE.DirectionalLight(0xfffaed, 0.6);
-        sunLight.position.set(100, 200, 50);
-        scene.add(sunLight);
-
-        // --- Состояние игрока ---
-        const car = {
-            x: 2, // Начинаем на правой (своей) полосе
-            z: 0,
-            speed: 0,
-            maxSpeed: 90, 
-            maxReverseSpeed: -25, 
-            acceleration: 0.6,
-            deceleration: 0.3,
-            friction: 0.06,
-            angle: 0,
-            steeringSpeed: 0.025
-        };
-
-        const keys = { w: false, a: false, s: false, d: false };
-
-        // --- Трасса ---
-        const roadWidth = 16; 
-        const worldWidth = 400;
-        const worldLength = 2500;
-
-        // Трава с холмами
-        const groundGeo = new THREE.PlaneGeometry(worldWidth, worldLength, 40, 100);
-        const pos = groundGeo.attributes.position;
-        for (let i = 0; i < pos.count; i++) {
-            let x = pos.getX(i);
-            let z = pos.getY(i);
-            if (Math.abs(x) > 14) {
-                pos.setZ(i, Math.sin(x * 0.04) * Math.cos(z * 0.02) * 7);
-            }
-        }
-        groundGeo.computeVertexNormals();
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x2E6F40, roughness: 0.9 });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2;
-        scene.add(ground);
-
-        // Асфальт
-        const roadGeo = new THREE.PlaneGeometry(roadWidth, worldLength);
-        const roadMat = new THREE.MeshStandardMaterial({ color: 0x242424, roughness: 0.8 });
-        const road = new THREE.Mesh(roadGeo, roadMat);
-        road.rotation.x = -Math.PI / 2;
-        road.position.y = 0.01;
-        scene.add(road);
-
-        // Красно-белые обочины
-        const curbGeo = new THREE.PlaneGeometry(0.6, worldLength);
-        const curbMat = new THREE.MeshStandardMaterial({ color: 0xBA1212 }); 
-        const curbL = new THREE.Mesh(curbGeo, curbMat);
-        curbL.rotation.x = -Math.PI / 2;
-        curbL.position.set(-roadWidth/2, 0.015, 0);
-        scene.add(curbL);
-        const curbR = curbL.clone();
-        curbR.position.x = roadWidth/2;
-        scene.add(curbR);
-
-        // Разметка
-        const markerGeo = new THREE.PlaneGeometry(0.2, 6);
-        const markerMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
-        const markersGroup = new THREE.Group();
-        for(let i = 0; i < 150; i++) {
-            const marker = new THREE.Mesh(markerGeo, markerMat);
-            marker.rotation.x = -Math.PI / 2;
-            marker.position.set(0, 0.02, -(i * 20));
-            markersGroup.add(marker);
-        }
-        scene.add(markersGroup);
-
-        // Окружение (Деревья)
-        for (let i = 0; i < 200; i++) {
-            let side = Math.random() > 0.5 ? 1 : -1;
-            const tree = new THREE.Group();
-            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.25, 2), new THREE.MeshStandardMaterial({ color: 0x5C4033 }));
-            trunk.position.y = 1; tree.add(trunk);
-            const leaves = new THREE.Mesh(new THREE.ConeGeometry(1.2, 2.4), new THREE.MeshStandardMaterial({ color: 0x1E5631 }));
-            leaves.position.y = 2.6; tree.add(leaves);
-            tree.position.set((13 + Math.random() * 50) * side, 0, -(Math.random() * (worldLength - 100)));
-            scene.add(tree);
-        }
-
-        // --- Интерьер игрока (1-е лицо) ---
-        const dashboardGroup = new THREE.Group();
-        const hood = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.45, 1.8), new THREE.MeshStandardMaterial({ color: 0xCC0000, roughness: 0.2, metalness: 0.6 }));
-        hood.position.set(0, -0.55, -1.1); dashboardGroup.add(hood);
-        const dash = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.4, 0.5), new THREE.MeshStandardMaterial({ color: 0x151515 }));
-        dash.position.set(0, -0.5, -0.25); dashboardGroup.add(dash);
-        const steeringWheel = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.025, 8, 24), new THREE.MeshStandardMaterial({ color: 0x252525 }));
-        steeringWheel.position.set(-0.38, -0.35, -0.35); steeringWheel.rotation.x = 0.3; dashboardGroup.add(steeringWheel);
-        scene.add(dashboardGroup);
-
-        camera.position.set(-0.38, 1.15, 0);
-
-        // --- Система Трафика (Другие машины) ---
-        const trafficCount = 12;
-        const trafficCars = [];
+<div id="game-container">
+    <!-- Вид из окна -->
+    <div id="windshield">
+        <div id="tunnel-environment"></div>
+        <div class="rail" id="rail-left"></div>
+        <div class="rail" id="rail-right"></div>
         
-        // Шаблон геометрии кузова автомобиля трафика
-        const npcBodyGeo = new THREE.BoxGeometry(1.7, 1.2, 3.5);
-        const npcMatPassing = new THREE.MeshStandardMaterial({ color: 0x1A73E8, roughness: 0.3 }); // Попутные — синие
-        const npcMatOncoming = new THREE.MeshStandardMaterial({ color: 0xE65100, roughness: 0.3 }); // Встречные — оранжевые
+        <!-- Станция -->
+        <div id="station">
+            <div id="station-name">СТАНЦИЯ: ПОРТАЛОВО</div>
+            <div style="margin-left: 300px;" id="passengers-group">
+                <!-- Пассажиры создадутся кодом -->
+            </div>
+        </div>
 
-        for (let i = 0; i < trafficCount; i++) {
-            // Чередуем: половина попутные (справа), половина встречные (слева)
-            const isOncoming = i % 2 === 0;
-            const mat = isOncoming ? npcMatOncoming : npcMatPassing;
+        <!-- Семафор -->
+        <div id="semaphore">
+            <div id="light-red" class="light red"></div>
+            <div id="light-green" class="light"></div>
+        </div>
+
+        <div id="hud">
+            <div>Очки: <span id="score-val">0</span></div>
+            <div>Пассажиры: <span id="pass-count">0</span></div>
+        </div>
+    </div>
+
+    <!-- Панель приборов -->
+    <div id="dashboard">
+        <!-- Бортовой компьютер -->
+        <div class="screen">
+            <div>БОРТОВОЙ КОМПЬЮТЕР</div>
+            <div>-------------------</div>
+            <div>Скорость: <span id="speed-display">0</span> км/ч</div>
+            <div>До станции: <span id="dist-display">500</span> м</div>
+            <div>Двери: <span id="doors-display" style="color: red;">ЗАКРЫТЫ</span></div>
+            <div id="status-text" style="color: yellow; margin-top: 5px;">Ждите зеленый сигнал...</div>
+        </div>
+
+        <!-- Кнопки управления -->
+        <div class="controls">
+            <button class="btn go" id="btn-accel">ТЯГА (+)</button>
+            <button class="btn" id="btn-brake">ТОРМОЗ (-)</button>
+            <button class="btn door" id="btn-doors">ДВЕРИ О/З</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Игровые переменные
+    let speed = 0;
+    let maxSpeed = 80;
+    let distanceToStation = 600; 
+    let doorsOpen = false;
+    let score = 0;
+    let passengersBoarded = 0;
+    let currentPhase = 'wait_signal'; // wait_signal, drive, braking, station_stop
+    
+    // Элементы DOM
+    const speedDisplay = document.getElementById('speed-display');
+    const distDisplay = document.getElementById('dist-display');
+    const doorsDisplay = document.getElementById('doors-display');
+    const statusText = document.getElementById('status-text');
+    const scoreVal = document.getElementById('score-val');
+    const passCount = document.getElementById('pass-count');
+    const station = document.getElementById('station');
+    const lightRed = document.getElementById('light-red');
+    const lightGreen = document.getElementById('light-green');
+    const tunnelEnv = document.getElementById('tunnel-environment');
+    const passGroup = document.getElementById('passengers-group');
+
+    // Генерация пассажиров на платформе
+    function generatePassengers() {
+        passGroup.innerHTML = '';
+        let num = Math.floor(Math.random() * 5) + 3;
+        for(let i=0; i<num; i++) {
+            let p = document.createElement('div');
+            p.className = 'passenger';
+            p.style.background = `hsl(${Math.random()*360}, 70%, 60%)`;
+            passGroup.appendChild(p);
+        }
+    }
+    generatePassengers();
+
+    // Симуляция окружения (огни в тоннеле)
+    let lights = [];
+    function createTunnelLight() {
+        if (speed > 0 && Math.random() < 0.1) {
+            let l = document.createElement('div');
+            l.className = 'wall-light';
+            l.style.left = '50%';
+            l.style.top = '45%';
+            l.style.transform = 'scale(0.1)';
+            tunnelEnv.appendChild(l);
+            lights.push({ element: l, x: 50, y: 45, scale: 0.1 });
+        }
+    }
+
+    function updateTunnelLights() {
+        for (let i = lights.length - 1; i >= 0; i--) {
+            let l = lights[i];
+            l.scale += speed * 0.005;
+            l.y += speed * 0.1;
+            l.x -= speed * 0.2; // уходят влево (эффект перспективы)
             
-            const npcCar = new THREE.Mesh(npcBodyGeo, mat);
-            
-            // Стекла
-            const windows = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.5, 1.8), new THREE.MeshStandardMaterial({ color: 0x111111 }));
-            windows.position.set(0, 0.6, -0.2);
-            npcCar.add(windows);
+            l.element.style.transform = `scale(${l.scale})`;
+            l.element.style.top = l.y + '%';
+            l.element.style.left = l.x + '%';
 
-            // Фары
-            const headlightGeo = new THREE.BoxGeometry(0.3, 0.15, 0.1);
-            const headlightMat = new THREE.MeshBasicMaterial({ color: 0xFFFDE7 });
-            const fl = new THREE.Mesh(headlightGeo, headlightMat); fl.position.set(0.6, -0.2, -1.76); npcCar.add(fl);
-            const fr = fl.clone(); fr.position.x = -0.6; npcCar.add(fr);
+            if (l.y > 100 || l.x < 0) {
+                l.element.remove();
+                lights.splice(i, 1);
+            }
+        }
+    }
 
-            npcCar.position.y = 0.6; // Ставим на колеса/дорогу
-            
-            // Настройка физики для каждого NPC
-            trafficCars.push({
-                mesh: npcCar,
-                isOncoming: isOncoming,
-                laneX: isOncoming ? -3.5 : 3.5, // левая или правая полоса
-                zOffset: -(300 + i * 150), // распределяем по длине дороги вперед
-                speed: isOncoming ? -45 : 30 // скорость встречных (в обратную сторону) и попутных
-            });
+    // Разрешение на отправление (через 3 секунды после старта)
+    setTimeout(() => {
+        if (currentPhase === 'wait_signal') {
+            lightRed.classList.remove('red');
+            lightGreen.classList.add('green');
+            currentPhase = 'drive';
+            statusText.innerText = 'Путь свободен. Разгоняйтесь!';
+            statusText.style.color = '#33ff33';
+        }
+    }, 3000);
 
-            scene.add(npcCar);
+    // Обработчики кнопок управления
+    document.getElementById('btn-accel').addEventListener('mousedown', () => {
+        if (doorsOpen) {
+            statusText.innerText = 'Ошибка: Двери открыты!';
+            return;
+        }
+        if (currentPhase === 'wait_signal') return;
+        speed = Math.min(maxSpeed, speed + 5);
+    });
+
+    document.getElementById('btn-brake').addEventListener('mousedown', () => {
+        speed = Math.max(0, speed - 8);
+    });
+
+    // Управление кнопками с клавиатуры (Стрелка вверх - разгон, Стрелка вниз - тормоз, Пробел - двери)
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp') document.getElementById('btn-accel').click();
+        if (e.key === 'ArrowDown') document.getElementById('btn-brake').click();
+        if (e.key === ' ') document.getElementById('btn-doors').click();
+    });
+
+    document.getElementById('btn-doors').addEventListener('click', () => {
+        if (speed > 0) {
+            statusText.innerText = 'Нельзя открывать двери на ходу!';
+            statusText.style.color = 'red';
+            return;
         }
 
-        // --- Управление ---
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.w = true;
-            if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.s = true;
-            if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.a = true;
-            if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.d = true;
-        });
-        window.addEventListener('keyup', (e) => {
-            if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.w = false;
-            if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.s = false;
-            if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.a = false;
-            if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.d = false;
-        });
+        doorsOpen = !doorsOpen;
+        if (doorsOpen) {
+            doorsDisplay.innerText = 'ОТКРЫТЫ';
+            doorsDisplay.style.color = '#33ff33';
+            statusText.innerText = 'Посадка пассажиров...';
+            statusText.style.color = 'yellow';
 
-        const speedDisplay = document.getElementById('speed');
-        const statusText = document.getElementById('status-text');
-
-        // --- Главный цикл обновлений ---
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // 1. Физика скорости игрока
-            if (keys.w) {
-                if (car.speed < car.maxSpeed) car.speed += car.acceleration;
-            } else if (keys.s) {
-                if (car.speed > car.maxReverseSpeed) car.speed -= car.acceleration * 1.5;
-            } else {
-                if (car.speed > 0) car.speed -= car.friction;
-                if (car.speed < 0) car.speed += car.friction;
-                if (Math.abs(car.speed) < 0.1) car.speed = 0;
-            }
-
-            // 2. Логика поворотов игрока
-            let targetWheelRotation = 0;
-            if (Math.abs(car.speed) > 0.5) {
-                const speedModifier = car.speed > 0 ? 1 : -1;
-                if (keys.a) {
-                    car.angle += car.steeringSpeed * speedModifier;
-                    targetWheelRotation = 0.8;
-                } else if (keys.d) {
-                    car.angle -= car.steeringSpeed * speedModifier;
-                    targetWheelRotation = -0.8;
-                } else {
-                    car.angle *= 0.92; // выравнивание курса
-                }
-            }
-            steeringWheel.rotation.z += (targetWheelRotation - steeringWheel.rotation.z) * 0.15;
-
-            // Движение игрока
-            car.x += Math.sin(car.angle) * (car.speed * 0.01);
-            car.z -= Math.cos(car.angle) * (car.speed * 0.01);
-
-            // Ограничение движения (Удержание на асфальте)
-            const maxTrackOffset = (roadWidth / 2) - 1.2; 
-            if (car.x > maxTrackOffset) { car.x = maxTrackOffset; if(car.angle < 0) car.angle = 0; }
-            if (car.x < -maxTrackOffset) { car.x = -maxTrackOffset; if(car.angle > 0) car.angle = 0; }
-
-            // Бесконечный цикл дороги по Z
-            if (car.z < -worldLength + 200) {
-                car.z = 0;
-                // При сбросе мира переносим машины трафика тоже поближе
-                trafficCars.forEach(c => c.zOffset = car.z - (300 + Math.random() * 800));
-            }
-
-            // 3. Обновление и симуляция Трафика
-            trafficCars.forEach(npc => {
-                // Движение NPC машин независимо от игрока
-                npc.zOffset -= npc.speed * 0.01;
-
-                // Если машина уехала слишком далеко назад или сильно улетела вперед, телепортируем её обратно вперед за горизонт
-                const distToPlayer = npc.zOffset - car.z;
-                if (distToPlayer > 100 || distToPlayer < -600) {
-                    npc.zOffset = car.z - (400 + Math.random() * 400); // Респавн впереди
-                    // Слегка смещаем по оси X внутри полосы для разнообразия
-                    npc.mesh.position.x = npc.laneX + (Math.random() - 0.5) * 1.5;
-                } else {
-                    npc.mesh.position.z = npc.zOffset;
-                }
-
-                // 4. Проверка легких столкновений (Коллизии)
-                let xDist = Math.abs(car.x - npc.mesh.position.x);
-                let zDist = Math.abs(car.z - npc.mesh.position.z);
-
-                // Если габариты пересекаются (ширина авто ~1.8, длина ~3.5)
-                if (xDist < 1.6 && zDist < 3.2) {
-                    statusText.innerText = "ОБЪЕЗД / КОНТАКТ!";
-                    statusText.style.color = "#FF9100";
-                    
-                    // Эффект расталкивания: плавно смещаем машину трафика в сторону
-                    if (car.x > npc.mesh.position.x) {
-                        npc.mesh.position.x -= 0.1;
-                    } else {
-                        npc.mesh.position.x += 0.1;
+            // Если остановились правильно на станции
+            if (distanceToStation <= 15 && distanceToStation >= -15) {
+                setTimeout(() => {
+                    if (doorsOpen) {
+                        passengersBoarded += 5;
+                        score += 100;
+                        passCount.innerText = passengersBoarded;
+                        scoreVal.innerText = score;
+                        statusText.innerText = 'Посадка завершена. Закройте двери.';
+                        statusText.style.color = '#33ff33';
                     }
-                    
-                    // Небольшая потеря скорости игрока от трения машин
-                    car.speed *= 0.98;
-                }
-            });
-
-            // Сброс надписи HUD, если столкновения нет
-            if (scene.frameId % 30 === 0 && statusText.innerText === "ОБЪЕЗД / КОНТАКТ!") {
-                statusText.innerText = "Система трафика: СТАБИЛЬНО";
-                statusText.style.color = "#aaa";
+                }, 2000);
+            } else {
+                statusText.innerText = 'Вы открыли двери вне станции! Штраф.';
+                score = Math.max(0, score - 50);
+                scoreVal.innerText = score;
             }
+        } else {
+            doorsDisplay.innerText = 'ЗАКРЫТЫ';
+            doorsDisplay.style.color = 'red';
+            statusText.innerText = 'Двери закрыты. Можно ехать.';
+            
+            // Если пассажиры сели, готовим следующую станцию
+            if (distanceToStation <= 15 && distanceToStation >= -15 && passengersBoarded > 0) {
+                resetToNextStation();
+            }
+        }
+    });
 
-            // 5. Позиционирование камеры и кабины игрока
-            camera.position.x = car.x - 0.38 * Math.cos(car.angle);
-            camera.position.z = car.z + 0.38 * Math.sin(car.angle);
-            camera.rotation.y = car.angle;
+    function resetToNextStation() {
+        currentPhase = 'wait_signal';
+        distanceToStation = 700 + Math.floor(Math.random() * 300);
+        station.style.left = '150%';
+        lightGreen.classList.remove('green');
+        lightRed.classList.add('red');
+        statusText.innerText = 'Следуем к следующей станции. Ждите сигнал...';
+        statusText.style.color = 'yellow';
+        generatePassengers();
+        
+        setTimeout(() => {
+            lightRed.classList.remove('red');
+            lightGreen.classList.add('green');
+            currentPhase = 'drive';
+            statusText.innerText = 'Перегон свободен. Разгон!';
+            statusText.style.color = '#33ff33';
+        }, 4000);
+    }
 
-            dashboardGroup.position.set(car.x, 1.15, car.z);
-            dashboardGroup.rotation.y = car.angle;
+    // Главный игровой цикл
+    function gameLoop() {
+        // Движение поезда
+        if (speed > 0) {
+            // Расстояние уменьшается пропорционально скорости
+            distanceToStation -= (speed / 36); 
+            createTunnelLight();
+        }
+        updateTunnelLights();
 
-            speedDisplay.innerText = Math.round(Math.abs(car.speed));
-            renderer.render(scene, camera);
-            scene.frameId = (scene.frameId || 0) + 1;
+        // Естественное замедление (трение)
+        if (speed > 0) speed = Math.max(0, speed - 0.1);
+
+        // Приближение станции визуально
+        if (distanceToStation < 200) {
+            // Рассчитываем позицию станции на экране (0 - прямо перед кабиной)
+            let stationPos = (distanceToStation * 2);
+            station.style.left = `${stationPos}%`;
         }
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        // Обновление экранов
+        speedDisplay.innerText = Math.round(speed);
+        distDisplay.innerText = Math.max(0, Math.round(distanceToStation));
 
-        animate();
-    </script>
+        // Логика прибытия
+        if (distanceToStation <= 0 && currentPhase !== 'station_stop') {
+            if (speed > 15) {
+                statusText.innerText = 'Вы пролетели станцию или разбились! Штраф.';
+                statusText.style.color = 'red';
+                score = Math.max(0, score - 100);
+                scoreVal.innerText = score;
+                distanceToStation = -50; // Уехал за станцию
+                speed = 0;
+            } else if (speed === 0) {
+                currentPhase = 'station_stop';
+                statusText.innerText = 'Точная остановка! Откройте двери.';
+                statusText.style.color = '#33ff33';
+            }
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Запуск игры
+    gameLoop();
+</script>
+
 </body>
 </html>
