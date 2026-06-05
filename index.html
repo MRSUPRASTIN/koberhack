@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Симулятор Машиниста Метро PRO + АРС</title>
+    <title>Симулятор Машиниста Метро PRO — Перегон 7 КМ</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body { background: #0b0c10; color: #66fcf1; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
@@ -16,7 +16,7 @@
             flex-direction: column;
         }
 
-        /* Лобовое стекло машиниста */
+        /* Лобовое стекло */
         #windshield {
             flex: 1.2;
             background: #000;
@@ -39,7 +39,7 @@
         #tunnel-environment { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
         .wall-light { position: absolute; width: 8px; height: 8px; background: #ffaa44; border-radius: 50%; top: 40%; box-shadow: 0 0 15px #ffaa44; }
         
-        /* Предупреждающие знаки в тоннеле */
+        /* Знаки */
         .brake-sign {
             position: absolute;
             width: 80px; height: 10px;
@@ -48,7 +48,7 @@
             transform: scale(0.1);
         }
 
-        /* Станция метро */
+        /* Станция */
         #station {
             position: absolute;
             width: 250%;
@@ -65,21 +65,7 @@
             position: relative;
         }
         #station-name { background: #111; color: #fff; padding: 10px 30px; font-weight: bold; font-size: 28px; border: 2px solid #fff; display: inline-block; letter-spacing: 2px; }
-        
-        /* Знак Остановка Первого Вагона (ОПВ) */
-        #opv-marker {
-            position: absolute;
-            bottom: 10px;
-            left: 5%;
-            background: #fff;
-            color: #000;
-            padding: 5px 10px;
-            font-weight: bold;
-            border: 3px solid #ff3333;
-            border-radius: 3px;
-            font-size: 16px;
-        }
-        
+        #opv-marker { position: absolute; bottom: 10px; left: 5%; background: #fff; color: #000; padding: 5px 10px; font-weight: bold; border: 3px solid #ff3333; border-radius: 3px; font-size: 16px; }
         .passenger { width: 14px; height: 45px; background: #fff; margin-right: 8px; border-radius: 4px 4px 0 0; display: inline-block; position: relative; bottom: -60px;}
 
         /* Светофор */
@@ -89,7 +75,7 @@
         .light.yellow { background: #ffcc00; box-shadow: 0 0 20px #ffcc00, inset 0 0 4px #fff; }
         .light.green { background: #33ff33; box-shadow: 0 0 20px #33ff33, inset 0 0 4px #fff; }
 
-        /* ПУЛЬТ УПРАВЛЕНИЯ ПОЕЗДОМ */
+        /* ПУЛЬТ УПРАВЛЕНИЯ */
         #control-panel {
             flex: 1;
             background: linear-gradient(to bottom, #23272a, #0f1115);
@@ -101,7 +87,6 @@
             box-shadow: inset 0 10px 20px rgba(0,0,0,0.8);
         }
 
-        /* Монитор БК */
         .mfd-screen {
             background: #020611;
             border: 4px solid #3a4454;
@@ -121,7 +106,6 @@
         .mfd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 13px; }
         .param { color: #8f9cae; } .val { color: #fff; text-align: right; font-weight: bold;}
 
-        /* Центральная панель сигнализации */
         .center-console {
             display: flex;
             flex-direction: column;
@@ -134,7 +118,6 @@
         }
         .sys-status { width: 100%; background: #000; padding: 8px; border-radius: 4px; text-align: center; font-weight: bold; font-size: 14px; border: 1px solid #444;}
 
-        /* Органы управления */
         .hardware-controls {
             display: flex;
             justify-content: space-around;
@@ -166,13 +149,7 @@
         .hw-btn.door-toggle { background: radial-gradient(#f1c40f, #d35400); color: #000; border-color: #f39c12; }
         .hw-btn.active-light { box-shadow: 0 0 20px #f1c40f, inset 0 0 10px #fff !important; color: #fff; }
 
-        /* Кабина: индикаторы давления и напряжения */
-        .gauges-side {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
-            padding: 5px;
-        }
+        .gauges-side { display: flex; flex-direction: column; justify-content: space-around; padding: 5px; }
         .gauge-bar-container { background: #111; border: 2px solid #444; height: 20px; border-radius: 3px; position: relative; margin: 5px 0; overflow: hidden;}
         .gauge-bar { height: 100%; width: 50%; background: #3498db; transition: width 0.2s; }
         .gauge-label { font-size: 11px; color: #a5b1c2; display: flex; justify-content: space-between; }
@@ -192,7 +169,7 @@
         
         <div id="station">
             <div id="station-wall">
-                <div id="station-name">СТАНЦИЯ: ТЕХНОПАРК</div>
+                <div id="station-name">СТАНЦИЯ: СИБИРСКАЯ</div>
                 <div id="opv-marker">ОПВ</div>
             </div>
             <div id="passengers-group"></div>
@@ -205,13 +182,12 @@
         </div>
 
         <div id="hud-top">
-            <div>МАРШРУТ: <b>№ 42</b></div>
+            <div>МАРШРУТ: <b>УДЛИНЕННЫЙ № 01</b></div>
             <div>СЧЕТ: <span id="score-val" style="color:#fff">0</span></div>
         </div>
     </div>
 
     <div id="control-panel">
-        
         <div class="gauges-side">
             <div>
                 <div class="gauge-label"><span>ТОРМОЗНАЯ МАГИСТРАЛЬ (ТМ)</span><span id="tm-val">5.0 Атм</span></div>
@@ -229,22 +205,21 @@
 
         <div class="center-console">
             <div class="mfd-screen" style="width: 100%; height: 130px;">
-                <div class="mfd-header"><span>ОСНОВНОЙ ДИСПЛЕЙ (МФДУ)</span><span id="clock">12:00:00</span></div>
+                <div class="mfd-header"><span>МФДУ СУДП</span><span id="clock">12:00:00</span></div>
                 <div class="mfd-main">
                     <div class="speed-block">
                         <div class="speed-val" id="speed-display">0</div>
                         <div style="font-size:10px; color:#8f9cae;">СКОРОСТЬ км/ч</div>
                     </div>
-                    <div class="mfd-grid" style="min-width: 190px;">
-                        <span class="param" style="color: #66fcf1;">РЕК. СКОРОСТЬ:</span><span class="val" id="ars-speed" style="color: #66fcf1;">80 км/ч</span>
-                        <span class="param">ДО СТАНЦИИ:</span><span class="val" id="dist-display">750 м</span>
+                    <div class="mfd-grid" style="min-width: 200px;">
+                        <span class="param" style="color: #66fcf1;">РЕК. СКОРОСТЬ:</span><span class="val" id="ars-speed" style="color: #66fcf1;">100 км/ч</span>
+                        <span class="param">ДО СТАНЦИИ:</span><span class="val" id="dist-display">7000 м</span>
                         <span class="param">ПАССАЖИРЫ:</span><span class="val" id="pass-count">0</span>
                         <span class="param">РЕЖИМ:</span><span class="val" id="mfd-mode" style="color:#f1c40f">ВЫБЕГ</span>
                     </div>
                 </div>
             </div>
-            
-            <div id="status-text" class="sys-status" style="color: #ff3333;">СИСТЕМА: ОЖИДАНИЕ СИГНАЛА СЕМФОРА</div>
+            <div id="status-text" class="sys-status" style="color: #ff3333;">СИСТЕМА: СТОЯНКА. ОЖИДАНИЕ ОТПРАВЛЕНИЯ</div>
         </div>
 
         <div class="hardware-controls">
@@ -252,12 +227,11 @@
             <button class="hw-btn master-brake" id="btn-brake">ТОРМОЗ<br>▼</button>
             <button class="hw-btn door-toggle" id="btn-doors">ДВЕРИ<br>[ || ]</button>
         </div>
-
     </div>
 </div>
 
 <script>
-    // Аудио движок
+    // Звук
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let trainSoundOsc = null;
     let trainSoundGain = null;
@@ -265,18 +239,16 @@
 
     function initAudio() {
         if (trainSoundOsc) return; 
-        
         trainSoundOsc = audioCtx.createOscillator();
         trainSoundGain = audioCtx.createGain();
         trainSoundOsc.type = 'sawtooth';
-        trainSoundOsc.frequency.setValueAtTime(30, audioCtx.currentTime); 
+        trainSoundOsc.frequency.setValueAtTime(25, audioCtx.currentTime); 
         
         let filter = audioCtx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(150, audioCtx.currentTime);
+        filter.frequency.setValueAtTime(130, audioCtx.currentTime);
 
         trainSoundGain.gain.setValueAtTime(0, audioCtx.currentTime);
-        
         trainSoundOsc.connect(filter);
         filter.connect(trainSoundGain);
         trainSoundGain.connect(audioCtx.destination);
@@ -285,9 +257,9 @@
         setInterval(() => {
             if (speed > 5) {
                 playClickSound();
-                setTimeout(() => { if (speed > 20) playClickSound(); }, 120);
+                setTimeout(() => { if (speed > 30) playClickSound(); }, 100);
             }
-        }, 800);
+        }, 600);
     }
 
     function playClickSound() {
@@ -295,8 +267,8 @@
         let osc = audioCtx.createOscillator();
         let gain = audioCtx.createGain();
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(60, audioCtx.currentTime);
-        gain.gain.setValueAtTime(speed * 0.003, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(50, audioCtx.currentTime);
+        gain.gain.setValueAtTime(speed * 0.002, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
@@ -310,7 +282,7 @@
         let gain = audioCtx.createGain();
         osc.type = type;
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
@@ -320,30 +292,26 @@
 
     function triggerArsAlarm(state) {
         if (state && !alarmInterval) {
-            alarmInterval = setInterval(() => {
-                playBeep(900, 0.15, 'triangle');
-            }, 400);
+            alarmInterval = setInterval(() => { playBeep(850, 0.12, 'triangle'); }, 350);
         } else if (!state && alarmInterval) {
             clearInterval(alarmInterval);
             alarmInterval = null;
         }
     }
 
-    // Игровые переменные
+    // Игровой процесс — 7 километров
     let speed = 0;
-    let maxSpeed = 80;
-    let recSpeed = 80; // Рекомендованная скорость АРС
-    let distanceToStation = 750;
+    let maxSpeed = 100;
+    let recSpeed = 100; 
+    let distanceToStation = 7000; // Ровно 7 км!
     let doorsOpen = false;
     let score = 0;
     let passengersBoarded = 0;
     let currentPhase = 'wait_signal'; 
-    let stationNames = ['ТЕХНОПАРК', 'СОКОЛЬНИКИ', 'ВЫСТАВОЧНАЯ', 'КИЕВСКАЯ', 'МАЯКОВСКАЯ'];
+    let stationNames = ['СИБИРСКАЯ', 'ТАЙГА', 'МТЦ', 'ЦЕНТРАЛЬНАЯ'];
     let currentStationIdx = 0;
-
     let pressureTC = 3.8;
 
-    // DOM Элементы
     const speedDisplay = document.getElementById('speed-display');
     const arsDisplay = document.getElementById('ars-speed');
     const distDisplay = document.getElementById('dist-display');
@@ -354,7 +322,6 @@
     const station = document.getElementById('station');
     const stationNameDiv = document.getElementById('station-name');
     const passGroup = document.getElementById('passengers-group');
-
     const lRed = document.getElementById('light-red');
     const lYellow = document.getElementById('light-yellow');
     const lGreen = document.getElementById('light-green');
@@ -363,7 +330,7 @@
 
     function generatePassengers() {
         passGroup.innerHTML = '';
-        let num = Math.floor(Math.random() * 8) + 4;
+        let num = Math.floor(Math.random() * 10) + 5;
         for(let i=0; i<num; i++) {
             let p = document.createElement('div');
             p.className = 'passenger';
@@ -374,11 +341,10 @@
     }
     generatePassengers();
 
-    // Эффекты окружения
     let elements = [];
     function updateTunnel() {
-        // Огни тоннеля
-        if (speed > 0 && Math.random() < speed * 0.003) {
+        // Огни реже (создает ощущение огромной скорости)
+        if (speed > 0 && Math.random() < speed * 0.0015) {
             let l = document.createElement('div');
             l.className = 'wall-light';
             l.style.left = '50%'; l.style.top = '40%';
@@ -387,8 +353,8 @@
             elements.push({ el: l, x: 50, y: 40, scale: 0.1, type: 'light' });
         }
         
-        // Предупреждающий знак "Тормози" перед станцией (появляется на 150м)
-        if (distanceToStation < 160 && distanceToStation > 140 && !elements.some(e => e.type === 'sign')) {
+        // Знак торможения за 600 метров до станции
+        if (distanceToStation < 610 && distanceToStation > 590 && !elements.some(e => e.type === 'sign')) {
             let s = document.createElement('div');
             s.className = 'brake-sign';
             document.getElementById('tunnel-environment').appendChild(s);
@@ -397,9 +363,9 @@
 
         for (let i = elements.length - 1; i >= 0; i--) {
             let e = elements[i];
-            e.scale += speed * (e.type === 'sign' ? 0.01 : 0.003);
-            e.y += speed * 0.08;
-            e.x -= speed * (e.type === 'sign' ? 0.08 : 0.15);
+            e.scale += speed * (e.type === 'sign' ? 0.008 : 0.002);
+            e.y += speed * 0.07;
+            e.x -= speed * (e.type === 'sign' ? 0.06 : 0.12);
             e.el.style.transform = `scale(${e.scale})`;
             e.el.style.top = e.y + '%';
             e.el.style.left = e.x + '%';
@@ -407,43 +373,43 @@
         }
     }
 
-    // Включение зеленого
     setTimeout(() => {
         lRed.classList.remove('red'); lYellow.classList.add('yellow');
         playBeep(500, 0.1);
         setTimeout(() => {
             lYellow.classList.remove('yellow'); lGreen.classList.add('green');
             currentPhase = 'drive';
-            statusText.innerText = 'СИСТЕМА: ПУТЬ СВОБОДЕН. ДОПУСТИМАЯ СКОРОСТЬ 80 КМ/Ч';
+            statusText.innerText = 'АРС: ПЕРЕГОН СВОБОДЕН. РАЗРЕШЕННАЯ СКОРОСТЬ 100 КМ/Ч';
             statusText.style.color = '#33ff33';
             playBeep(660, 0.2);
         }, 1500);
     }, 2000);
 
+    // Тяжелая физика — нажимать нужно многократно или держать
     function changeSpeed(amount) {
         initAudio();
         if (doorsOpen && amount > 0) return;
         if (currentPhase === 'wait_signal') return;
 
         if (amount > 0) {
-            speed = Math.min(maxSpeed, speed + amount);
+            speed = Math.min(maxSpeed, speed + 3); // Медленный разгон тяжелого состава
             pressureTC = Math.max(0, pressureTC - 1.0);
             mfdMode.innerText = 'ТЯГА'; mfdMode.style.color = '#33ff33';
-            playBeep(400, 0.05);
+            playBeep(400, 0.04);
         } else {
-            speed = Math.max(0, speed + amount);
-            pressureTC = Math.min(3.8, pressureTC + 0.8);
+            speed = Math.max(0, speed - 4); // Инерционное торможение
+            pressureTC = Math.min(3.8, pressureTC + 0.6);
             mfdMode.innerText = 'ТОРМОЗ'; mfdMode.style.color = '#ff3333';
-            playBeep(300, 0.05);
+            playBeep(300, 0.04);
         }
     }
 
-    document.getElementById('btn-accel').addEventListener('click', () => changeSpeed(6));
-    document.getElementById('btn-brake').addEventListener('click', () => changeSpeed(-8));
+    document.getElementById('btn-accel').addEventListener('click', () => changeSpeed(1));
+    document.getElementById('btn-brake').addEventListener('click', () => changeSpeed(-1));
 
     window.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowUp') changeSpeed(6);
-        if (e.key === 'ArrowDown') changeSpeed(-8);
+        if (e.key === 'ArrowUp') changeSpeed(1);
+        if (e.key === 'ArrowDown') changeSpeed(-1);
         if (e.key === ' ') document.getElementById('btn-doors').click();
     });
 
@@ -457,30 +423,29 @@
 
         if (doorsOpen) {
             btn.classList.add('active-light');
-            statusText.innerText = 'ИНФО: ИДЕТ ПОСАДКА ПАССАЖИРОВ...';
+            statusText.innerText = 'ИНФО: ИДЕТ ПОСАДКА ПАССАРАЖИРОВ...';
             statusText.style.color = '#f1c40f';
             playBeep(580, 0.1);
 
             if (distanceToStation <= 12 && distanceToStation >= -12) {
                 setTimeout(() => {
                     if (doorsOpen) {
-                        passengersBoarded += Math.floor(Math.random() * 20) + 15;
-                        score += 150;
+                        passengersBoarded += Math.floor(Math.random() * 40) + 30;
+                        score += 500; // Больше очков за длинный рейс!
                         passCount.innerText = passengersBoarded;
                         scoreVal.innerText = score;
                         statusText.innerText = `ИНФО: ПОСАДКА ЗАВЕРШЕНА. ЗАКРОЙТЕ ДВЕРИ.`;
                         statusText.style.color = '#33ff33';
-                        setTimeout(() => { playBeep(440, 0.2); }, 200);
                     }
                 }, 2000);
             } else {
                 statusText.innerText = 'ШТРАФ: ОТКРЫТИЕ ДВЕРЕЙ В ТОННЕЛЕ!';
-                score = Math.max(0, score - 200); scoreVal.innerText = score;
+                score = Math.max(0, score - 500); scoreVal.innerText = score;
             }
         } else {
             playBeep(880, 0.2);
             btn.classList.remove('active-light');
-            statusText.innerText = 'СИСТЕМА: ДВЕРИ ЗАКРЫТЫ. ЦЕПЬ СОБРАНА.';
+            statusText.innerText = 'СИСТЕМА: ДВЕРИ ЗАКРЫТЫ. ЦЕПЬ СБОРКИ ГОТОВА.';
             statusText.style.color = '#33ff33';
 
             if (distanceToStation <= 12 && distanceToStation >= -12 && passengersBoarded > 0) {
@@ -491,84 +456,84 @@
 
     function nextStationSetup() {
         currentPhase = 'wait_signal';
-        distanceToStation = 800 + Math.floor(Math.random() * 200);
+        distanceToStation = 7000; // Всегда честные 7 км
         station.style.left = '200%';
         lGreen.classList.remove('green'); lRed.classList.add('red');
-        recSpeed = 80;
+        recSpeed = 100;
         
         currentStationIdx = (currentStationIdx + 1) % stationNames.length;
         stationNameDiv.innerText = 'СТАНЦИЯ: ' + stationNames[currentStationIdx];
-        statusText.innerText = 'СИСТЕМА: ОЖИДАНИЕ РАЗРЕШЕНИЯ СИСТЕМЫ АРС...';
+        statusText.innerText = 'СИСТЕМА: БЛОКИРОВКА АРС. ОЖИДАЙТЕ РАЗРЕШЕНИЯ СЕКТОРНОЙ СИСТЕМЫ...';
         statusText.style.color = '#ff3333';
         generatePassengers();
 
         setTimeout(() => {
             lRed.classList.remove('red'); lGreen.classList.add('green');
             currentPhase = 'drive';
-            statusText.innerText = 'СИСТЕМА: ПЕРЕГОН СВОБОДЕН. РАЗГОН.';
+            statusText.innerText = 'СИСТЕМА: ПЕРЕГОН 7 КМ СВОБОДЕН. КУРС НА СЛЕДУЮЩУЮ СТАНЦИЮ.';
             statusText.style.color = '#33ff33';
             playBeep(660, 0.2);
-        }, 3000);
+        }, 5000);
     }
 
-    // ИГРОВОЙ ЦИКЛ С ДИНАМИЧЕСКИМ АРС
+    // Логика АРС под 7 КМ
     function loop() {
         if (speed > 0) {
             distanceToStation -= (speed / 36); 
             updateTunnel();
-            speed = Math.max(0, speed - 0.03); // Выбег
+            speed = Math.max(0, speed - 0.008); // Огромный накат (выбег) тяжелого поезда
         }
 
-        // --- ЛОГИКА АРС (ИНСТРУКЦИЯ ДЛЯ ТОРМОЖЕНИЯ) ---
+        // --- ГРАФИК ТОРМОЖЕНИЯ АРС ДЛЯ 7000м ---
         if (currentPhase === 'drive') {
-            if (distanceToStation > 350) {
-                recSpeed = 80;
-                statusText.innerText = 'СИСТЕМА: СЛЕДУЙТЕ УСТАНОВЛЕННЫМ КУРСОМ (80 км/ч)';
+            if (distanceToStation > 1200) {
+                recSpeed = 100;
+                statusText.innerText = 'СИСТЕМА: ПЕРЕГОН СЛЕДОВАНИЯ. РАЗРЕШЕНО 100 КМ/Ч.';
                 statusText.style.color = '#33ff33';
-            } else if (distanceToStation <= 350 && distanceToStation > 200) {
-                recSpeed = 60; // Плавное снижение скорости на подходе
-                statusText.innerText = 'АРС: ПРИБЛИЖЕНИЕ К СТАНЦИИ. СНИЖАЙТЕ СКОРОСТЬ ДО 60 КМ/Ч';
+            } else if (distanceToStation <= 1200 && distanceToStation > 600) {
+                recSpeed = 80; // Предварительное снижение за 1.2 км!
+                statusText.innerText = 'АРС: ВНИМАНИЕ! КОНЕЦ ПЕРЕГОНА ЧЕРЕЗ 1.2 КМ. СНИЖАЙТЕ ДО 80 КМ/Ч';
                 statusText.style.color = '#f1c40f';
-            } else if (distanceToStation <= 200 && distanceToStation > 80) {
-                recSpeed = 40; // Скорость въезда на платформу
-                statusText.innerText = 'АРС: ВЪЕЗД НА СТАНЦИЮ. СНИЖАЙТЕ СКОРОСТЬ ДО 40 КМ/Ч!';
+            } else if (distanceToStation <= 600 && distanceToStation > 350) {
+                recSpeed = 60; 
+                statusText.innerText = 'АРС: ДИСТАНЦИЯ 600М. СНИЖАЙТЕ СКОРОСТЬ ДО 60 КМ/Ч!';
                 statusText.style.color = '#ff9f43';
-            } else if (distanceToStation <= 80) {
-                recSpeed = 20; // Финальное торможение до ОПВ
-                statusText.innerText = 'АРС: ТОРМОЖЕНИЕ К ОТМЕТКЕ ОПВ (20 км/ч)!';
+            } else if (distanceToStation <= 350 && distanceToStation > 120) {
+                recSpeed = 40; // Скорость въезда на платформу
+                statusText.innerText = 'АРС: ВЪЕЗД НА СТАНЦИЮ. ТОРМОЖЕНИЕ ДО 40 КМ/Ч!';
+                statusText.style.color = '#ff4d4d';
+            } else if (distanceToStation <= 120) {
+                recSpeed = 20; // Подползаем к ОПВ
+                statusText.innerText = 'АРС: МАНЕВРЫ К МАРКЕРУ ОПВ (МАКС 20 КМ/Ч)!';
                 statusText.style.color = '#ff3333';
             }
 
-            // Проверка превышения рекомендованной скорости АРС
             if (speed > recSpeed) {
-                triggerArsAlarm(true); // Включаем панический писк пульта
-                statusText.innerText = `ВНИМАНИЕ: ПРЕВЫШЕНИЕ АРС! ТОРМОЗИТЕ!`;
+                triggerArsAlarm(true);
+                statusText.innerText = `ЭКСТРЕННОЕ ПРЕДУПРЕЖДЕНИЕ: ПРЕВЫШЕНИЕ АРС! ТОРМОЗИТЕ!`;
                 statusText.style.color = '#ff3333';
             } else {
-                triggerArsAlarm(false); // Все в порядке, выключаем писк
+                triggerArsAlarm(false);
             }
         } else {
             triggerArsAlarm(false);
         }
 
-        // Обновление интерфейса АРС
         arsDisplay.innerText = recSpeed + ' км/ч';
         if (speed > recSpeed) arsDisplay.style.color = '#ff3333';
         else arsDisplay.style.color = '#66fcf1';
 
-        // Звук двигателя
         if (trainSoundGain) {
             trainSoundGain.gain.setValueAtTime(speed * 0.002, audioCtx.currentTime);
-            trainSoundOsc.frequency.setValueAtTime(30 + speed * 0.8, audioCtx.currentTime);
+            trainSoundOsc.frequency.setValueAtTime(25 + speed * 0.7, audioCtx.currentTime);
         }
 
-        // Пневматика
         if (mfdMode.innerText === 'ТОРМОЗ') pressureTC = Math.min(3.8, pressureTC + 0.1);
         else if (speed > 0) pressureTC = Math.max(0, pressureTC - 0.1);
         gaugeTC.style.width = (pressureTC / 5 * 100) + '%';
         tcVal.innerText = pressureTC.toFixed(1) + ' Атм';
         
-        // Появление платформы
+        // Визуальное появление станции на последних 250 метрах
         if (distanceToStation < 250) {
             station.style.left = `${distanceToStation * 1.5}%`;
         }
@@ -576,17 +541,17 @@
         speedDisplay.innerText = Math.round(speed);
         distDisplay.innerText = Math.max(0, Math.round(distanceToStation)) + ' м';
 
-        // Остановка
+        // Финиш перегона
         if (distanceToStation <= 0 && currentPhase === 'drive') {
             if (speed > 12) {
-                statusText.innerText = 'АВАРИЯ: ПРОЕЗД СТАНЦИИ БЕЗ ОСТАНОВКИ! ШТРАФ!';
+                statusText.innerText = 'КАТАСТРОФА: ПРОЕЗД СТАНЦИИ НА СКОРОСТИ! ВЫ СНЯТЫ С СМЕНЫ!';
                 statusText.style.color = '#ff3333';
-                score = Math.max(0, score - 300); scoreVal.innerText = score;
-                speed = 0; distanceToStation = -30;
-                playBeep(100, 0.8, 'sawtooth');
+                score = Math.max(0, score - 1000); scoreVal.innerText = score;
+                speed = 0; distanceToStation = -40;
+                playBeep(100, 1.2, 'sawtooth');
             } else if (speed === 0) {
                 currentPhase = 'station_stop';
-                statusText.innerText = 'СИСТЕМА: ОСТАНОВКА ВЫПОЛНЕНА. ОТКРОЙТЕ ДВЕРИ.';
+                statusText.innerText = 'СИСТЕМА: ИДЕАЛЬНАЯ ОСТАНОВКА ПОСЛЕ 7 КМ РЕЙСА. ОТКРОЙТЕ ДВЕРИ.';
                 statusText.style.color = '#33ff33';
                 playBeep(700, 0.3);
             }
