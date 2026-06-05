@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Симулятор Машиниста Метро PRO — Перегон 7 КМ</title>
+    <title>Реалистичный Симулятор Машиниста Поезда</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body { background: #0b0c10; color: #66fcf1; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
@@ -16,145 +16,108 @@
             flex-direction: column;
         }
 
-        /* Лобовое стекло */
+        /* Лобовое стекло кабины */
         #windshield {
-            flex: 1.2;
-            background: #000;
+            flex: 1.3;
+            background: #020205;
             position: relative;
             overflow: hidden;
-            box-shadow: inset 0 -20px 30px rgba(0,0,0,0.9);
+            box-shadow: inset 0 -30px 40px rgba(0,0,0,1);
         }
 
         /* Геометрия тоннеля */
-        .tunnel-line {
-            position: absolute;
-            background: #222;
-            transform-origin: top center;
-        }
-        #rail-left { bottom: 0; left: 42%; width: 6px; height: 50%; transform: skewX(-35deg); background: #444; box-shadow: 2px 0 5px #000;}
-        #rail-right { bottom: 0; right: 42%; width: 6px; height: 50%; transform: skewX(35deg); background: #444; box-shadow: -2px 0 5px #000;}
-        #wall-l { top: 0; left: 0; width: 30%; height: 100%; background: linear-gradient(to right, #050505, #151515); clip-path: polygon(0 0, 100% 0, 40% 100%, 0% 100%); }
-        #wall-r { top: 0; right: 0; width: 30%; height: 100%; background: linear-gradient(to left, #050505, #151515); clip-path: polygon(0 0, 100% 0, 100% 100%, 60% 100%); }
+        .tunnel-line { position: absolute; background: #222; transform-origin: top center; }
+        #rail-left { bottom: 0; left: 40%; width: 8px; height: 50%; transform: skewX(-38deg); background: #444; box-shadow: 2px 0 5px #000;}
+        #rail-right { bottom: 0; right: 40%; width: 8px; height: 50%; transform: skewX(38deg); background: #444; box-shadow: -2px 0 5px #000;}
+        #wall-l { top: 0; left: 0; width: 30%; height: 100%; background: linear-gradient(to right, #030303, #111); clip-path: polygon(0 0, 100% 0, 40% 100%, 0% 100%); }
+        #wall-r { top: 0; right: 0; width: 30%; height: 100%; background: linear-gradient(to left, #030303, #111); clip-path: polygon(0 0, 100% 0, 100% 100%, 60% 100%); }
 
         #tunnel-environment { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
-        .wall-light { position: absolute; width: 8px; height: 8px; background: #ffaa44; border-radius: 50%; top: 40%; box-shadow: 0 0 15px #ffaa44; }
+        .wall-light { position: absolute; width: 10px; height: 10px; background: #ffaa44; border-radius: 50%; top: 42%; box-shadow: 0 0 20px #ffaa44; }
         
-        /* Знаки */
         .brake-sign {
             position: absolute;
-            width: 80px; height: 10px;
+            width: 90px; height: 12px;
             background: repeating-linear-gradient(45deg, #f1c40f, #f1c40f 10px, #000 10px, #000 20px);
-            top: 45%; left: 48%;
-            transform: scale(0.1);
+            top: 45%; left: 47%;
+            transform: scale(0.05);
+            border: 1px solid #fff;
         }
 
-        /* Станция */
+        /* Перрон Станции */
         #station {
             position: absolute;
-            width: 250%;
+            width: 300%;
             height: 100%;
-            background: linear-gradient(to bottom, #2b2b2b, #111 80%, #333);
+            background: linear-gradient(to bottom, #2c3e50, #0f171e 80%, #222);
             top: 0;
-            left: 200%;
-            transform: skewX(-15deg);
-            border-left: 20px solid #555;
+            left: 300%;
+            transform: skewX(-12deg);
+            border-left: 25px solid #7f8c8d;
         }
         #station-wall {
-            width: 100%; height: 60%; background: #444; border-bottom: 8px solid #00ffcc; padding: 20px;
-            box-shadow: inset 0 -10px 20px rgba(0,0,0,0.5);
+            width: 100%; height: 55%; background: #34495e; border-bottom: 10px solid #00ffcc; padding: 25px;
+            box-shadow: inset 0 -15px 30px rgba(0,0,0,0.6);
             position: relative;
         }
-        #station-name { background: #111; color: #fff; padding: 10px 30px; font-weight: bold; font-size: 28px; border: 2px solid #fff; display: inline-block; letter-spacing: 2px; }
-        #opv-marker { position: absolute; bottom: 10px; left: 5%; background: #fff; color: #000; padding: 5px 10px; font-weight: bold; border: 3px solid #ff3333; border-radius: 3px; font-size: 16px; }
-        .passenger { width: 14px; height: 45px; background: #fff; margin-right: 8px; border-radius: 4px 4px 0 0; display: inline-block; position: relative; bottom: -60px;}
+        #station-name { background: #111; color: #fff; padding: 12px 35px; font-weight: bold; font-size: 32px; border: 3px solid #fff; display: inline-block; letter-spacing: 3px; }
+        #opv-marker { position: absolute; bottom: 15px; left: 4%; background: #fff; color: #111; padding: 6px 14px; font-weight: bold; border: 4px solid #e74c3c; border-radius: 4px; font-size: 18px; }
+        .passenger { width: 14px; height: 50px; background: #fff; margin-right: 6px; border-radius: 5px 5px 0 0; display: inline-block; position: relative; bottom: -80px;}
 
-        /* Светофор */
-        #semaphore { position: absolute; left: 15%; bottom: 10%; width: 24px; height: 70px; background: #1a1a1a; border: 3px solid #333; border-radius: 5px; display: flex; flex-direction: column; justify-content: space-around; align-items: center; padding: 6px; }
-        .light { width: 14px; height: 14px; border-radius: 50%; background: #222; transition: 0.2s; }
-        .light.red { background: #ff3333; box-shadow: 0 0 20px #ff3333, inset 0 0 4px #fff; }
-        .light.yellow { background: #ffcc00; box-shadow: 0 0 20px #ffcc00, inset 0 0 4px #fff; }
-        .light.green { background: #33ff33; box-shadow: 0 0 20px #33ff33, inset 0 0 4px #fff; }
+        /* Светофор автоматической блокировки */
+        #semaphore { position: absolute; left: 12%; bottom: 12%; width: 26px; height: 80px; background: #151515; border: 3px solid #444; border-radius: 6px; display: flex; flex-direction: column; justify-content: space-around; align-items: center; padding: 6px; box-shadow: 0 5px 15px #000; }
+        .light { width: 16px; height: 16px; border-radius: 50%; background: #1a1a1a; transition: 0.3s; }
+        .light.red { background: #ff3333; box-shadow: 0 0 25px #ff3333, inset 0 0 5px #fff; }
+        .light.yellow { background: #ffcc00; box-shadow: 0 0 25px #ffcc00, inset 0 0 5px #fff; }
+        .light.green { background: #33ff33; box-shadow: 0 0 25px #33ff33, inset 0 0 5px #fff; }
 
-        /* ПУЛЬТ УПРАВЛЕНИЯ */
+        /* ПУЛЬТ УПРАВЛЕНИЯ ПОЕЗДОМ */
         #control-panel {
-            flex: 1;
-            background: linear-gradient(to bottom, #23272a, #0f1115);
-            border-top: 6px solid #454d55;
-            padding: 15px 30px;
+            flex: 0.9;
+            background: linear-gradient(to bottom, #1f2428, #0d0f12);
+            border-top: 8px solid #343a40;
+            padding: 20px 40px;
             display: grid;
-            grid-template-columns: 1fr 1.5fr 1fr;
-            gap: 20px;
-            box-shadow: inset 0 10px 20px rgba(0,0,0,0.8);
+            grid-template-columns: 1.11fr 1.3fr 1fr;
+            gap: 30px;
+            box-shadow: inset 0 15px 30px rgba(0,0,0,0.9);
         }
 
+        /* Манометры пневматики */
+        .gauges-side { display: flex; flex-direction: column; justify-content: space-around; }
+        .gauge-bar-container { background: #07090e; border: 2px solid #454d55; height: 22px; border-radius: 4px; position: relative; margin: 4px 0; overflow: hidden; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); }
+        .gauge-bar { height: 100%; width: 0%; transition: width 0.2s cubic-bezier(0.1, 0.8, 0.3, 1); }
+        .gauge-label { font-size: 12px; color: #a5b1c2; display: flex; justify-content: space-between; font-weight: bold; letter-spacing: 0.5px; }
+
+        /* Центральный дисплей (МФДУ) */
+        .center-console { display: flex; flex-direction: column; justify-content: space-between; align-items: center; }
         .mfd-screen {
-            background: #020611;
-            border: 4px solid #3a4454;
-            border-radius: 8px;
-            padding: 12px;
-            font-family: 'Consolas', monospace;
-            color: #00ffcc;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            box-shadow: inset 0 0 20px rgba(0,255,200,0.2), 0 4px 10px rgba(0,0,0,0.5);
+            width: 100%; height: 140px; background: #010409; border: 4px solid #454d55; border-radius: 8px; padding: 14px;
+            font-family: 'Consolas', monospace; color: #00ffcc; display: flex; flex-direction: column; justify-content: space-between;
+            box-shadow: inset 0 0 25px rgba(0,255,200,0.15), 0 5px 15px rgba(0,0,0,0.7);
         }
-        .mfd-header { font-size: 12px; color: #8f9cae; border-bottom: 1px solid #3a4454; padding-bottom: 4px; display: flex; justify-content: space-between;}
-        .mfd-main { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; }
+        .mfd-header { font-size: 11px; color: #8b949e; border-bottom: 1px solid #21262d; padding-bottom: 6px; display: flex; justify-content: space-between; }
+        .mfd-main { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
         .speed-block { text-align: center; }
-        .speed-val { font-size: 48px; font-weight: bold; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
-        .mfd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 13px; }
-        .param { color: #8f9cae; } .val { color: #fff; text-align: right; font-weight: bold;}
+        .speed-val { font-size: 54px; font-weight: bold; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.2); font-family: 'Arial Black', sans-serif; line-height: 50px; }
+        .mfd-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 5px; font-size: 13px; }
+        .param { color: #8b949e; } .val { color: #fff; text-align: right; font-weight: bold; }
+        .sys-status { width: 100%; background: #000; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; font-size: 13px; border: 1px solid #30363d; letter-spacing: 1px; }
 
-        .center-console {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(255,255,255,0.02);
-            border: 2px solid #2c3238;
-            border-radius: 6px;
-            padding: 10px;
-        }
-        .sys-status { width: 100%; background: #000; padding: 8px; border-radius: 4px; text-align: center; font-weight: bold; font-size: 14px; border: 1px solid #444;}
-
-        .hardware-controls {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            width: 100%;
-            margin-top: 10px;
-        }
-        
+        /* Физические кнопки пульта */
+        .hardware-controls { display: flex; justify-content: space-around; align-items: center; }
         .hw-btn {
-            width: 70px; height: 70px;
-            border-radius: 50%;
-            border: 5px solid #444;
-            background: #222;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 10px;
-            font-weight: bold;
-            color: #aaa;
-            box-shadow: 0 6px 0 #111, 0 8px 10px rgba(0,0,0,0.5);
-            transition: 0.1s;
+            width: 80px; height: 80px; border-radius: 50%; border: 6px solid #3a3f44; background: #222; cursor: pointer;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 11px; font-weight: bold; color: #ccc;
+            box-shadow: 0 7px 0 #111, 0 10px 15px rgba(0,0,0,0.6); transition: 0.1s; transform: translateY(-3px);
         }
-        .hw-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #111, 0 4px 5px rgba(0,0,0,0.5); }
-        
-        .hw-btn.master-go { background: radial-gradient(#2ecc71, #27ae60); color: #fff; border-color: #27ae60; }
-        .hw-btn.master-brake { background: radial-gradient(#e74c3c, #c0392b); color: #fff; border-color: #c0392b; }
-        .hw-btn.door-toggle { background: radial-gradient(#f1c40f, #d35400); color: #000; border-color: #f39c12; }
-        .hw-btn.active-light { box-shadow: 0 0 20px #f1c40f, inset 0 0 10px #fff !important; color: #fff; }
+        .hw-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #111, 0 5px 5px rgba(0,0,0,0.6); }
+        .hw-btn.master-go { background: radial-gradient(#2ecc71, #1e7e34); color: #fff; border-color: #1e7e34; }
+        .hw-btn.master-brake { background: radial-gradient(#e74c3c, #bd2130); color: #fff; border-color: #bd2130; }
+        .hw-btn.door-toggle { background: radial-gradient(#f1c40f, #d39e00); color: #111; border-color: #d39e00; }
+        .hw-btn.active-light { box-shadow: 0 0 25px #f1c40f, inset 0 0 10px #fff !important; color: #fff !important; }
 
-        .gauges-side { display: flex; flex-direction: column; justify-content: space-around; padding: 5px; }
-        .gauge-bar-container { background: #111; border: 2px solid #444; height: 20px; border-radius: 3px; position: relative; margin: 5px 0; overflow: hidden;}
-        .gauge-bar { height: 100%; width: 50%; background: #3498db; transition: width 0.2s; }
-        .gauge-label { font-size: 11px; color: #a5b1c2; display: flex; justify-content: space-between; }
-
-        #hud-top { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.75); padding: 10px 20px; border-radius: 4px; border-left: 4px solid #66fcf1; font-size: 14px;}
+        #hud-top { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); padding: 12px 24px; border-radius: 5px; border-left: 5px solid #66fcf1; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
     </style>
 </head>
 <body>
@@ -169,7 +132,7 @@
         
         <div id="station">
             <div id="station-wall">
-                <div id="station-name">СТАНЦИЯ: СИБИРСКАЯ</div>
+                <div id="station-name">СТАНЦИЯ: КУНЦЕВСКАЯ</div>
                 <div id="opv-marker">ОПВ</div>
             </div>
             <div id="passengers-group"></div>
@@ -182,8 +145,8 @@
         </div>
 
         <div id="hud-top">
-            <div>МАРШРУТ: <b>УДЛИНЕННЫЙ № 01</b></div>
-            <div>СЧЕТ: <span id="score-val" style="color:#fff">0</span></div>
+            <div>МАРШРУТ СЛЕДОВАНИЯ: <b>№ 710</b></div>
+            <div>ОЧКИ ГРАФИКА: <span id="score-val" style="color:#fff">0</span></div>
         </div>
     </div>
 
@@ -191,35 +154,35 @@
         <div class="gauges-side">
             <div>
                 <div class="gauge-label"><span>ТОРМОЗНАЯ МАГИСТРАЛЬ (ТМ)</span><span id="tm-val">5.0 Атм</span></div>
-                <div class="gauge-bar-container"><div id="gauge-tm" class="gauge-bar" style="width: 83%; background: #2ecc71;"></div></div>
+                <div class="gauge-bar-container"><div id="gauge-tm" class="gauge-bar" style="width: 100%; background: #2ecc71;"></div></div>
             </div>
             <div>
                 <div class="gauge-label"><span>ТОРМОЗНЫЕ ЦИЛИНДРЫ (ТЦ)</span><span id="tc-val">0.0 Атм</span></div>
                 <div class="gauge-bar-container"><div id="gauge-tc" class="gauge-bar" style="width: 0%; background: #e74c3c;"></div></div>
             </div>
             <div>
-                <div class="gauge-label"><span>НАПРЯЖЕНИЕ НА КР</span><span id="kr-val">825 В</span></div>
-                <div class="gauge-bar-container"><div id="gauge-kr" class="gauge-bar" style="width: 90%; background: #f1c40f;"></div></div>
+                <div class="gauge-label"><span>НАПОРНАЯ МАГИСТРАЛЬ (НМ)</span><span id="nm-val">8.1 Атм</span></div>
+                <div class="gauge-bar-container"><div id="gauge-nm" class="gauge-bar" style="width: 81%; background: #f1c40f;"></div></div>
             </div>
         </div>
 
         <div class="center-console">
-            <div class="mfd-screen" style="width: 100%; height: 130px;">
-                <div class="mfd-header"><span>МФДУ СУДП</span><span id="clock">12:00:00</span></div>
+            <div class="mfd-screen">
+                <div class="mfd-header"><span>МФДУ-БОРТ v4.12</span><span id="clock">00:00:00</span></div>
                 <div class="mfd-main">
                     <div class="speed-block">
                         <div class="speed-val" id="speed-display">0</div>
-                        <div style="font-size:10px; color:#8f9cae;">СКОРОСТЬ км/ч</div>
+                        <div style="font-size:10px; color:#8b949e; font-weight:bold; margin-top:2px;">СКОРОСТЬ км/ч</div>
                     </div>
-                    <div class="mfd-grid" style="min-width: 200px;">
-                        <span class="param" style="color: #66fcf1;">РЕК. СКОРОСТЬ:</span><span class="val" id="ars-speed" style="color: #66fcf1;">100 км/ч</span>
-                        <span class="param">ДО СТАНЦИИ:</span><span class="val" id="dist-display">7000 м</span>
+                    <div class="mfd-grid" style="min-width: 210px;">
+                        <span class="param" style="color: #66fcf1;">АРС ДОПУСТИМАЯ:</span><span class="val" id="ars-speed" style="color: #66fcf1;">80 км/ч</span>
+                        <span class="param">ДО СТАНЦИИ:</span><span class="val" id="dist-display">1500 м</span>
                         <span class="param">ПАССАЖИРЫ:</span><span class="val" id="pass-count">0</span>
-                        <span class="param">РЕЖИМ:</span><span class="val" id="mfd-mode" style="color:#f1c40f">ВЫБЕГ</span>
+                        <span class="param">РЕЖИМ КВ:</span><span class="val" id="mfd-mode" style="color:#f1c40f">ВЫБЕГ</span>
                     </div>
                 </div>
             </div>
-            <div id="status-text" class="sys-status" style="color: #ff3333;">СИСТЕМА: СТОЯНКА. ОЖИДАНИЕ ОТПРАВЛЕНИЯ</div>
+            <div id="status-text" class="sys-status" style="color: #ff3333;">СИСТЕМА: СТОЯНКА. ОЖИДАНИЕ СИГНАЛА БЛОКИРОВКИ</div>
         </div>
 
         <div class="hardware-controls">
@@ -231,86 +194,77 @@
 </div>
 
 <script>
-    // Звук
+    // Саунд-движок Web Audio API
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    let trainSoundOsc = null;
-    let trainSoundGain = null;
-    let alarmInterval = null;
+    let motorOsc = null, motorGain = null, alarmInterval = null;
 
     function initAudio() {
-        if (trainSoundOsc) return; 
-        trainSoundOsc = audioCtx.createOscillator();
-        trainSoundGain = audioCtx.createGain();
-        trainSoundOsc.type = 'sawtooth';
-        trainSoundOsc.frequency.setValueAtTime(25, audioCtx.currentTime); 
+        if (motorOsc) return;
+        motorOsc = audioCtx.createOscillator();
+        motorGain = audioCtx.createGain();
+        motorOsc.type = 'sawtooth';
+        motorOsc.frequency.setValueAtTime(20, audioCtx.currentTime);
         
         let filter = audioCtx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(130, audioCtx.currentTime);
+        filter.frequency.setValueAtTime(120, audioCtx.currentTime);
 
-        trainSoundGain.gain.setValueAtTime(0, audioCtx.currentTime);
-        trainSoundOsc.connect(filter);
-        filter.connect(trainSoundGain);
-        trainSoundGain.connect(audioCtx.destination);
-        trainSoundOsc.start();
+        motorGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        motorOsc.connect(filter);
+        filter.connect(motorGain);
+        motorGain.connect(audioCtx.destination);
+        motorOsc.start();
 
+        // Стук колёсных пар на рельсовых стыках
         setInterval(() => {
-            if (speed > 5) {
-                playClickSound();
-                setTimeout(() => { if (speed > 30) playClickSound(); }, 100);
+            if (speed > 10) {
+                playClick();
+                setTimeout(() => { if (speed > 35) playClick(); }, 140);
             }
-        }, 600);
+        }, 750);
     }
 
-    function playClickSound() {
-        if(!trainSoundGain) return;
+    function playClick() {
+        if(!motorGain) return;
         let osc = audioCtx.createOscillator();
         let gain = audioCtx.createGain();
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(50, audioCtx.currentTime);
-        gain.gain.setValueAtTime(speed * 0.002, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.1);
+        osc.frequency.setValueAtTime(45, audioCtx.currentTime);
+        gain.gain.setValueAtTime(speed * 0.0025, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.12);
     }
 
-    function playBeep(freq, duration, type='sine') {
+    function playBeep(freq, duration) {
         initAudio();
         let osc = audioCtx.createOscillator();
         let gain = audioCtx.createGain();
-        osc.type = type;
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
         gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
     }
 
-    function triggerArsAlarm(state) {
-        if (state && !alarmInterval) {
-            alarmInterval = setInterval(() => { playBeep(850, 0.12, 'triangle'); }, 350);
-        } else if (!state && alarmInterval) {
-            clearInterval(alarmInterval);
-            alarmInterval = null;
+    function setArsAlarm(active) {
+        if (active && !alarmInterval) {
+            alarmInterval = setInterval(() => { playBeep(880, 0.1); }, 300);
+        } else if (!active && alarmInterval) {
+            clearInterval(alarmInterval); alarmInterval = null;
         }
     }
 
-    // Игровой процесс — 7 километров
-    let speed = 0;
-    let maxSpeed = 100;
-    let recSpeed = 100; 
-    let distanceToStation = 7000; // Ровно 7 км!
-    let doorsOpen = false;
-    let score = 0;
-    let passengersBoarded = 0;
-    let currentPhase = 'wait_signal'; 
-    let stationNames = ['СИБИРСКАЯ', 'ТАЙГА', 'МТЦ', 'ЦЕНТРАЛЬНАЯ'];
-    let currentStationIdx = 0;
-    let pressureTC = 3.8;
+    // Игровые параметры
+    let speed = 0, maxSpeed = 80, recSpeed = 80;
+    let distanceToStation = 1500; // Дистанция перегона (1.5 км)
+    let doorsOpen = false, score = 0, passengers = 0;
+    let currentPhase = 'wait_signal';
+    let stations = ['КУНЦЕВСКАЯ', 'МОЛОДЁЖНАЯ', 'КРЫЛАТСКОЕ', 'СТРОГИНО'];
+    let stationIdx = 0;
+
+    // Пневматика (Давление в атмосферах)
+    let pressureTM = 5.0, pressureTC = 3.8;
 
     const speedDisplay = document.getElementById('speed-display');
     const arsDisplay = document.getElementById('ars-speed');
@@ -322,246 +276,200 @@
     const station = document.getElementById('station');
     const stationNameDiv = document.getElementById('station-name');
     const passGroup = document.getElementById('passengers-group');
-    const lRed = document.getElementById('light-red');
-    const lYellow = document.getElementById('light-yellow');
-    const lGreen = document.getElementById('light-green');
-    const gaugeTC = document.getElementById('gauge-tc');
-    const tcVal = document.getElementById('tc-val');
+    const lRed = document.getElementById('light-red'), lYellow = document.getElementById('light-yellow'), lGreen = document.getElementById('light-green');
+    const gaugeTM = document.getElementById('gauge-tm'), gaugeTC = document.getElementById('gauge-tc'), tmVal = document.getElementById('tm-val'), tcVal = document.getElementById('tc-val');
 
-    function generatePassengers() {
+    function spawnPassengers() {
         passGroup.innerHTML = '';
-        let num = Math.floor(Math.random() * 10) + 5;
-        for(let i=0; i<num; i++) {
-            let p = document.createElement('div');
-            p.className = 'passenger';
-            p.style.background = `hsl(${Math.random()*360}, 60%, 50%)`;
-            p.style.left = `${Math.random()*300}px`;
-            passGroup.appendChild(p);
+        let count = Math.floor(Math.random() * 12) + 6;
+        for(let i=0; i<count; i++) {
+            let p = document.createElement('div'); p.className = 'passenger';
+            p.style.background = `hsl(${Math.random()*360}, 65%, 55%)`;
+            p.style.left = `${Math.random()*320}px`; passGroup.appendChild(p);
         }
     }
-    generatePassengers();
+    spawnPassengers();
 
-    let elements = [];
-    function updateTunnel() {
-        // Огни реже (создает ощущение огромной скорости)
-        if (speed > 0 && Math.random() < speed * 0.0015) {
-            let l = document.createElement('div');
-            l.className = 'wall-light';
-            l.style.left = '50%'; l.style.top = '40%';
-            l.style.transform = 'scale(0.1)';
+    // Отрисовка окружения тоннеля
+    let tunnelElements = [];
+    function handleTunnelFX() {
+        if (speed > 0 && Math.random() < speed * 0.0025) {
+            let l = document.createElement('div'); l.className = 'wall-light';
+            l.style.left = '50%'; l.style.top = '42%'; l.style.transform = 'scale(0.1)';
             document.getElementById('tunnel-environment').appendChild(l);
-            elements.push({ el: l, x: 50, y: 40, scale: 0.1, type: 'light' });
+            tunnelElements.push({ el: l, x: 50, y: 42, scale: 0.1, type: 'light' });
         }
-        
-        // Знак торможения за 600 метров до станции
-        if (distanceToStation < 610 && distanceToStation > 590 && !elements.some(e => e.type === 'sign')) {
-            let s = document.createElement('div');
-            s.className = 'brake-sign';
+        if (distanceToStation < 410 && distanceToStation > 390 && !tunnelElements.some(e => e.type === 'sign')) {
+            let s = document.createElement('div'); s.className = 'brake-sign';
             document.getElementById('tunnel-environment').appendChild(s);
-            elements.push({ el: s, x: 48, y: 45, scale: 0.1, type: 'sign' });
+            tunnelElements.push({ el: s, x: 47, y: 45, scale: 0.05, type: 'sign' });
         }
-
-        for (let i = elements.length - 1; i >= 0; i--) {
-            let e = elements[i];
-            e.scale += speed * (e.type === 'sign' ? 0.008 : 0.002);
-            e.y += speed * 0.07;
-            e.x -= speed * (e.type === 'sign' ? 0.06 : 0.12);
+        for (let i = tunnelElements.length - 1; i >= 0; i--) {
+            let e = tunnelElements[i];
+            e.scale += speed * (e.type === 'sign' ? 0.007 : 0.0025);
+            e.y += speed * 0.075; e.x -= speed * (e.type === 'sign' ? 0.06 : 0.13);
             e.el.style.transform = `scale(${e.scale})`;
-            e.el.style.top = e.y + '%';
-            e.el.style.left = e.x + '%';
-            if (e.y > 100 || e.x < 0) { e.el.remove(); elements.splice(i, 1); }
+            e.el.style.top = e.y + '%'; e.el.style.left = e.x + '%';
+            if (e.y > 100 || e.x < 0) { e.el.remove(); tunnelElements.splice(i, 1); }
         }
     }
 
+    // Сигнализация отправления
     setTimeout(() => {
-        lRed.classList.remove('red'); lYellow.classList.add('yellow');
-        playBeep(500, 0.1);
+        lRed.classList.remove('red'); lYellow.classList.add('yellow'); playBeep(440, 0.1);
         setTimeout(() => {
             lYellow.classList.remove('yellow'); lGreen.classList.add('green');
             currentPhase = 'drive';
-            statusText.innerText = 'АРС: ПЕРЕГОН СВОБОДЕН. РАЗРЕШЕННАЯ СКОРОСТЬ 100 КМ/Ч';
-            statusText.style.color = '#33ff33';
-            playBeep(660, 0.2);
+            statusText.innerText = 'АРС: ПУТЬ СВОБОДЕН. ДОПУСТИМАЯ СКОРОСТЬ 80 КМ/Ч';
+            statusText.style.color = '#33ff33'; playBeep(523, 0.25);
         }, 1500);
-    }, 2000);
+    }, 2500);
 
-    // Тяжелая физика — нажимать нужно многократно или держать
-    function changeSpeed(amount) {
+    // Логика контроллера (Управление тягой и торможением)
+    function handleController(action) {
         initAudio();
-        if (doorsOpen && amount > 0) return;
+        if (doorsOpen && action > 0) return;
         if (currentPhase === 'wait_signal') return;
 
-        if (amount > 0) {
-            speed = Math.min(maxSpeed, speed + 3); // Медленный разгон тяжелого состава
-            pressureTC = Math.max(0, pressureTC - 1.0);
-            mfdMode.innerText = 'ТЯГА'; mfdMode.style.color = '#33ff33';
-            playBeep(400, 0.04);
-        } else {
-            speed = Math.max(0, speed - 4); // Инерционное торможение
+        if (action > 0) { // ХОД
+            speed = Math.min(maxSpeed, speed + 3.5);
+            pressureTM = Math.min(5.0, pressureTM + 0.3);
+            pressureTC = Math.max(0.0, pressureTC - 0.7);
+            mfdMode.innerText = 'ТЯГА'; mfdMode.style.color = '#33ff33'; playBeep(350, 0.05);
+        } else { // ТОРМОЗ
+            speed = Math.max(0, speed - 4.5);
+            pressureTM = Math.max(3.5, pressureTM - 0.4);
             pressureTC = Math.min(3.8, pressureTC + 0.6);
-            mfdMode.innerText = 'ТОРМОЗ'; mfdMode.style.color = '#ff3333';
-            playBeep(300, 0.04);
+            mfdMode.innerText = 'ТОРМОЖЕНИЕ'; mfdMode.style.color = '#ff3333'; playBeep(280, 0.05);
         }
     }
 
-    document.getElementById('btn-accel').addEventListener('click', () => changeSpeed(1));
-    document.getElementById('btn-brake').addEventListener('click', () => changeSpeed(-1));
-
+    document.getElementById('btn-accel').addEventListener('click', () => handleController(1));
+    document.getElementById('btn-brake').addEventListener('click', () => handleController(-1));
     window.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowUp') changeSpeed(1);
-        if (e.key === 'ArrowDown') changeSpeed(-1);
+        if (e.key === 'ArrowUp') handleController(1);
+        if (e.key === 'ArrowDown') handleController(-1);
         if (e.key === ' ') document.getElementById('btn-doors').click();
     });
 
-    // Двери
+    // Посадка / Высадка и управление дверями
     document.getElementById('btn-doors').addEventListener('click', () => {
-        initAudio();
-        if (speed > 0) return;
-
+        initAudio(); if (speed > 0) return;
         doorsOpen = !doorsOpen;
         const btn = document.getElementById('btn-doors');
 
         if (doorsOpen) {
-            btn.classList.add('active-light');
-            statusText.innerText = 'ИНФО: ИДЕТ ПОСАДКА ПАССАРАЖИРОВ...';
-            statusText.style.color = '#f1c40f';
-            playBeep(580, 0.1);
-
-            if (distanceToStation <= 12 && distanceToStation >= -12) {
+            btn.classList.add('active-light'); playBeep(400, 0.15);
+            if (distanceToStation <= 10 && distanceToStation >= -10) {
+                statusText.innerText = 'ИНФО: ВЫСАДКА И ПОСАДКА ПАССАЖИРОВ...'; statusText.style.color = '#f1c40f';
                 setTimeout(() => {
                     if (doorsOpen) {
-                        passengersBoarded += Math.floor(Math.random() * 40) + 30;
-                        score += 500; // Больше очков за длинный рейс!
-                        passCount.innerText = passengersBoarded;
-                        scoreVal.innerText = score;
-                        statusText.innerText = `ИНФО: ПОСАДКА ЗАВЕРШЕНА. ЗАКРОЙТЕ ДВЕРИ.`;
-                        statusText.style.color = '#33ff33';
+                        passengers += Math.floor(Math.random() * 25) + 20;
+                        score += 300; passCount.innerText = passengers; scoreVal.innerText = score;
+                        statusText.innerText = 'ИНФО: ПОСАДКА ЗАВЕРШЕНА. ЗАКРОЙТЕ ДВЕРИ.'; statusText.style.color = '#33ff33';
                     }
-                }, 2000);
+                }, 2500);
             } else {
-                statusText.innerText = 'ШТРАФ: ОТКРЫТИЕ ДВЕРЕЙ В ТОННЕЛЕ!';
-                score = Math.max(0, score - 500); scoreVal.innerText = score;
+                statusText.innerText = 'ШТРАФ: ОТКРЫТИЕ ДВЕРЕЙ В ТОННЕЛЕ! ОПАСНОСТЬ!';
+                score = Math.max(0, score - 400); scoreVal.innerText = score;
             }
         } else {
-            playBeep(880, 0.2);
-            btn.classList.remove('active-light');
-            statusText.innerText = 'СИСТЕМА: ДВЕРИ ЗАКРЫТЫ. ЦЕПЬ СБОРКИ ГОТОВА.';
-            statusText.style.color = '#33ff33';
-
-            if (distanceToStation <= 12 && distanceToStation >= -12 && passengersBoarded > 0) {
-                nextStationSetup();
+            playBeep(600, 0.2); btn.classList.remove('active-light');
+            statusText.innerText = 'СИСТЕМА: ДВЕРИ ЗАКРЫТЫ. ЦЕПЬ СБОРКИ В ПОРЯДКЕ.'; statusText.style.color = '#33ff33';
+            if (distanceToStation <= 10 && distanceToStation >= -10 && passengers > 0) {
+                prepareNextStation();
             }
         }
     });
 
-    function nextStationSetup() {
-        currentPhase = 'wait_signal';
-        distanceToStation = 7000; // Всегда честные 7 км
-        station.style.left = '200%';
-        lGreen.classList.remove('green'); lRed.classList.add('red');
-        recSpeed = 100;
-        
-        currentStationIdx = (currentStationIdx + 1) % stationNames.length;
-        stationNameDiv.innerText = 'СТАНЦИЯ: ' + stationNames[currentStationIdx];
-        statusText.innerText = 'СИСТЕМА: БЛОКИРОВКА АРС. ОЖИДАЙТЕ РАЗРЕШЕНИЯ СЕКТОРНОЙ СИСТЕМЫ...';
-        statusText.style.color = '#ff3333';
-        generatePassengers();
+    function prepareNextStation() {
+        currentPhase = 'wait_signal'; distanceToStation = 1500;
+        station.style.left = '300%'; lGreen.classList.remove('green'); lRed.classList.add('red');
+        recSpeed = 80;
+        stationIdx = (stationIdx + 1) % stations.length;
+        stationNameDiv.innerText = 'СТАНЦИЯ: ' + stations[stationIdx];
+        statusText.innerText = 'СИСТЕМА: СМЕНА БЛОК-УЧАСТКА. ОЖИДАНИЕ СИГНАЛА АРС...'; statusText.style.color = '#ff3333';
+        spawnPassengers();
 
         setTimeout(() => {
-            lRed.classList.remove('red'); lGreen.classList.add('green');
-            currentPhase = 'drive';
-            statusText.innerText = 'СИСТЕМА: ПЕРЕГОН 7 КМ СВОБОДЕН. КУРС НА СЛЕДУЮЩУЮ СТАНЦИЮ.';
-            statusText.style.color = '#33ff33';
-            playBeep(660, 0.2);
-        }, 5000);
+            lRed.classList.remove('red'); lGreen.classList.add('green'); currentPhase = 'drive';
+            statusText.innerText = 'СИСТЕМА: ПЕРЕГОН СВОБОДЕН. ОТПРАВЛЕНИЕ.'; statusText.style.color = '#33ff33'; playBeep(523, 0.2);
+        }, 3500);
     }
 
-    // Логика АРС под 7 КМ
-    function loop() {
+    // Главный симуляционный цикл
+    function updatePhysicsLoop() {
         if (speed > 0) {
-            distanceToStation -= (speed / 36); 
-            updateTunnel();
-            speed = Math.max(0, speed - 0.008); // Огромный накат (выбег) тяжелого поезда
+            distanceToStation -= (speed / 36); handleTunnelFX();
+            speed = Math.max(0, speed - 0.015); // Естественное сопротивление движения (выбег)
         }
 
-        // --- ГРАФИК ТОРМОЖЕНИЯ АРС ДЛЯ 7000м ---
+        // Автоматическая Логика АРС (Инструкции по торможению)
         if (currentPhase === 'drive') {
-            if (distanceToStation > 1200) {
-                recSpeed = 100;
-                statusText.innerText = 'СИСТЕМА: ПЕРЕГОН СЛЕДОВАНИЯ. РАЗРЕШЕНО 100 КМ/Ч.';
-                statusText.style.color = '#33ff33';
-            } else if (distanceToStation <= 1200 && distanceToStation > 600) {
-                recSpeed = 80; // Предварительное снижение за 1.2 км!
-                statusText.innerText = 'АРС: ВНИМАНИЕ! КОНЕЦ ПЕРЕГОНА ЧЕРЕЗ 1.2 КМ. СНИЖАЙТЕ ДО 80 КМ/Ч';
-                statusText.style.color = '#f1c40f';
-            } else if (distanceToStation <= 600 && distanceToStation > 350) {
-                recSpeed = 60; 
-                statusText.innerText = 'АРС: ДИСТАНЦИЯ 600М. СНИЖАЙТЕ СКОРОСТЬ ДО 60 КМ/Ч!';
-                statusText.style.color = '#ff9f43';
-            } else if (distanceToStation <= 350 && distanceToStation > 120) {
-                recSpeed = 40; // Скорость въезда на платформу
-                statusText.innerText = 'АРС: ВЪЕЗД НА СТАНЦИЮ. ТОРМОЖЕНИЕ ДО 40 КМ/Ч!';
-                statusText.style.color = '#ff4d4d';
-            } else if (distanceToStation <= 120) {
-                recSpeed = 20; // Подползаем к ОПВ
-                statusText.innerText = 'АРС: МАНЕВРЫ К МАРКЕРУ ОПВ (МАКС 20 КМ/Ч)!';
-                statusText.style.color = '#ff3333';
+            if (distanceToStation > 400) {
+                recSpeed = 80;
+                statusText.innerText = 'СИСТЕМА: РЕЖИМ АВТОМАТИЧЕСКОГО СЛЕДОВАНИЯ (80 км/ч)'; statusText.style.color = '#33ff33';
+            } else if (distanceToStation <= 400 && distanceToStation > 200) {
+                recSpeed = 60; // Предварительное торможение
+                statusText.innerText = 'АРС: ВНИМАНИЕ! ПОДХОД К СТАНЦИИ. СНИЖАЙТЕ СКОРОСТЬ ДО 60 КМ/Ч'; statusText.style.color = '#f1c40f';
+            } else if (distanceToStation <= 200 && distanceToStation > 70) {
+                recSpeed = 40; // Скорость въезда на перрон
+                statusText.innerText = 'АРС: ПЛАТФОРМА. ОГРАНИЧЕНИЕ ВЪЕЗДА ДО 40 КМ/Ч!'; statusText.style.color = '#ff9f43';
+            } else if (distanceToStation <= 70) {
+                recSpeed = 20; // Прицельное торможение к ОПВ
+                statusText.innerText = 'АРС: ФИНАЛЬНОЕ ТОРМОЖЕНИЕ К ЗНАКУ ОПВ (20 км/ч)!'; statusText.style.color = '#ff3333';
             }
-
+            // Проверка превышения скорости
+            setArsAlarm(speed > recSpeed);
             if (speed > recSpeed) {
-                triggerArsAlarm(true);
-                statusText.innerText = `ЭКСТРЕННОЕ ПРЕДУПРЕЖДЕНИЕ: ПРЕВЫШЕНИЕ АРС! ТОРМОЗИТЕ!`;
-                statusText.style.color = '#ff3333';
-            } else {
-                triggerArsAlarm(false);
+                statusText.innerText = 'ВНИМАНИЕ: ПРЕВЫШЕНИЕ ДОПУСТИМОЙ СКОРОСТИ АРС! ТОРМОЗИТЕ!'; statusText.style.color = '#ff3333';
             }
         } else {
-            triggerArsAlarm(false);
+            setArsAlarm(false);
         }
 
+        // Обновление приборов пульта
         arsDisplay.innerText = recSpeed + ' км/ч';
-        if (speed > recSpeed) arsDisplay.style.color = '#ff3333';
-        else arsDisplay.style.color = '#66fcf1';
-
-        if (trainSoundGain) {
-            trainSoundGain.gain.setValueAtTime(speed * 0.002, audioCtx.currentTime);
-            trainSoundOsc.frequency.setValueAtTime(25 + speed * 0.7, audioCtx.currentTime);
-        }
-
-        if (mfdMode.innerText === 'ТОРМОЗ') pressureTC = Math.min(3.8, pressureTC + 0.1);
-        else if (speed > 0) pressureTC = Math.max(0, pressureTC - 0.1);
-        gaugeTC.style.width = (pressureTC / 5 * 100) + '%';
-        tcVal.innerText = pressureTC.toFixed(1) + ' Атм';
-        
-        // Визуальное появление станции на последних 250 метрах
-        if (distanceToStation < 250) {
-            station.style.left = `${distanceToStation * 1.5}%`;
-        }
-
+        arsDisplay.style.color = (speed > recSpeed) ? '#ff3333' : '#66fcf1';
         speedDisplay.innerText = Math.round(speed);
         distDisplay.innerText = Math.max(0, Math.round(distanceToStation)) + ' м';
 
-        // Финиш перегона
+        // Синхронизация звука двигателя
+        if (motorGain) {
+            motorGain.gain.setValueAtTime(speed * 0.0018, audioCtx.currentTime);
+            motorOsc.frequency.setValueAtTime(20 + speed * 0.85, audioCtx.currentTime);
+        }
+
+        // Динамика манометров торможения
+        if (mfdMode.innerText === 'ТОРМОЖЕНИЕ') pressureTC = Math.min(3.8, pressureTC + 0.06);
+        else if (speed > 0) pressureTC = Math.max(0.0, pressureTC - 0.08);
+        gaugeTC.style.width = (pressureTC / 5 * 100) + '%';
+        tcVal.innerText = pressureTC.toFixed(1) + ' Атм';
+        gaugeTM.style.width = (pressureTM / 5 * 100) + '%';
+        tmVal.innerText = pressureTM.toFixed(1) + ' Атм';
+        
+        // Визуальное приближение перрона станции
+        if (distanceToStation < 250) {
+            station.style.left = `${distanceToStation * 1.6}%`;
+        }
+
+        // Фиксация остановки на станции
         if (distanceToStation <= 0 && currentPhase === 'drive') {
-            if (speed > 12) {
-                statusText.innerText = 'КАТАСТРОФА: ПРОЕЗД СТАНЦИИ НА СКОРОСТИ! ВЫ СНЯТЫ С СМЕНЫ!';
-                statusText.style.color = '#ff3333';
-                score = Math.max(0, score - 1000); scoreVal.innerText = score;
-                speed = 0; distanceToStation = -40;
-                playBeep(100, 1.2, 'sawtooth');
+            if (speed > 10) { // Проезд станции
+                statusText.innerText = 'АВАРИЯ:ПРОЕЗД СТАНЦИИ БЕЗ ОСТАНОВКИ. ШТРАФ!'; statusText.style.color = '#ff3333';
+                score = Math.max(0, score - 500); scoreVal.innerText = score;
+                speed = 0; distanceToStation = -20; playBeep(120, 0.6);
             } else if (speed === 0) {
                 currentPhase = 'station_stop';
-                statusText.innerText = 'СИСТЕМА: ИДЕАЛЬНАЯ ОСТАНОВКА ПОСЛЕ 7 КМ РЕЙСА. ОТКРОЙТЕ ДВЕРИ.';
-                statusText.style.color = '#33ff33';
-                playBeep(700, 0.3);
+                statusText.innerText = 'СИСТЕМА: ОСТАНОВКА ВЫПОЛНЕНА У ОТМЕТКИ ОПВ. ОТКРОЙТЕ ДВЕРИ.'; statusText.style.color = '#33ff33';
+                playBeep(650, 0.25);
             }
         }
 
         document.getElementById('clock').innerText = new Date().toTimeString().split(' ')[0];
-        requestAnimationFrame(loop);
+        requestAnimationFrame(updatePhysicsLoop);
     }
-
-    loop();
+    updatePhysicsLoop();
 </script>
 </body>
 </html>
