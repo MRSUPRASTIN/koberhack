@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Симулятор Машиниста Метро</title>
+    <title>Симулятор Машиниста Метро PRO</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background: #111; color: #fff; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
+        body { background: #0b0c10; color: #66fcf1; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
 
         #game-container {
             position: relative;
@@ -16,415 +16,565 @@
             flex-direction: column;
         }
 
-        /* Вид из лобового стекла */
+        /* Лобовое стекло машиниста */
         #windshield {
-            flex: 2;
-            background: black;
+            flex: 1.2;
+            background: #000;
             position: relative;
             overflow: hidden;
-            border-bottom: 5px solid #333;
+            box-shadow: inset 0 -20px 30px rgba(0,0,0,0.9);
         }
 
-        /* Тоннель (рельсы и стены уходят в перспективу) */
-        .rail {
+        /* Геометрия тоннеля */
+        .tunnel-line {
             position: absolute;
-            bottom: 0;
-            width: 4px;
-            background: #555;
-            height: 50%;
+            background: #222;
             transform-origin: top center;
         }
-        #rail-left { left: 45%; transform: skewX(-30deg); }
-        #rail-right { right: 45%; transform: skewX(30deg); }
+        #rail-left { bottom: 0; left: 42%; width: 6px; height: 50%; transform: skewX(-35deg); background: #444; box-shadow: 2px 0 5px #000;}
+        #rail-right { bottom: 0; right: 42%; width: 6px; height: 50%; transform: skewX(35deg); background: #444; box-shadow: -2px 0 5px #000;}
+        #wall-l { top: 0; left: 0; width: 30%; height: 100%; background: linear-gradient(to right, #050505, #151515); clip-path: polygon(0 0, 100% 0, 40% 100%, 0% 100%); }
+        #wall-r { top: 0; right: 0; width: 30%; height: 100%; background: linear-gradient(to left, #050505, #151515); clip-path: polygon(0 0, 100% 0, 100% 100%, 60% 100%); }
 
-        /* Огни тоннеля / Станция */
-        #tunnel-environment {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-        }
+        #tunnel-environment { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
+        .wall-light { position: absolute; width: 8px; height: 8px; background: #ffaa44; border-radius: 50%; top: 40%; box-shadow: 0 0 15px #ffaa44; }
 
-        .wall-light {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background: rgba(255, 200, 100, 0.5);
-            border-radius: 50%;
-            top: 40%;
-        }
-
-        /* Станция */
+        /* Станция метро */
         #station {
             position: absolute;
-            width: 200%;
+            width: 250%;
             height: 100%;
-            background: linear-gradient(to bottom, #777, #444);
+            background: linear-gradient(to bottom, #2b2b2b, #111 80%, #333);
             top: 0;
-            left: 150%; /* Начинается за экраном справа */
-            transform: skewX(-20deg);
-            transition: left 0.1s linear;
-            display: flex;
-            align-items: flex-end;
-            padding-bottom: 20px;
+            left: 200%;
+            transform: skewX(-15deg);
+            border-left: 20px solid #555;
         }
-        #station-name {
-            position: absolute;
-            top: 20%;
-            left: 10%;
-            background: #fff;
-            color: #000;
-            padding: 5px 20px;
-            font-weight: bold;
-            font-size: 24px;
+        #station-wall {
+            width: 100%; height: 60%; background: #444; border-bottom: 8px solid #ff0055; padding: 20px;
+            box-shadow: inset 0 -10px 20px rgba(0,0,0,0.5);
         }
-        .passenger {
-            width: 15px;
-            height: 40px;
-            background: #fff;
-            margin-right: 15px;
-            border-radius: 5px 5px 0 0;
-            display: inline-block;
+        #station-name { background: #111; color: #fff; padding: 10px 30px; font-weight: bold; font-size: 28px; border: 2px solid #fff; display: inline-block; letter-spacing: 2px; }
+        .passenger { width: 14px; height: 45px; background: #fff; margin-right: 8px; border-radius: 4px 4px 0 0; display: inline-block; position: relative; bottom: -60px;}
+
+        /* Светофор (Семафор) */
+        #semaphore { position: absolute; left: 15%; bottom: 10%; width: 24px; height: 70px; background: #1a1a1a; border: 3px solid #333; border-radius: 5px; display: flex; flex-direction: column; justify-content: space-around; align-items: center; padding: 6px; }
+        .light { width: 14px; height: 14px; border-radius: 50%; background: #222; transition: 0.2s; }
+        .light.red { background: #ff3333; box-shadow: 0 0 20px #ff3333, inset 0 0 4px #fff; }
+        .light.yellow { background: #ffcc00; box-shadow: 0 0 20px #ffcc00, inset 0 0 4px #fff; }
+        .light.green { background: #33ff33; box-shadow: 0 0 20px #33ff33, inset 0 0 4px #fff; }
+
+        /* РЕАЛИСТИЧНЫЙ ПУЛЬТ УПРАВЛЕНИЯ */
+        #control-panel {
+            flex: 1;
+            background: linear-gradient(to bottom, #23272a, #0f1115);
+            border-top: 6px solid #454d55;
+            padding: 15px 30px;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 20px;
+            box-shadow: inset 0 10px 20px rgba(0,0,0,0.8);
         }
 
-        /* Семафор */
-        #semaphore {
-            position: absolute;
-            left: 10%;
-            top: 30%;
-            width: 20px;
-            height: 50px;
+        /* Монитор БК (Бортового компьютера) */
+        .mfd-screen {
+            background: #020611;
+            border: 4px solid #3a4454;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Consolas', monospace;
+            color: #00ffcc;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: inset 0 0 20px rgba(0,255,200,0.2), 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .mfd-header { font-size: 12px; color: #8f9cae; border-bottom: 1px solid #3a4454; padding-bottom: 4px; display: flex; justify-content: space-between;}
+        .mfd-main { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; }
+        .speed-block { text-align: center; }
+        .speed-val { font-size: 48px; font-weight: bold; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .mfd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 13px; }
+        .param { color: #8f9cae; } .val { color: #fff; text-align: right; font-weight: bold;}
+
+        /* Центральная панель сигнализации */
+        .center-console {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.02);
+            border: 2px solid #2c3238;
+            border-radius: 6px;
+            padding: 10px;
+        }
+        .sys-status { width: 100%; background: #000; padding: 8px; border-radius: 4px; text-align: center; font-weight: bold; font-size: 14px; border: 1px solid #444;}
+
+        /* Органы управления (Кнопки и Контроллер) */
+        .hardware-controls {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        /* Кнопки-лампы */
+        .hw-btn {
+            width: 70px; height: 70px;
+            border-radius: 50%;
+            border: 5px solid #444;
             background: #222;
-            border: 2px solid #444;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #aaa;
+            box-shadow: 0 6px 0 #111, 0 8px 10px rgba(0,0,0,0.5);
+            transition: 0.1s;
+        }
+        .hw-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #111, 0 4px 5px rgba(0,0,0,0.5); }
+        
+        .hw-btn.master-go { background: radial-gradient(#2ecc71, #27ae60); color: #fff; border-color: #27ae60; }
+        .hw-btn.master-brake { background: radial-gradient(#e74c3c, #c0392b); color: #fff; border-color: #c0392b; }
+        .hw-btn.door-toggle { background: radial-gradient(#f1c40f, #d35400); color: #000; border-color: #f39c12; }
+        .hw-btn.active-light { box-shadow: 0 0 20px #f1c40f, inset 0 0 10px #fff !important; color: #fff; }
+
+        /* Кабина: индикаторы давления и напряжения */
+        .gauges-side {
             display: flex;
             flex-direction: column;
             justify-content: space-around;
-            align-items: center;
-            padding: 4px;
+            padding: 5px;
         }
-        .light { width: 12px; height: 12px; border-radius: 50%; background: #333; }
-        .light.red { background: #ff3333; box-shadow: 0 0 10px #ff3333; }
-        .light.green { background: #33ff33; box-shadow: 0 0 10px #33ff33; }
+        .gauge-bar-container { background: #111; border: 2px solid #444; height: 20px; border-radius: 3px; position: relative; margin: 5px 0; overflow: hidden;}
+        .gauge-bar { height: 100%; width: 50%; background: #3498db; transition: width 0.2s; }
+        .gauge-label { font-size: 11px; color: #a5b1c2; display: flex; justify-content: space-between; }
 
-        /* Кабина / Панель управления */
-        #dashboard {
-            flex: 1;
-            background: #2c3e50;
-            border-top: 4px solid #34495e;
-            padding: 20px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-        }
-
-        .screen {
-            background: #000;
-            border: 3px solid #7f8c8d;
-            padding: 10px;
-            border-radius: 5px;
-            min-width: 200px;
-            color: #00ff00;
-            font-family: monospace;
-            box-shadow: inset 0 0 10px rgba(0,255,0,0.5);
-        }
-
-        .controls {
-            display: flex;
-            gap: 15px;
-        }
-
-        .btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 15px 25px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 5px;
-            box-shadow: 0 5px #c0392b;
-            active-transform: translateY(4px);
-        }
-        .btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 1px #c0392b;
-        }
-        .btn.go { background: #2ecc71; box-shadow: 0 5px #27ae60; }
-        .btn.go:active { box-shadow: 0 1px #27ae60; }
-        .btn.door { background: #f1c40f; color: black; box-shadow: 0 5px #f39c12; }
-        .btn.door:active { box-shadow: 0 1px #f39c12; }
-
-        /* Информационное окно */
-        #hud {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            border-radius: 5px;
-            text-align: right;
-        }
+        #hud-top { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.75); padding: 10px 20px; border-radius: 4px; border-left: 4px solid #66fcf1; font-size: 14px;}
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <!-- Вид из окна -->
+    <!-- Лобовое Окно -->
     <div id="windshield">
+        <div id="wall-l" class="tunnel-line"></div>
+        <div id="wall-r" class="tunnel-line"></div>
         <div id="tunnel-environment"></div>
-        <div class="rail" id="rail-left"></div>
-        <div class="rail" id="rail-right"></div>
+        <div class="tunnel-line" id="rail-left"></div>
+        <div class="tunnel-line" id="rail-right"></div>
         
         <!-- Станция -->
         <div id="station">
-            <div id="station-name">СТАНЦИЯ: ПОРТАЛОВО</div>
-            <div style="margin-left: 300px;" id="passengers-group">
-                <!-- Пассажиры создадутся кодом -->
+            <div id="station-wall">
+                <div id="station-name">СТАНЦИЯ: ТЕХНОПАРК</div>
             </div>
+            <div id="passengers-group"></div>
         </div>
 
-        <!-- Семафор -->
+        <!-- Светофор -->
         <div id="semaphore">
             <div id="light-red" class="light red"></div>
+            <div id="light-yellow" class="light"></div>
             <div id="light-green" class="light"></div>
         </div>
 
-        <div id="hud">
-            <div>Очки: <span id="score-val">0</span></div>
-            <div>Пассажиры: <span id="pass-count">0</span></div>
+        <div id="hud-top">
+            <div>МАРШРУТ: <b>№ 42</b></div>
+            <div>СЧЕТ: <span id="score-val" style="color:#fff">0</span></div>
         </div>
     </div>
 
-    <!-- Панель приборов -->
-    <div id="dashboard">
-        <!-- Бортовой компьютер -->
-        <div class="screen">
-            <div>БОРТОВОЙ КОМПЬЮТЕР</div>
-            <div>-------------------</div>
-            <div>Скорость: <span id="speed-display">0</span> км/ч</div>
-            <div>До станции: <span id="dist-display">500</span> м</div>
-            <div>Двери: <span id="doors-display" style="color: red;">ЗАКРЫТЫ</span></div>
-            <div id="status-text" style="color: yellow; margin-top: 5px;">Ждите зеленый сигнал...</div>
+    <!-- ПУЛЬТ УПРАВЛЕНИЯ ПОЕЗДОМ -->
+    <div id="control-panel">
+        
+        <!-- Левый Дисплей: Манометры и Цепи -->
+        <div class="gauges-side">
+            <div>
+                <div class="gauge-label"><span>ТОРМОЗНАЯ МАГИСТРАЛЬ (ТМ)</span><span id="tm-val">5.0 Атм</span></div>
+                <div class="gauge-bar-container"><div id="gauge-tm" class="gauge-bar" style="width: 83%; background: #2ecc71;"></div></div>
+            </div>
+            <div>
+                <div class="gauge-label"><span>ТОРМОЗНЫЕ ЦИЛИНДРЫ (ТЦ)</span><span id="tc-val">0.0 Атм</span></div>
+                <div class="gauge-bar-container"><div id="gauge-tc" class="gauge-bar" style="width: 0%; background: #e74c3c;"></div></div>
+            </div>
+            <div>
+                <div class="gauge-label"><span>НАПРЯЖЕНИЕ НА КР</span><span id="kr-val">825 В</span></div>
+                <div class="gauge-bar-container"><div id="gauge-kr" class="gauge-bar" style="width: 90%; background: #f1c40f;"></div></div>
+            </div>
         </div>
 
-        <!-- Кнопки управления -->
-        <div class="controls">
-            <button class="btn go" id="btn-accel">ТЯГА (+)</button>
-            <button class="btn" id="btn-brake">ТОРМОЗ (-)</button>
-            <button class="btn door" id="btn-doors">ДВЕРИ О/З</button>
+        <!-- Центр: Экран БК и Кнопки Борта -->
+        <div class="center-console">
+            <div class="mfd-screen" style="width: 100%; height: 130px;">
+                <div class="mfd-header"><span>ОСНОВНОЙ ДИСПЛЕЙ (МФДУ)</span><span id="clock">12:00:00</span></div>
+                <div class="mfd-main">
+                    <div class="speed-block">
+                        <div class="speed-val" id="speed-display">0</div>
+                        <div style="font-size:10px; color:#8f9cae;">СКОРОСТЬ км/ч</div>
+                    </div>
+                    <div class="mfd-grid" style="min-width: 180px;">
+                        <span class="param">ДО СТАНЦИИ:</span><span class="val" id="dist-display">750 м</span>
+                        <span class="param">ПАССАЖИРЫ:</span><span class="val" id="pass-count">0</span>
+                        <span class="param">РЕЖИМ:</span><span class="val" id="mfd-mode" style="color:#f1c40f">ВЫБЕГ</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="status-text" class="sys-status" style="color: #ff3333;">СИСТЕМА: ОЖИДАНИЕ СИГНАЛА СЕМФОРА</div>
         </div>
+
+        <!-- Правая Панель: Тумблеры и Кнопки ХОД / ТОРМОЗ -->
+        <div class="hardware-controls">
+            <button class="hw-btn master-go" id="btn-accel">ХОД<br>▲</button>
+            <button class="hw-btn master-brake" id="btn-brake">ТОРМОЗ<br>▼</button>
+            <button class="hw-btn door-toggle" id="btn-doors">ДВЕРИ<br>[ || ]</button>
+        </div>
+
     </div>
 </div>
 
 <script>
+    // Аудио движок (Web Audio API - Синтез звука без внешних файлов)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let trainSoundOsc = null;
+    let trainSoundGain = null;
+    let wheelsGain = null;
+
+    function initAudio() {
+        if (trainSoundOsc) return; // Уже инициализирован
+        
+        // Базовый гул мотора
+        trainSoundOsc = audioCtx.createOscillator();
+        trainSoundGain = audioCtx.createGain();
+        trainSoundOsc.type = 'sawtooth';
+        trainSoundOsc.frequency.setValueAtTime(30, audioCtx.currentTime); // Низкий гул
+        
+        // Фильтр для глухого звука в кабине
+        let filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(150, audioCtx.currentTime);
+
+        trainSoundGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        
+        trainSoundOsc.connect(filter);
+        filter.connect(trainSoundGain);
+        trainSoundGain.connect(audioCtx.destination);
+        trainSoundOsc.start();
+
+        // Стук колес (через периодические щелчки генератора шума)
+        setInterval(() => {
+            if (speed > 5) {
+                playClickSound();
+                setTimeout(() => { if (speed > 20) playClickSound(); }, 120);
+            }
+        }, 800);
+    }
+
+    function playClickSound() {
+        if(!trainSoundGain) return;
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(60, audioCtx.currentTime);
+        gain.gain.setValueAtTime(speed * 0.003, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function playBeep(freq, duration, type='sine') {
+        initAudio();
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function playInformer() {
+        // Имитация голоса информатора метро (двухтональный сигнал)
+        playBeep(440, 0.3);
+        setTimeout(() => playBeep(330, 0.4), 250);
+    }
+
     // Игровые переменные
     let speed = 0;
+    let targetSpeed = 0;
     let maxSpeed = 80;
-    let distanceToStation = 600; 
+    let distanceToStation = 750;
     let doorsOpen = false;
     let score = 0;
     let passengersBoarded = 0;
-    let currentPhase = 'wait_signal'; // wait_signal, drive, braking, station_stop
-    
-    // Элементы DOM
+    let currentPhase = 'wait_signal'; // wait_signal, drive, station_stop
+    let stationNames = ['ТЕХНОПАРК', 'СОКОЛЬНИКИ', 'ВЫСТАВОЧНАЯ', 'КИЕВСКАЯ', 'МАЯКОВСКАЯ'];
+    let currentStationIdx = 0;
+
+    // Пневматика (манометры)
+    let pressureTM = 5.0;
+    let pressureTC = 3.8;
+
+    // DOM Элементы
     const speedDisplay = document.getElementById('speed-display');
     const distDisplay = document.getElementById('dist-display');
-    const doorsDisplay = document.getElementById('doors-display');
+    const passCount = document.getElementById('pass-count');
+    const mfdMode = document.getElementById('mfd-mode');
     const statusText = document.getElementById('status-text');
     const scoreVal = document.getElementById('score-val');
-    const passCount = document.getElementById('pass-count');
     const station = document.getElementById('station');
-    const lightRed = document.getElementById('light-red');
-    const lightGreen = document.getElementById('light-green');
-    const tunnelEnv = document.getElementById('tunnel-environment');
+    const stationNameDiv = document.getElementById('station-name');
     const passGroup = document.getElementById('passengers-group');
 
-    // Генерация пассажиров на платформе
+    const lRed = document.getElementById('light-red');
+    const lYellow = document.getElementById('light-yellow');
+    const lGreen = document.getElementById('light-green');
+
+    const gaugeTM = document.getElementById('gauge-tm');
+    const gaugeTC = document.getElementById('gauge-tc');
+    const tmVal = document.getElementById('tm-val');
+    const tcVal = document.getElementById('tc-val');
+
+    // Генератор пассажиров
     function generatePassengers() {
         passGroup.innerHTML = '';
-        let num = Math.floor(Math.random() * 5) + 3;
+        let num = Math.floor(Math.random() * 8) + 4;
         for(let i=0; i<num; i++) {
             let p = document.createElement('div');
             p.className = 'passenger';
-            p.style.background = `hsl(${Math.random()*360}, 70%, 60%)`;
+            p.style.background = `hsl(${Math.random()*360}, 60%, 50%)`;
+            p.style.left = `${Math.random()*300}px`;
             passGroup.appendChild(p);
         }
     }
     generatePassengers();
 
-    // Симуляция окружения (огни в тоннеле)
+    // Эффект тоннельных огней
     let lights = [];
-    function createTunnelLight() {
-        if (speed > 0 && Math.random() < 0.1) {
+    function updateTunnel() {
+        if (speed > 0 && Math.random() < speed * 0.003) {
             let l = document.createElement('div');
             l.className = 'wall-light';
-            l.style.left = '50%';
-            l.style.top = '45%';
+            l.style.left = '50%'; l.style.top = '40%';
             l.style.transform = 'scale(0.1)';
-            tunnelEnv.appendChild(l);
-            lights.push({ element: l, x: 50, y: 45, scale: 0.1 });
+            document.getElementById('tunnel-environment').appendChild(l);
+            lights.push({ el: l, x: 50, y: 40, scale: 0.1 });
         }
-    }
-
-    function updateTunnelLights() {
         for (let i = lights.length - 1; i >= 0; i--) {
             let l = lights[i];
-            l.scale += speed * 0.005;
-            l.y += speed * 0.1;
-            l.x -= speed * 0.2; // уходят влево (эффект перспективы)
-            
-            l.element.style.transform = `scale(${l.scale})`;
-            l.element.style.top = l.y + '%';
-            l.element.style.left = l.x + '%';
-
-            if (l.y > 100 || l.x < 0) {
-                l.element.remove();
-                lights.splice(i, 1);
-            }
+            l.scale += speed * 0.003;
+            l.y += speed * 0.08;
+            l.x -= speed * 0.15;
+            l.el.style.transform = `scale(${l.scale})`;
+            l.el.style.top = l.y + '%';
+            l.el.style.left = l.x + '%';
+            if (l.y > 100 || l.x < 0) { l.el.remove(); lights.splice(i, 1); }
         }
     }
 
-    // Разрешение на отправление (через 3 секунды после старта)
+    // Логика авто-семафора
     setTimeout(() => {
-        if (currentPhase === 'wait_signal') {
-            lightRed.classList.remove('red');
-            lightGreen.classList.add('green');
+        lRed.classList.remove('red');
+        lYellow.classList.add('yellow');
+        playBeep(500, 0.1);
+        setTimeout(() => {
+            lYellow.classList.remove('yellow');
+            lGreen.classList.add('green');
             currentPhase = 'drive';
-            statusText.innerText = 'Путь свободен. Разгоняйтесь!';
+            statusText.innerText = 'СИСТЕМА: ПУТЬ СВОБОДЕН. РАЗРЕШЕННЫЙ СКОРОСТЬ 80 КМ/Ч';
             statusText.style.color = '#33ff33';
-        }
+            playBeep(660, 0.2);
+        }, 2000);
     }, 3000);
 
-    // Обработчики кнопок управления
-    document.getElementById('btn-accel').addEventListener('mousedown', () => {
-        if (doorsOpen) {
-            statusText.innerText = 'Ошибка: Двери открыты!';
+    // УПРАВЛЕНИЕ ПОЕЗДОМ
+    function changeSpeed(amount) {
+        initAudio();
+        if (doorsOpen && amount > 0) {
+            statusText.innerText = 'ЗАПРЕТ ТЯГИ: ДВЕРИ ОТКРЫТЫ!';
+            statusText.style.color = '#ff3333';
+            playBeep(200, 0.4, 'sawtooth');
             return;
         }
         if (currentPhase === 'wait_signal') return;
-        speed = Math.min(maxSpeed, speed + 5);
-    });
 
-    document.getElementById('btn-brake').addEventListener('mousedown', () => {
-        speed = Math.max(0, speed - 8);
-    });
+        if (amount > 0) { // Разгон (Ход)
+            speed = Math.min(maxSpeed, speed + amount);
+            pressureTC = Math.max(0, pressureTC - 1.0); // Отпуск тормозов
+            mfdMode.innerText = 'ТЯГА';
+            mfdMode.style.color = '#33ff33';
+            playBeep(400, 0.05);
+        } else { // Торможение
+            speed = Math.max(0, speed + amount);
+            pressureTC = Math.min(3.8, pressureTC + 0.8); // Давление в цилиндрах растет
+            mfdMode.innerText = 'ТОРМОЗ';
+            mfdMode.style.color = '#ff3333';
+            playBeep(300, 0.05);
+        }
+    }
 
-    // Управление кнопками с клавиатуры (Стрелка вверх - разгон, Стрелка вниз - тормоз, Пробел - двери)
+    document.getElementById('btn-accel').addEventListener('click', () => changeSpeed(6));
+    document.getElementById('btn-brake').addEventListener('click', () => changeSpeed(-8));
+
+    // Горячие клавиши
     window.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowUp') document.getElementById('btn-accel').click();
-        if (e.key === 'ArrowDown') document.getElementById('btn-brake').click();
+        if (e.key === 'ArrowUp') changeSpeed(6);
+        if (e.key === 'ArrowDown') changeSpeed(-8);
         if (e.key === ' ') document.getElementById('btn-doors').click();
     });
 
+    // ДВЕРИ
     document.getElementById('btn-doors').addEventListener('click', () => {
+        initAudio();
         if (speed > 0) {
-            statusText.innerText = 'Нельзя открывать двери на ходу!';
-            statusText.style.color = 'red';
+            statusText.innerText = 'ОТКАЗ СИСТЕМЫ: БЛОКИРОВКА ДВЕРЕЙ НА ХОДУ!';
+            statusText.style.color = '#ff3333';
+            playBeep(150, 0.5, 'sawtooth');
             return;
         }
 
         doorsOpen = !doorsOpen;
-        if (doorsOpen) {
-            doorsDisplay.innerText = 'ОТКРЫТЫ';
-            doorsDisplay.style.color = '#33ff33';
-            statusText.innerText = 'Посадка пассажиров...';
-            statusText.style.color = 'yellow';
+        const btn = document.getElementById('btn-doors');
 
-            // Если остановились правильно на станции
-            if (distanceToStation <= 15 && distanceToStation >= -15) {
+        if (doorsOpen) {
+            btn.classList.add('active-light');
+            document.getElementById('doors-display');
+            statusText.innerText = 'ИНФО: ИДЕТ ПОСАДКА ПАССАЖИРОВ...';
+            statusText.style.color = '#f1c40f';
+            playBeep(580, 0.1);
+
+            if (distanceToStation <= 12 && distanceToStation >= -12) {
                 setTimeout(() => {
                     if (doorsOpen) {
-                        passengersBoarded += 5;
-                        score += 100;
+                        let boarded = Math.floor(Math.random() * 20) + 15;
+                        passengersBoarded += boarded;
+                        score += 150;
                         passCount.innerText = passengersBoarded;
                         scoreVal.innerText = score;
-                        statusText.innerText = 'Посадка завершена. Закройте двери.';
+                        statusText.innerText = `ИНФО: ПОСАДКА ЗАВЕРШЕНА. ВАГОН ЗАПОЛНЕН.`;
                         statusText.style.color = '#33ff33';
+                        playInformer(); // Звук информатора
                     }
-                }, 2000);
+                }, 2500);
             } else {
-                statusText.innerText = 'Вы открыли двери вне станции! Штраф.';
-                score = Math.max(0, score - 50);
+                statusText.innerText = 'ШТРАФ: ОТКРЫТИЕ ДВЕРЕЙ В ТОННЕЛЕ!';
+                score = Math.max(0, score - 200);
                 scoreVal.innerText = score;
             }
         } else {
-            doorsDisplay.innerText = 'ЗАКРЫТЫ';
-            doorsDisplay.style.color = 'red';
-            statusText.innerText = 'Двери закрыты. Можно ехать.';
-            
-            // Если пассажиры сели, готовим следующую станцию
-            if (distanceToStation <= 15 && distanceToStation >= -15 && passengersBoarded > 0) {
-                resetToNextStation();
+            // Закрытие дверей с писком предупреждения
+            playBeep(880, 0.3);
+            btn.classList.remove('active-light');
+            statusText.innerText = 'СИСТЕМА: ДВЕРИ ЗАКРЫТЫ. ЦЕПЬ СОБРАНА.';
+            statusText.style.color = '#33ff33';
+
+            if (distanceToStation <= 12 && distanceToStation >= -12 && passengersBoarded > 0) {
+                nextStationSetup();
             }
         }
     });
 
-    function resetToNextStation() {
+    function nextStationSetup() {
         currentPhase = 'wait_signal';
-        distanceToStation = 700 + Math.floor(Math.random() * 300);
-        station.style.left = '150%';
-        lightGreen.classList.remove('green');
-        lightRed.classList.add('red');
-        statusText.innerText = 'Следуем к следующей станции. Ждите сигнал...';
-        statusText.style.color = 'yellow';
-        generatePassengers();
+        distanceToStation = 800 + Math.floor(Math.random() * 300);
+        station.style.left = '200%';
+        lGreen.classList.remove('green');
+        lRed.classList.add('red');
         
+        currentStationIdx = (currentStationIdx + 1) % stationNames.length;
+        stationNameDiv.innerText = 'СТАНЦИЯ: ' + stationNames[currentStationIdx];
+        
+        statusText.innerText = 'СИСТЕМА: ПЕРЕГОН ЗАНЯТ. ОЖИДАЙТЕ РАЗРЕШЕНИЯ СИСТЕМЫ АРС';
+        statusText.style.color = '#ff3333';
+        generatePassengers();
+
         setTimeout(() => {
-            lightRed.classList.remove('red');
-            lightGreen.classList.add('green');
+            lRed.classList.remove('red');
+            lGreen.classList.add('green');
             currentPhase = 'drive';
-            statusText.innerText = 'Перегон свободен. Разгон!';
+            statusText.innerText = 'СИСТЕМА: ПЕРЕГОН СВОБОДЕН. РАЗГОН.';
             statusText.style.color = '#33ff33';
+            playBeep(660, 0.2);
         }, 4000);
     }
 
-    // Главный игровой цикл
-    function gameLoop() {
-        // Движение поезда
+    // РЕАЛИСТИЧНЫЙ ИГРОВОЙ ЦИКЛ (60 FPS)
+    function loop() {
+        // Плавная физика движения и торможения
         if (speed > 0) {
-            // Расстояние уменьшается пропорционально скорости
             distanceToStation -= (speed / 36); 
-            createTunnelLight();
-        }
-        updateTunnelLights();
-
-        // Естественное замедление (трение)
-        if (speed > 0) speed = Math.max(0, speed - 0.1);
-
-        // Приближение станции визуально
-        if (distanceToStation < 200) {
-            // Рассчитываем позицию станции на экране (0 - прямо перед кабиной)
-            let stationPos = (distanceToStation * 2);
-            station.style.left = `${stationPos}%`;
+            updateTunnel();
+            // Плавное падение скорости от трения (выбег)
+            speed = Math.max(0, speed - 0.02);
+            mfdMode.innerText = (mfdMode.innerText === 'ТЯГА') ? 'ТЯГА' : 'ВЫБЕГ';
+            if (mfdMode.innerText === 'ВЫБЕГ') mfdMode.style.color = '#ffcc00';
+        } else {
+            if(mfdMode.innerText !== 'ТОРМОЗ') mfdMode.innerText = 'СТОЯНКА';
+            mfdMode.style.color = '#fff';
         }
 
-        // Обновление экранов
+        // Динамический звук мотора
+        if (trainSoundGain) {
+            trainSoundGain.gain.setValueAtTime(speed * 0.002, audioCtx.currentTime);
+            trainSoundOsc.frequency.setValueAtTime(30 + speed * 0.8, audioCtx.currentTime);
+        }
+
+        // Плавные изменения манометров
+        if (mfdMode.innerText === 'ТОРМОЗ') {
+            pressureTC = Math.min(3.8, pressureTC + 0.1);
+        } else if (speed > 0) {
+            pressureTC = Math.max(0, pressureTC - 0.1);
+        }
+        
+        // Рендеринг шкал приборов
+        gaugeTC.style.width = (pressureTC / 5 * 100) + '%';
+        tcVal.innerText = pressureTC.toFixed(1) + ' Атм';
+        
+        // Визуализация приближения платформы станции
+        if (distanceToStation < 250) {
+            let pos = (distanceToStation * 1.5);
+            station.style.left = `${pos}%`;
+        }
+
+        // Вывод данных на экран БК
         speedDisplay.innerText = Math.round(speed);
-        distDisplay.innerText = Math.max(0, Math.round(distanceToStation));
+        distDisplay.innerText = Math.max(0, Math.round(distanceToStation)) + ' м';
 
-        // Логика прибытия
-        if (distanceToStation <= 0 && currentPhase !== 'station_stop') {
-            if (speed > 15) {
-                statusText.innerText = 'Вы пролетели станцию или разбились! Штраф.';
-                statusText.style.color = 'red';
-                score = Math.max(0, score - 100);
+        // Контроль точности прибытия
+        if (distanceToStation <= 0 && currentPhase === 'drive') {
+            if (speed > 12) {
+                statusText.innerText = 'АВАРИЯ: ПРЕВЫШЕНИЕ СКОРОСТИ НА СТАНЦИИ! ШТРАФ!';
+                statusText.style.color = '#ff3333';
+                score = Math.max(0, score - 300);
                 scoreVal.innerText = score;
-                distanceToStation = -50; // Уехал за станцию
                 speed = 0;
+                playBeep(100, 0.8, 'sawtooth');
+                distanceToStation = -30;
             } else if (speed === 0) {
                 currentPhase = 'station_stop';
-                statusText.innerText = 'Точная остановка! Откройте двери.';
+                statusText.innerText = 'СИСТЕМА: ТОЧНАЯ ОСТАНОВКА. ОТКРОЙТЕ ДВЕРИ ДЛЯ ПАССАЖИРОВ.';
                 statusText.style.color = '#33ff33';
+                playBeep(700, 0.3);
             }
         }
 
-        requestAnimationFrame(gameLoop);
+        // Электронные часы на пульте
+        let now = new Date();
+        document.getElementById('clock').innerText = now.toTimeString().split(' ')[0];
+
+        requestAnimationFrame(loop);
     }
 
-    // Запуск игры
-    gameLoop();
+    loop();
 </script>
-
 </body>
 </html>
