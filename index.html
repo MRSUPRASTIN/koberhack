@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Симулятор Автобуса PRO</title>
+    <title>Симулятор Автобуса: Ультра Мод</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #1a1a1a;
+            background-color: #111;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
@@ -22,7 +22,7 @@
 
         #gameContainer {
             position: relative;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
             border-radius: 12px;
             overflow: hidden;
             background-color: #87ceeb;
@@ -41,108 +41,117 @@
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             pointer-events: none;
+            z-index: 5;
         }
 
         .ui-card {
-            background: rgba(0, 0, 0, 0.75);
-            padding: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px;
             border-radius: 8px;
             border: 1px solid #444;
-            font-size: 14px;
+            font-size: 13px;
             text-align: center;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         }
 
-        .label {
-            font-size: 11px;
-            color: #aaa;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-
-        .value {
-            font-size: 18px;
-            font-weight: bold;
-            color: #fff;
-        }
-
+        .label { font-size: 10px; color: #aaa; text-transform: uppercase; margin-bottom: 2px; }
+        .value { font-size: 16px; font-weight: bold; color: #fff; }
         .gold { color: #ffcc00; }
         .green { color: #55ff55; }
         .red { color: #ff5555; }
+        .blue { color: #33a6ff; }
 
         #fuel-bar-container {
-            width: 100%;
-            background: #333;
-            height: 8px;
-            border-radius: 4px;
-            margin-top: 5px;
-            overflow: hidden;
+            width: 100%; background: #333; height: 6px; border-radius: 3px; margin-top: 4px; overflow: hidden;
         }
-        #fuel-bar {
-            height: 100%;
-            background: #ffcc00;
-            width: 100%;
-            transition: width 0.1s linear;
-        }
+        #fuel-bar { height: 100%; background: #ffcc00; width: 100%; }
 
-        #message-overlay {
+        /* Всплывающие окна событий и магазина */
+        .modal {
             position: absolute;
-            top: 40%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.85);
-            padding: 15px 30px;
-            border-radius: 20px;
+            background: rgba(15, 15, 25, 0.95);
+            padding: 20px;
+            border-radius: 12px;
             border: 2px solid #ffcc00;
-            font-size: 20px;
-            font-weight: bold;
             text-align: center;
             display: none;
             z-index: 10;
+            box-shadow: 0 0 30px rgba(0,0,0,0.7);
+            min-width: 300px;
+        }
+
+        .modal h3 { margin-top: 0; color: #ffcc00; }
+        .modal button {
+            background: #222; color: #fff; border: 1px solid #ffcc00;
+            padding: 8px 16px; margin: 8px; border-radius: 5px; cursor: pointer;
+            font-weight: bold; transition: 0.2s;
+        }
+        .modal button:hover { background: #ffcc00; color: #000; }
+
+        #message-overlay {
+            position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.85); padding: 10px 20px; border-radius: 20px;
+            font-weight: bold; display: none; z-index: 9; text-align: center; pointer-events: none;
         }
 
         #controls-hint {
-            margin-top: 15px;
-            color: #ccc;
-            text-align: center;
-            font-size: 14px;
-            background: #222;
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: 1px solid #333;
+            margin-top: 15px; color: #ccc; text-align: center; font-size: 13px;
+            background: #222; padding: 10px 20px; border-radius: 8px; border: 1px solid #333;
         }
     </style>
 </head>
 <body>
 
-    <h2 style="margin-bottom: 10px; letter-spacing: 1px;">Симулятор МосГорТранс: Продвинутая Логика</h2>
+    <h2 style="margin-bottom: 10px; letter-spacing: 1px;">🚍 Симулятор Автобуса: Ультра Рейс</h2>
 
     <div id="gameContainer">
         <div id="message-overlay"></div>
+
+        <div id="garage-modal" class="modal">
+            <h3>🔧 Автосервис и Тюнинг</h3>
+            <p>Вы заехали на тех-станцию остановки. Улучшите ваш автобус:</p>
+            <div style="text-align: left; margin-bottom: 15px; font-size: 14px;">
+                ⚙️ Двигатель (Скорость): <span id="lvl-eng">1</span>/3 <button onclick="buyUpgrade('engine')">Апгрейд (500₽)</button><br>
+                🛞 Тормоза (Сцепление): <span id="lvl-brk">1</span>/3 <button onclick="buyUpgrade('brakes')">Апгрейд (400₽)</button><br>
+                🛋️ Подвеска (Комфорт): <span id="lvl-sus">1</span>/3 <button onclick="buyUpgrade('suspension')">Апгрейд (600₽)</button><br>
+                🚌 Кузов Гармошка (Места): <span id="lvl-bus">Обычный</span> <button onclick="buyUpgrade('bus')">Купить (1500₽)</button>
+            </div>
+            <button onclick="closeGarage()" style="border-color: #55ff55; color: #55ff55;">Выехать на маршрут</button>
+        </div>
+
+        <div id="event-modal" class="modal">
+            <h3 id="event-title">Событие!</h3>
+            <p id="event-desc">Что-то произошло в салоне...</p>
+            <button id="event-btn1" onclick="resolveEvent(1)">Вариант 1</button>
+            <button id="event-btn2" onclick="resolveEvent(2)">Вариант 2</button>
+        </div>
+
         <div id="ui">
             <div class="ui-card">
-                <div class="label">Финансы</div>
+                <div class="label">Баланс</div>
                 <div class="value gold"><span id="money">1000</span> ₽</div>
             </div>
             <div class="ui-card">
                 <div class="label">Пассажиры / Комфорт</div>
-                <div class="value"><span id="passengers" class="green">0</span>/20 | <span id="comfort" class="green">100</span>%</div>
+                <div class="value"><span id="passengers" class="green">0</span>/<span id="max-pass">20</span> | <span id="comfort" class="green">100</span>%</div>
             </div>
             <div class="ui-card">
-                <div class="label">Топливо</div>
+                <div class="label">Топливо / Погода</div>
                 <div id="fuel-bar-container"><div id="fuel-bar"></div></div>
+                <div style="font-size: 11px; margin-top:2px;" id="weather-text" class="blue">Ясно</div>
             </div>
             <div class="ui-card">
-                <div class="label">Таймер маршрута</div>
+                <div class="label">График опоздания</div>
                 <div class="value red"><span id="schedule">60</span> сек</div>
             </div>
         </div>
-        <canvas id="gameCanvas" width="900" height="450"></canvas>
+        <canvas id="gameCanvas" width="950" height="450"></canvas>
     </div>
 
     <div id="controls-hint">
-        <strong>Стрелка Вправо</strong> — Газ | <strong>Стрелка Влево</strong> — Тормоз/Реверс. <br>
-        <span class="red">Соблюдайте ПДД:</span> Не стойте на перекрестке на красный, не врезайтесь в машины, не тормозите резко (падает комфорт)!
+        <strong>Стрелка Вправо / D</strong> — Газ | <strong>Стрелка Влево / A</strong> — Тормоз. <br>
+        Тормозите перед <span style="color:#ffcc00; font-weight:bold;">желтыми лежачими полицейскими</span>! В дождь тормозной путь увеличен.
     </div>
 
 <script>
@@ -152,219 +161,327 @@ const ctx = canvas.getContext('2d');
 // UI элементы
 const moneyEl = document.getElementById('money');
 const passengersEl = document.getElementById('passengers');
+const maxPassEl = document.getElementById('max-pass');
 const comfortEl = document.getElementById('comfort');
 const fuelBar = document.getElementById('fuel-bar');
 const scheduleEl = document.getElementById('schedule');
 const msgOverlay = document.getElementById('message-overlay');
+const weatherTextEl = document.getElementById('weather-text');
 
-// Игровая конфигурация и физика
+// Переменные Улучшений (Тюнинг)
+let upgrades = { engine: 1, brakes: 1, suspension: 1, bigBus: false };
+
+// Геймплейные параметры
 let money = 1000;
 let passengers = 0;
+let maxPassengers = 20;
 let comfort = 100;
 let fuel = 100;
-let scheduleTime = 60; // Секунды на рейс
+let scheduleTime = 60;
 let worldX = 0;
 let gameSpeed = 0;
 let gameOver = false;
+let inModal = false;
 
-const maxSpeed = 8;
-const acceleration = 0.12;
-const friction = 0.04;
-const braking = 0.4;
+// Окружающая среда
+let timeOfDay = 0; // 0..2000 цикл дня и ночи
+let weather = 'sunny'; // 'sunny' или 'rain'
+let weatherTimer = 0;
+
+// Константы физики базовые
+let maxSpeed = 7;
+let acceleration = 0.12;
+let friction = 0.04;
+let braking = 0.35;
 
 const keys = { Left: false, Right: false };
 
 // Автобус
 const bus = {
     x: 180,
+    baseY: 310,
     y: 310,
     width: 180,
     height: 65,
-    wheelRotation: 0
+    wheelRotation: 0,
+    jumpTimer: 0
 };
 
-// Объекты в мире (Остановки, Светофоры, Трафик, Заправки)
-const entities = [
-    { type: 'stop', worldX: 1000, width: 130, state: 'pickup', timer: 0 },
-    { type: 'traffic_light', worldX: 1800, state: 'green', timer: 0 },
-    { type: 'car', worldX: 2300, speed: 3, width: 70, height: 40, color: '#ff3333' },
-    { type: 'gas_station', worldX: 3000, width: 150, timer: 0 },
-    { type: 'stop', worldX: 4200, width: 130, state: 'dropoff', timer: 0 },
-    { type: 'traffic_light', worldX: 5200, state: 'red', timer: 0 }
+// Мир объектов (Остановки, Трафик, Светофоры, Лежачие полицейские, АЗС)
+let entities = [
+    { type: 'stop', worldX: 900, width: 140, state: 'pickup', timer: 0 },
+    { type: 'bump', worldX: 1600, width: 40 },
+    { type: 'traffic_light', worldX: 2200, state: 'green', timer: 0 },
+    { type: 'car', worldX: 2700, speed: 2.5, width: 75, height: 40, color: '#f53333' },
+    { type: 'gas_station', worldX: 3600, width: 160 },
+    { type: 'bump', worldX: 4300, width: 40 },
+    { type: 'stop', worldX: 5000, width: 140, state: 'dropoff', timer: 0 }
 ];
 
-// Декорации параллакса
+// Генерация заднего плана (Параллакс)
 const scenery = [];
-for (let i = 0; i < 40; i++) {
+for (let i = 0; i < 45; i++) {
     scenery.push({
-        x: i * 400 + Math.random() * 150,
-        y: 180 + Math.random() * 50,
-        type: Math.random() > 0.5 ? 'building' : 'tree',
-        width: 90 + Math.random() * 60,
-        height: 140 + Math.random() * 80,
-        color: `hsl(${Math.random() * 360}, 25%, 45%)`
+        x: i * 350 + Math.random() * 100,
+        y: 190 + Math.random() * 40,
+        type: Math.random() > 0.4 ? 'building' : 'tree',
+        width: 100 + Math.random() * 50,
+        height: 130 + Math.random() * 90,
+        color: `hsl(${Math.random() * 360}, 20%, ${35 + Math.random()*20}%)`
     });
 }
 
-// Управление
+// Слушатели управления
 window.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight' || e.key === 'd') keys.Right = true;
-    if (e.key === 'ArrowLeft' || e.key === 'a') keys.Left = true;
+    if(inModal || gameOver) return;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'в') keys.Right = true;
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'ф') keys.Left = true;
 });
 window.addEventListener('keyup', e => {
-    if (e.key === 'ArrowRight' || e.key === 'd') keys.Right = false;
-    if (e.key === 'ArrowLeft' || e.key === 'a') keys.Left = false;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'в') keys.Right = false;
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'ф') keys.Left = false;
 });
 
-// Всплывающие сообщения на экране
-function showMessage(text, duration = 2000) {
+function showMessage(text, duration = 1500) {
     msgOverlay.innerHTML = text;
     msgOverlay.style.display = 'block';
     setTimeout(() => { msgOverlay.style.display = 'none'; }, duration);
 }
 
-// Таймер расписания (раз в секунду)
+// Секундный таймер расписания и погоды
 setInterval(() => {
-    if (!gameOver) {
+    if (!gameOver && !inModal) {
         scheduleTime--;
         scheduleEl.innerText = scheduleTime;
         if (scheduleTime <= 0) {
             scheduleTime = 0;
-            if (passengers > 0) {
-                money = Math.max(0, money - 5); // Штраф за опоздание
-                moneyEl.innerText = money;
+            if (passengers > 0) { money = Math.max(0, money - 4); moneyEl.innerText = money; }
+        }
+
+        // Логика переключения погоды
+        weatherTimer++;
+        if (weatherTimer > 45) { // Каждые 45 сек меняем погоду
+            weather = weather === 'sunny' ? 'rain' : 'sunny';
+            weatherTimer = 0;
+            if (weather === 'rain') {
+                weatherTextEl.innerText = "🌧️ Дождь (Скользко!)";
+                weatherTextEl.className = "red";
+                showMessage("<span class='red'>Начался дождь! Дорога скользкая!</span>");
+            } else {
+                weatherTextEl.innerText = "☀️ Ясно";
+                weatherTextEl.className = "blue";
+                showMessage("<span class='green'>Дождь закончился!</span>");
             }
+        }
+
+        // Шанс случайного события (15%)
+        if (passengers > 3 && Math.random() < 0.15) {
+            triggerRandomEvent();
         }
     }
 }, 1000);
 
-// Главный цикл логики
-function update() {
-    if (gameOver) return;
+// Гараж / Тюнинг логика
+function openGarage() {
+    inModal = true;
+    keys.Right = false; keys.Left = false; gameSpeed = 0;
+    document.getElementById('lvl-eng').innerText = upgrades.engine;
+    document.getElementById('lvl-brk').innerText = upgrades.brakes;
+    document.getElementById('lvl-sus').innerText = upgrades.suspension;
+    document.getElementById('lvl-bus').innerText = upgrades.bigBus ? "Гармошка" : "Обычный";
+    document.getElementById('garage-modal').style.display = 'block';
+}
 
-    // --- Логика движения и физики ---
+function closeGarage() {
+    document.getElementById('garage-modal').style.display = 'none';
+    inModal = false;
+}
+
+function buyUpgrade(type) {
+    if (type === 'engine' && upgrades.engine < 3 && money >= 500) {
+        money -= 500; upgrades.engine++; showMessage("Двигатель улучшен!");
+    } else if (type === 'brakes' && upgrades.brakes < 3 && money >= 400) {
+        money -= 400; upgrades.brakes++; showMessage("Тормоза улучшены!");
+    } else if (type === 'suspension' && upgrades.suspension < 3 && money >= 600) {
+        money -= 600; upgrades.suspension++; showMessage("Подвеска улучшена!");
+    } else if (type === 'bus' && !upgrades.bigBus && money >= 1500) {
+        money -= 1500; upgrades.bigBus = true; maxPassengers = 45;
+        bus.width = 250; // Удлиняем автобус визуально
+        maxPassEl.innerText = maxPassengers;
+        showMessage("Куплен автобус-гармошка!");
+    } else {
+        alert("Недостаточно средств или достигнут максимум!");
+    }
+    moneyEl.innerText = money;
+    openGarage(); // Обновить цифры на экране
+}
+
+// Логика случайных событий
+let currentEvent = null;
+function triggerRandomEvent() {
+    inModal = true;
+    keys.Right = false; keys.Left = false; gameSpeed = 0;
+    
+    const events = [
+        { title: "🎫 Безбилетник!", desc: "Замечен пассажир без билета. Ваши действия?", b1: "Высадить (Теряем время)", b2: "Оштрафовать (+200₽)" },
+        { title: "🤢 Пассажиру плохо!", desc: "Человеку душно, он просит включить кондиционер.", b1: "Включить (Расход топлива)", b2: "Игнорировать (-Комфорт)" }
+    ];
+    
+    currentEvent = events[Math.floor(Math.random() * events.length)];
+    document.getElementById('event-title').innerText = currentEvent.title;
+    document.getElementById('event-desc').innerText = currentEvent.desc;
+    document.getElementById('event-btn1').innerText = currentEvent.b1;
+    document.getElementById('event-btn2').innerText = currentEvent.b2;
+    document.getElementById('event-modal').style.display = 'block';
+}
+
+function resolveEvent(option) {
+    document.getElementById('event-modal').style.display = 'none';
+    inModal = false;
+
+    if (currentEvent.title.includes("Безбилетник")) {
+        if (option === 1) { scheduleTime = Math.max(0, scheduleTime - 15); showMessage("Потеряно время на высадку"); }
+        else { money += 200; comfort = Math.max(0, comfort - 10); showMessage("Получен штраф +200₽! Салон недоволен."); }
+    } else {
+        if (option === 1) { fuel = Math.max(0, fuel - 15); showMessage("Кондиционер включен! Бензин -15%"); }
+        else { comfort = Math.max(0, comfort - 25); showMessage("Комфорт упал на 25%!"); }
+    }
+    moneyEl.innerText = money;
+    comfortEl.innerText = Math.round(comfort);
+}
+
+// Главный движок обновлений
+function update() {
+    if (gameOver || inModal) return;
+
+    // Смена дня и ночи
+    timeOfDay = (timeOfDay + 1) % 2200;
+
+    // Влияние тюнинга и погоды на параметры
+    let currentAcc = acceleration * (1 + upgrades.engine * 0.25);
+    let currentBraking = braking * (1 + upgrades.brakes * 0.3);
+    let currentFriction = friction;
+
+    if (weather === 'rain') {
+        currentBraking *= 0.5; // Скольжение при торможении
+        currentFriction = 0.01; // Меньше трение дороги
+    }
+
+    // --- Управление физикой движения ---
     if (keys.Right && fuel > 0) {
-        gameSpeed += acceleration;
+        gameSpeed += currentAcc;
         if (gameSpeed > maxSpeed) gameSpeed = maxSpeed;
-        fuel -= 0.04; // Расход топлива при разгоне
+        fuel -= 0.03;
     } else if (keys.Left) {
-        // Проверка на резкое торможение
-        if (gameSpeed > 4) {
-            comfort = Math.max(0, comfort - 0.5);
+        if (gameSpeed > 3.5) {
+            let comfortLoss = 0.6 / upgrades.suspension; // Мягкая подвеска защищает
+            comfort = Math.max(0, comfort - comfortLoss);
             comfortEl.innerText = Math.round(comfort);
         }
-        gameSpeed -= braking;
-        if (gameSpeed < -maxSpeed / 3) gameSpeed = -maxSpeed / 3;
+        gameSpeed -= currentBraking;
+        if (gameSpeed < -2) gameSpeed = -2;
     } else {
-        if (gameSpeed > 0) gameSpeed -= friction;
-        if (gameSpeed < 0) gameSpeed += friction;
-        if (Math.abs(gameSpeed) < friction) gameSpeed = 0;
+        if (gameSpeed > 0) gameSpeed -= currentFriction;
+        if (gameSpeed < 0) gameSpeed += currentFriction;
+        if (Math.abs(gameSpeed) < currentFriction) gameSpeed = 0;
     }
 
-    if (gameSpeed !== 0 && fuel > 0) {
-        fuel -= 0.01; // Постоянный расход в движении
-    }
+    if (gameSpeed !== 0 && fuel > 0) fuel -= 0.01;
     fuelBar.style.width = `${Math.max(0, fuel)}%`;
 
     if (fuel <= 0 && gameSpeed === 0) {
-        gameOver = true;
-        showMessage("<span class='red'>Закончилось топливо!<br>Игра окончена.</span>", 10000);
-        return;
+        gameOver = true; showMessage("<span class='red'>Топливо на нуле! Эвакуатор.<br>Игра окончена.</span>", 10000); return;
     }
 
     worldX += gameSpeed;
     bus.wheelRotation += gameSpeed * 0.04;
 
-    // --- Логика игровых объектов (Entities) ---
+    // Анимация подпрыгивания автобуса
+    if (bus.jumpTimer > 0) {
+        bus.jumpTimer--;
+        bus.y = bus.baseY - Math.sin(bus.jumpTimer * 0.2) * 12;
+    } else {
+        bus.y = bus.baseY;
+    }
+
+    // --- Обработка логики интерактивных объектов ---
     entities.forEach(ent => {
-        let entScreenX = ent.worldX - worldX + bus.x;
+        let scrX = ent.worldX - worldX + bus.x;
         let busCenter = bus.x + bus.width / 2;
-        let isBusOver = (busCenter > entScreenX) && (busCenter < entScreenX + ent.width);
+        let isBusOver = (busCenter > scrX) && (busCenter < scrX + ent.width);
 
-        // 1. Логика Светофоров
-        if (ent.type === 'traffic_light') {
-            ent.timer++;
-            if (ent.timer > 200) { // Переключение каждые ~3.5 сек
-                ent.state = ent.state === 'green' ? 'red' : 'green';
-                ent.timer = 0;
-            }
-            // Штраф за проезд на красный свет
-            if (ent.state === 'red' && bus.x + bus.width > entScreenX && bus.x < entScreenX + 30 && gameSpeed > 1) {
-                money = Math.max(0, money - 200);
-                moneyEl.innerText = money;
-                ent.worldX += 100; // Чтобы штраф не капал каждый кадр
-                showMessage("<span class='red'>Штраф за проезд на красный! -200₽</span>");
-            }
-        }
-
-        // 2. Логика Трафика (Машин)
-        if (ent.type === 'car') {
-            ent.worldX += ent.speed; // Машина едет вперед
-            // Коллизия (автобус догнал машину)
-            if (bus.x + bus.width > entScreenX && bus.x < entScreenX + ent.width && Math.abs(bus.y - 10 - 310) < 20) {
-                if (gameSpeed > ent.speed) {
-                    gameSpeed = ent.speed - 1;
-                    money = Math.max(0, money - 300);
-                    comfort = Math.max(0, comfort - 30);
-                    moneyEl.innerText = money;
+        // 1. Лежачий полицейский
+        if (ent.type === 'bump') {
+            if (bus.x + bus.width > scrX && bus.x < scrX + ent.width && bus.jumpTimer === 0) {
+                if (gameSpeed > 2.2) {
+                    bus.jumpTimer = 20; // Запуск анимации прыжка
+                    let dmg = (gameSpeed * 8) / upgrades.suspension;
+                    comfort = Math.max(0, comfort - dmg);
                     comfortEl.innerText = Math.round(comfort);
-                    ent.worldX += 200; // Отталкиваем машину вперед
-                    showMessage("<span class='red'>ДТП! Штраф -300₽. Комфорт упал!</span>");
+                    showMessage("<span class='red'>Удар! Притормаживайте перед кочками!</span>");
                 }
             }
         }
 
-        // 3. Логика Остановки (Посадка / Высадка)
+        // 2. Светофор
+        if (ent.type === 'traffic_light') {
+            ent.timer++;
+            if (ent.timer > 220) { ent.state = ent.state === 'green' ? 'red' : 'green'; ent.timer = 0; }
+            if (ent.state === 'red' && bus.x + bus.width > scrX && bus.x < scrX + 25 && gameSpeed > 0.5) {
+                money = Math.max(0, money - 250); moneyEl.innerText = money;
+                ent.worldX += 150; // Избегаем повторного штрафа
+                showMessage("<span class='red'>Штраф за красный свет! -250₽</span>");
+            }
+        }
+
+        // 3. Машина (Трафик)
+        if (ent.type === 'car') {
+            ent.worldX += ent.speed;
+            if (bus.x + bus.width > scrX && bus.x < scrX + ent.width) {
+                if (gameSpeed > ent.speed) {
+                    gameSpeed = ent.speed - 0.5;
+                    money = Math.max(0, money - 400); comfort = Math.max(0, comfort - 35);
+                    moneyEl.innerText = money; comfortEl.innerText = Math.round(comfort);
+                    ent.worldX += 250;
+                    showMessage("<span class='red'>Авария! Штраф -400₽!</span>");
+                }
+            }
+        }
+
+        // 4. Остановки и Сервис
         if (ent.type === 'stop' && isBusOver && gameSpeed === 0) {
             ent.timer++;
             if (ent.state === 'pickup') {
-                if (ent.timer < 80) {
-                    showMessage(`Посадка пассажиров... ${Math.round(ent.timer/80*100)}%`);
-                } else {
-                    let boarded = Math.floor(Math.random() * 6) + 4;
-                    passengers = Math.min(20, passengers + boarded);
-                    passengersEl.innerText = passengers;
-                    ent.type = 'used';
-                    scheduleTime = Math.min(90, scheduleTime + 40); // Добавочное время
-                    showMessage("<span class='green'>Посадка завершена! По графику.</span>");
+                if (ent.timer < 70) showMessage(`Загрузка пассажиров... ${Math.round(ent.timer/70*100)}%`);
+                else {
+                    let boarded = Math.floor(Math.random() * 8) + 6;
+                    passengers = Math.min(maxPassengers, passengers + boarded);
+                    passengersEl.innerText = passengers; ent.type = 'used';
+                    scheduleTime = Math.min(90, scheduleTime + 45);
+                    openGarage(); // Открываем гараж для тюнинга на остановке!
                 }
             } else if (ent.state === 'dropoff') {
-                if (ent.timer < 80) {
-                    showMessage(`Высадка пассажиров... ${Math.round(ent.timer/80*100)}%`);
-                } else {
-                    let left = passengers;
-                    passengers = 0;
-                    passengersEl.innerText = passengers;
-                    // Расчет прибыли с учетом комфорта
-                    let earnings = Math.floor(left * 50 * (comfort / 100));
-                    money += earnings;
-                    moneyEl.innerText = money;
-                    ent.type = 'used';
-                    showMessage(`<span class='green'>Рейс завершен! Заработано: ${earnings}₽</span>`);
+                if (ent.timer < 70) showMessage(`Выгрузка пассажиров... ${Math.round(ent.timer/70*100)}%`);
+                else {
+                    let income = Math.floor(passengers * 60 * (comfort / 100));
+                    money += income; passengers = 0; passengersEl.innerText = passengers;
+                    comfort = 100; comfortEl.innerText = comfort; // Сброс комфорта для нового круга
+                    ent.type = 'used'; moneyEl.innerText = money;
+                    showMessage(`<span class='green'>Маршрут сдан! Доход: +${income}₽</span>`);
                 }
             }
         }
 
-        // 4. Логика Заправочной станции
+        // 5. АЗС заправка
         if (ent.type === 'gas_station' && isBusOver && gameSpeed === 0 && fuel < 99) {
-            if (money >= 10) {
-                fuel = Math.min(100, fuel + 1);
-                money -= 5;
-                moneyEl.innerText = money;
-                showMessage("Заправка бака... топливо +1%", 200);
-            } else {
-                showMessage("<span class='red'>Нет денег на бензин!</span>");
-            }
+            if (money >= 8) { fuel = Math.min(100, fuel + 1.5); money -= 6; moneyEl.innerText = money; showMessage("Заправка бака...", 150); }
         }
 
-        // Зацикливание бесконечного мира (перенос объектов вперед)
-        if (entScreenX < -500) {
-            ent.worldX += 5500;
-            ent.timer = 0;
-            if (ent.type === 'used') {
-                ent.type = 'stop';
-                ent.state = Math.random() > 0.5 ? 'pickup' : 'dropoff';
-            }
+        // Телепортация объектов вперед (Бесконечный игровой мир)
+        if (scrX < -600) {
+            ent.worldX += 5200; ent.timer = 0;
+            if (ent.type === 'used') { ent.type = 'stop'; ent.state = Math.random() > 0.5 ? 'pickup' : 'dropoff'; }
+            if (ent.type === 'car') ent.speed = 2 + Math.random() * 2;
         }
     });
 
@@ -372,159 +489,165 @@ function update() {
     requestAnimationFrame(update);
 }
 
-// Отрисовка графики игры
+// Отрисовка всей 2D сцены
 function draw() {
-    // 1. Небо и Горизонт
-    ctx.fillStyle = '#87ceeb';
+    // Рассчитываем освещение в зависимости от времени суток
+    let isNight = timeOfDay > 1000;
+    
+    // Небо (меняет цвет ночью)
+    ctx.fillStyle = isNight ? '#0b1d3a' : '#87ceeb';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Земля под городом
-    ctx.fillStyle = '#7cfc00';
-    ctx.fillRect(0, 300, canvas.width, canvas.height - 300);
+    // Отрисовка солнца или луны
+    ctx.fillStyle = isNight ? '#fdfefe' : '#fdfd96';
+    ctx.beginPath();
+    ctx.arc(isNight ? 150 : 780, 70, isNight ? 25 : 35, 0, Math.PI * 2);
+    ctx.fill();
 
-    // 2. Отрисовка заднего плана (Параллакс)
+    // Задний план (Параллакс строений)
     scenery.forEach(item => {
-        let screenX = item.x - worldX * 0.4;
-        if (screenX < -200) item.x += 4000;
-        if (screenX > canvas.width + 200) item.x -= 4000;
+        let scrX = item.x - worldX * 0.35;
+        if (scrX < -200) item.x += 3800;
+        if (scrX > canvas.width + 200) item.x -= 3800;
 
         if (item.type === 'building') {
-            ctx.fillStyle = item.color;
-            ctx.fillRect(screenX, 350 - item.height, item.width, item.height);
-            // Окна
-            ctx.fillStyle = '#fceb92';
-            for (let wx = screenX + 15; wx < screenX + item.width - 15; wx += 30) {
-                for (let wy = (350 - item.height) + 15; wy < 330; wy += 40) {
-                    ctx.fillRect(wx, wy, 14, 20);
+            ctx.fillStyle = isNight ? '#152238' : item.color;
+            ctx.fillRect(scrX, 350 - item.height, item.width, item.height);
+            // Светящиеся окна ночью
+            ctx.fillStyle = isNight ? '#fffa85' : '#fceb92';
+            if (!isNight || Math.random() > 0.3) { // Часть окон темные ночью
+                for (let wx = scrX + 12; wx < scrX + item.width - 15; wx += 28) {
+                    for (let wy = (350 - item.height) + 15; wy < 330; wy += 35) {
+                        ctx.fillRect(wx, wy, 12, 18);
+                    }
                 }
             }
         } else {
-            // Дерево
-            ctx.fillStyle = '#5c4033';
-            ctx.fillRect(screenX + 20, 310, 10, 40);
-            ctx.fillStyle = '#2e8b57';
-            ctx.beginPath();
-            ctx.arc(screenX + 25, 300, 30, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.fillStyle = isNight ? '#1e2f23' : '#5c4033';
+            ctx.fillRect(scrX + 20, 310, 8, 40);
+            ctx.fillStyle = isNight ? '#124024' : '#2e8b57';
+            ctx.beginPath(); ctx.arc(scrX + 24, 295, 25, 0, Math.PI * 2); ctx.fill();
         }
     });
 
-    // 3. Асфальтовая дорога
-    ctx.fillStyle = '#444444';
+    // Асфальт и обочина
+    ctx.fillStyle = isNight ? '#222' : '#444';
     ctx.fillRect(0, 350, canvas.width, 100);
+    ctx.fillStyle = '#777'; ctx.fillRect(0, 345, canvas.width, 5); // Бордюр
 
-    // Дорожная разметка
-    ctx.fillStyle = '#ffffff';
-    let dashW = 50;
-    let dashG = 30;
-    let startX = -(worldX % (dashW + dashG));
-    for (let x = startX; x < canvas.width; x += dashW + dashG) {
-        ctx.fillRect(x, 395, dashW, 5);
-    }
-    // Бордюр
-    ctx.fillStyle = '#888';
-    ctx.fillRect(0, 345, canvas.width, 5);
+    // Разметка дороги
+    ctx.fillStyle = '#fff';
+    let sX = -(worldX % 80);
+    for (let x = sX; x < canvas.width; x += 80) { ctx.fillRect(x, 395, 45, 5); }
 
-    // 4. Отрисовка динамических объектов (Entities)
+    // --- Отрисовка Элементов Трассы (Entities) ---
     entities.forEach(ent => {
         let scrX = ent.worldX - worldX + bus.x;
 
         if (ent.type === 'stop' || ent.type === 'used') {
-            // Остановка
-            ctx.fillStyle = 'rgba(0, 0, 255, 0.15)';
-            ctx.fillRect(scrX, 345, ent.width, 10); // Карман
-
-            ctx.fillStyle = '#1e90ff';
-            ctx.fillRect(scrX + 20, 260, ent.width - 40, 85); // Стенка павильона
-            ctx.fillStyle = '#333';
-            ctx.fillRect(scrX + 15, 255, ent.width - 30, 8); // Крыша
-
-            // Знак
-            ctx.fillStyle = '#333'; ctx.fillRect(scrX + 5, 250, 4, 95);
-            ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1e90ff'; ctx.lineWidth = 3;
-            ctx.fillRect(scrX - 5, 230, 24, 24); ctx.strokeRect(scrX - 5, 230, 24, 24);
-            ctx.fillStyle = '#000'; ctx.font = '14px Arial'; ctx.fillText("А", scrX + 2, 247);
+            ctx.fillStyle = 'rgba(0, 200, 255, 0.2)'; ctx.fillRect(scrX, 345, ent.width, 8); // Карман
+            ctx.fillStyle = isNight ? '#103050' : '#1e90ff'; ctx.fillRect(scrX + 15, 260, ent.width - 30, 85);
+            ctx.fillStyle = '#222'; ctx.fillRect(scrX + 10, 255, ent.width - 20, 6);
+            // Знак А
+            ctx.fillStyle = '#222'; ctx.fillRect(scrX + 5, 250, 4, 95);
+            ctx.fillStyle = '#fff'; ctx.fillRect(scrX - 5, 230, 24, 24);
+            ctx.fillStyle = '#000'; ctx.font = 'bold 13px Arial'; ctx.fillText("А", scrX + 2, 247);
         }
-
-        else if (ent.type === 'traffic_light') {
-            // Светофор
-            ctx.fillStyle = '#222';
-            ctx.fillRect(scrX, 200, 25, 70); // Корпус
-            ctx.fillRect(scrX + 10, 270, 5, 80); // Столб
-            
-            // Лампы
-            ctx.fillStyle = (ent.state === 'red') ? '#ff0000' : '#440000';
-            ctx.beginPath(); ctx.arc(scrX + 12.5, 215, 8, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = (ent.state === 'green') ? '#00ff00' : '#004400';
-            ctx.beginPath(); ctx.arc(scrX + 12.5, 250, 8, 0, Math.PI*2); ctx.fill();
-        }
-
-        else if (ent.type === 'gas_station') {
-            // АЗС заправка
+        else if (ent.type === 'bump') {
+            // Лежачий полицейский
             ctx.fillStyle = '#ffcc00';
-            ctx.fillRect(scrX, 230, ent.width, 115);
-            ctx.fillStyle = '#222';
-            ctx.fillRect(scrX + 20, 270, 30, 75); // Колонка
-            ctx.fillStyle = '#fff';
-            ctx.font = '12px Arial';
-            ctx.fillText("БЕНЗИН", scrX + 45, 250);
+            ctx.fillRect(scrX, 346, ent.width, 5);
+            ctx.fillStyle = '#000'; // Черные полосы предупреждения
+            ctx.fillRect(scrX + 10, 346, 5, 5);
+            ctx.fillRect(scrX + 25, 346, 5, 5);
         }
-
+        else if (ent.type === 'traffic_light') {
+            ctx.fillStyle = '#222'; ctx.fillRect(scrX, 190, 22, 65); ctx.fillRect(scrX + 9, 255, 4, 90);
+            ctx.fillStyle = (ent.state === 'red') ? '#ff0000' : '#330000';
+            ctx.beginPath(); ctx.arc(scrX + 11, 202, 7, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = (ent.state === 'green') ? '#00ff00' : '#003300';
+            ctx.beginPath(); ctx.arc(scrX + 11, 240, 7, 0, Math.PI*2); ctx.fill();
+        }
+        else if (ent.type === 'gas_station') {
+            ctx.fillStyle = '#d9a700'; ctx.fillRect(scrX, 220, ent.width, 125);
+            ctx.fillStyle = '#111'; ctx.fillRect(scrX + 30, 270, 30, 75);
+            ctx.fillStyle = '#fff'; ctx.font = '11px sans-serif'; ctx.fillText("АЗС ОПТИ", scrX + 45, 245);
+        }
         else if (ent.type === 'car') {
-            // Легковой трафик
             ctx.fillStyle = ent.color;
-            ctx.fillRect(scrX, 330, ent.width, ent.height - 15); // Кузов
-            ctx.fillRect(scrX + 15, 310, ent.width - 30, 20); // Крыша
-            ctx.fillStyle = '#fff'; // Фары передние
-            ctx.fillRect(scrX + ent.width - 4, 335, 4, 6);
-            // Колеса легковушки
+            ctx.fillRect(scrX, 330, ent.width, ent.height - 15);
+            ctx.fillRect(scrX + 12, 312, ent.width - 25, 20);
+            ctx.fillStyle = '#fff'; ctx.fillRect(scrX + ent.width - 4, 334, 4, 6); // Свет фар машины
             ctx.fillStyle = '#000';
-            ctx.beginPath(); ctx.arc(scrX + 15, 345, 9, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(scrX + ent.width - 15, 345, 9, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(scrX + 15, 346, 9, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(scrX + ent.width - 15, 346, 9, 0, Math.PI*2); ctx.fill();
         }
     });
 
-    // 5. ОРИСОВКА АВТОБУСА
+    // --- ОРИСОВКА АВТОБУСА ---
     ctx.save();
     
-    // Тело автобуса
-    ctx.fillStyle = '#4488ff'; // Современный синий автобус МосГорТранс
+    // Основной цвет кузова
+    ctx.fillStyle = upgrades.bigBus ? '#12a34a' : '#0066ff'; 
     ctx.fillRect(bus.x, bus.y, bus.width, bus.height);
 
-    // Окна и двери
-    ctx.fillStyle = '#111111';
-    for (let i = 0; i < 4; i++) {
-        ctx.fillRect(bus.x + 12 + (i * 35), bus.y + 10, 25, 24); // Окна пассажиров
+    // Окна
+    ctx.fillStyle = isNight ? '#fffb99' : '#222'; // Ночью окна светятся изнутри салона
+    let windowCount = upgrades.bigBus ? 7 : 4;
+    for (let i = 0; i < windowCount; i++) {
+        ctx.fillRect(bus.x + 10 + (i * 30), bus.y + 10, 22, 22);
     }
-    ctx.fillRect(bus.x + bus.width - 30, bus.y + 8, 25, 26); // Лобовое стекло водителя
-    
-    // Двери (текстура)
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillRect(bus.x + 45, bus.y + 10, 20, 50);
-    ctx.fillRect(bus.x + 115, bus.y + 10, 20, 50);
+    // Лобовое стекло водителя
+    ctx.fillStyle = '#111';
+    ctx.fillRect(bus.x + bus.width - 25, bus.y + 8, 22, 24);
+
+    // Фары автобуса (Световой луч ночью)
+    if (isNight) {
+        let gradient = ctx.createLinearGradient(bus.x + bus.width, bus.y + 40, bus.x + bus.width + 180, bus.y + 50);
+        gradient.addColorStop(0, 'rgba(255, 255, 200, 0.4)');
+        gradient.addColorStop(1, 'rgba(255, 255, 200, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(bus.x + bus.width, bus.y + 35);
+        ctx.lineTo(bus.x + bus.width + 180, bus.y + 10);
+        ctx.lineTo(bus.x + bus.width + 180, bus.y + 70);
+        ctx.fill();
+    }
+    ctx.fillStyle = '#ffffaa'; ctx.fillRect(bus.x + bus.width - 2, bus.y + 40, 3, 8); // Фара физически
 
     // Колёса автобуса
-    drawWheel(bus.x + 40, bus.y + bus.height);
-    drawWheel(bus.x + bus.width - 45, bus.y + bus.height);
+    drawWheel(bus.x + 35, bus.y + bus.height);
+    if(upgrades.bigBus) drawWheel(bus.x + bus.width / 2 + 10, bus.y + bus.height); // Доп. ось для гармошки
+    drawWheel(bus.x + bus.width - 40, bus.y + bus.height);
 
     ctx.restore();
+
+    // Эффект дождя (Капли на экране)
+    if (weather === 'rain') {
+        ctx.strokeStyle = 'rgba(174,194,224,0.4)';
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 15; i++) {
+            let rx = Math.random() * canvas.width;
+            let ry = Math.random() * canvas.height;
+            ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(rx - 10, ry + 20); ctx.stroke();
+        }
+    }
 }
 
 function drawWheel(x, y) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(bus.wheelRotation);
-    ctx.fillStyle = '#1a1a1a';
-    ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill(); // Шина
-    ctx.fillStyle = '#d7d7d7';
-    ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill(); // Диск
-    ctx.strokeStyle = '#222'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(-9, 0); ctx.lineTo(9, 0); ctx.moveTo(0, -9); ctx.lineTo(0, 9); ctx.stroke(); // Спицы
+    ctx.save(); ctx.translate(x, y); ctx.rotate(bus.wheelRotation);
+    ctx.fillStyle = '#151515'; ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#999'; ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.stroke();
     ctx.restore();
 }
 
-// Старт игры
-update();
+// Старт цикла игры
+function loop() {
+    update();
+    if(!gameOver) requestAnimationFrame(loop);
+}
+loop();
 </script>
 
 </body>
