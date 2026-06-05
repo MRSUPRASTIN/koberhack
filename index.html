@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Реалистичный Симулятор Машиниста Поезда</title>
+    <title>Симулятор Поезда: Воркута — Ленинград (Вид из кабины)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background: #0b0c10; color: #66fcf1; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
+        body { background: #050508; color: #e0e6ed; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
 
         #game-container {
             position: relative;
@@ -16,460 +16,429 @@
             flex-direction: column;
         }
 
-        /* Лобовое стекло кабины */
+        /* Вид из окна локомотива (Кабина машиниста) */
         #windshield {
-            flex: 1.3;
-            background: #020205;
+            flex: 1.4;
+            background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d); /* Северный рассвет */
             position: relative;
             overflow: hidden;
             box-shadow: inset 0 -30px 40px rgba(0,0,0,1);
         }
 
-        /* Геометрия тоннеля */
-        .tunnel-line { position: absolute; background: #222; transform-origin: top center; }
-        #rail-left { bottom: 0; left: 40%; width: 8px; height: 50%; transform: skewX(-38deg); background: #444; box-shadow: 2px 0 5px #000;}
-        #rail-right { bottom: 0; right: 40%; width: 8px; height: 50%; transform: skewX(38deg); background: #444; box-shadow: -2px 0 5px #000;}
-        #wall-l { top: 0; left: 0; width: 30%; height: 100%; background: linear-gradient(to right, #030303, #111); clip-path: polygon(0 0, 100% 0, 40% 100%, 0% 100%); }
-        #wall-r { top: 0; right: 0; width: 30%; height: 100%; background: linear-gradient(to left, #030303, #111); clip-path: polygon(0 0, 100% 0, 100% 100%, 60% 100%); }
-
-        #tunnel-environment { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
-        .wall-light { position: absolute; width: 10px; height: 10px; background: #ffaa44; border-radius: 50%; top: 42%; box-shadow: 0 0 20px #ffaa44; }
-        
-        .brake-sign {
+        /* Земля и рельсы */
+        #ground {
             position: absolute;
-            width: 90px; height: 12px;
-            background: repeating-linear-gradient(45deg, #f1c40f, #f1c40f 10px, #000 10px, #000 20px);
-            top: 45%; left: 47%;
-            transform: scale(0.05);
-            border: 1px solid #fff;
+            bottom: 0; width: 100%; height: 45%;
+            background: linear-gradient(to bottom, #2d4a22 0%, #13230d 100%); /* Зеленая тайга/тундра */
         }
+        .rail-line { position: absolute; background: #3a3d40; transform-origin: top center; }
+        #rail-left { bottom: 0; left: 38%; width: 10px; height: 100%; transform: skewX(-42deg); background: #555; box-shadow: 2px 0 5px #000; }
+        #rail-right { bottom: 0; right: 38%; width: 10px; height: 100%; transform: skewX(42deg); background: #555; box-shadow: -2px 0 5px #000; }
+        
+        /* Шпалы (динамические) */
+        #ties-container { position: absolute; width: 100%; height: 45%; bottom: 0; overflow: hidden; }
+        .tie { position: absolute; width: 120px; height: 6px; background: #4a3525; left: 46%; bottom: 100%; transform: scale(0.1); }
 
-        /* Перрон Станции */
+        /* Окружающая среда (деревья, столбы) */
+        #scenery-container { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
+        .tree { position: absolute; width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-bottom: 60px solid #0f3d0f; top: 45%; left: 50%; transform: scale(0.1); transform-origin: bottom center; }
+        .pole { position: absolute; width: 6px; height: 90px; background: #555; top: 35%; left: 50%; transform: scale(0.1); transform-origin: bottom center; }
+        .pole::after { content: ''; position: absolute; top: 5px; left: -15px; width: 36px; height: 4px; background: #444; }
+
+        /* Магистральная станция */
         #station {
             position: absolute;
-            width: 300%;
-            height: 100%;
-            background: linear-gradient(to bottom, #2c3e50, #0f171e 80%, #222);
-            top: 0;
-            left: 300%;
-            transform: skewX(-12deg);
-            border-left: 25px solid #7f8c8d;
+            width: 400%; height: 100%;
+            background: transparent;
+            top: 0; left: 400%;
         }
-        #station-wall {
-            width: 100%; height: 55%; background: #34495e; border-bottom: 10px solid #00ffcc; padding: 25px;
-            box-shadow: inset 0 -15px 30px rgba(0,0,0,0.6);
-            position: relative;
+        #platform {
+            position: absolute; bottom: 0; left: 0; width: 45%; height: 45%;
+            background: linear-gradient(to bottom, #7f8c8d, #34495e);
+            border-top: 5px solid #fff; transform: skewX(-20deg);
         }
-        #station-name { background: #111; color: #fff; padding: 12px 35px; font-weight: bold; font-size: 32px; border: 3px solid #fff; display: inline-block; letter-spacing: 3px; }
-        #opv-marker { position: absolute; bottom: 15px; left: 4%; background: #fff; color: #111; padding: 6px 14px; font-weight: bold; border: 4px solid #e74c3c; border-radius: 4px; font-size: 18px; }
-        .passenger { width: 14px; height: 50px; background: #fff; margin-right: 6px; border-radius: 5px 5px 0 0; display: inline-block; position: relative; bottom: -80px;}
+        #station-building {
+            position: absolute; bottom: 35%; left: 5%; background: #2c3e50;
+            border: 3px solid #bdc3c7; padding: 15px 40px; color: #fff; text-align: center;
+        }
+        #station-title { font-size: 28px; font-weight: bold; letter-spacing: 2px; text-shadow: 2px 2px #000; }
 
-        /* Светофор автоматической блокировки */
-        #semaphore { position: absolute; left: 12%; bottom: 12%; width: 26px; height: 80px; background: #151515; border: 3px solid #444; border-radius: 6px; display: flex; flex-direction: column; justify-content: space-around; align-items: center; padding: 6px; box-shadow: 0 5px 15px #000; }
-        .light { width: 16px; height: 16px; border-radius: 50%; background: #1a1a1a; transition: 0.3s; }
-        .light.red { background: #ff3333; box-shadow: 0 0 25px #ff3333, inset 0 0 5px #fff; }
-        .light.yellow { background: #ffcc00; box-shadow: 0 0 25px #ffcc00, inset 0 0 5px #fff; }
-        .light.green { background: #33ff33; box-shadow: 0 0 25px #33ff33, inset 0 0 5px #fff; }
+        /* Железнодорожный семафор (Мачта) */
+        #way-signal { position: absolute; right: 15%; bottom: 25%; width: 14px; height: 160px; background: #666; display: flex; flex-direction: column; align-items: center; border: 2px solid #333; }
+        #signal-head { width: 30px; height: 60px; background: #111; border-radius: 15px; position: absolute; top: 0; display: flex; flex-direction: column; justify-content: space-around; align-items: center; padding: 5px; }
+        .sig-light { width: 16px; height: 16px; border-radius: 50%; background: #222; }
+        .sig-light.red { background: #ff3333; box-shadow: 0 0 25px #ff3333; }
+        .sig-light.yellow { background: #ffcc00; box-shadow: 0 0 25px #ffcc00; }
+        .sig-light.green { background: #33ff33; box-shadow: 0 0 25px #33ff33; }
 
-        /* ПУЛЬТ УПРАВЛЕНИЯ ПОЕЗДОМ */
-        #control-panel {
+        /* ПУЛЬТ ЛОКОМОТИВА */
+        #cab-panel {
             flex: 0.9;
-            background: linear-gradient(to bottom, #1f2428, #0d0f12);
-            border-top: 8px solid #343a40;
+            background: linear-gradient(to bottom, #2c3e50, #1a252f); /* Стальной окрас кабины РЖД/СССР */
+            border-top: 10px solid #34495e;
             padding: 20px 40px;
             display: grid;
-            grid-template-columns: 1.11fr 1.3fr 1fr;
-            gap: 30px;
-            box-shadow: inset 0 15px 30px rgba(0,0,0,0.9);
+            grid-template-columns: 1fr 1.4fr 1fr;
+            gap: 25px;
+            box-shadow: inset 0 20px 40px rgba(0,0,0,0.9);
         }
 
-        /* Манометры пневматики */
-        .gauges-side { display: flex; flex-direction: column; justify-content: space-around; }
-        .gauge-bar-container { background: #07090e; border: 2px solid #454d55; height: 22px; border-radius: 4px; position: relative; margin: 4px 0; overflow: hidden; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); }
-        .gauge-bar { height: 100%; width: 0%; transition: width 0.2s cubic-bezier(0.1, 0.8, 0.3, 1); }
-        .gauge-label { font-size: 12px; color: #a5b1c2; display: flex; justify-content: space-between; font-weight: bold; letter-spacing: 0.5px; }
-
-        /* Центральный дисплей (МФДУ) */
-        .center-console { display: flex; flex-direction: column; justify-content: space-between; align-items: center; }
-        .mfd-screen {
-            width: 100%; height: 140px; background: #010409; border: 4px solid #454d55; border-radius: 8px; padding: 14px;
-            font-family: 'Consolas', monospace; color: #00ffcc; display: flex; flex-direction: column; justify-content: space-between;
-            box-shadow: inset 0 0 25px rgba(0,255,200,0.15), 0 5px 15px rgba(0,0,0,0.7);
+        /* Локомотивный светофор АЛСН в кабине */
+        #alsn-display {
+            background: #111; border: 3px solid #555; border-radius: 5px;
+            width: 70px; height: 130px; display: flex; flex-direction: column;
+            justify-content: space-around; align-items: center; padding: 5px; margin-right: 15px;
         }
-        .mfd-header { font-size: 11px; color: #8b949e; border-bottom: 1px solid #21262d; padding-bottom: 6px; display: flex; justify-content: space-between; }
-        .mfd-main { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
-        .speed-block { text-align: center; }
-        .speed-val { font-size: 54px; font-weight: bold; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.2); font-family: 'Arial Black', sans-serif; line-height: 50px; }
-        .mfd-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 5px; font-size: 13px; }
-        .param { color: #8b949e; } .val { color: #fff; text-align: right; font-weight: bold; }
-        .sys-status { width: 100%; background: #000; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; font-size: 13px; border: 1px solid #30363d; letter-spacing: 1px; }
+        .alsn-unit { width: 45px; height: 20px; border-radius: 3px; background: #222; font-size: 10px; font-weight: bold; text-align: center; line-height: 20px; color: #444; }
+        .alsn-unit.active-green { background: #33ff33; color: #000; box-shadow: 0 0 15px #33ff33; }
+        .alsn-unit.active-yellow { background: #ffcc00; color: #000; box-shadow: 0 0 15px #ffcc00; }
+        .alsn-unit.active-red { background: #ff3333; color: #fff; box-shadow: 0 0 15px #ff3333; }
 
-        /* Физические кнопки пульта */
-        .hardware-controls { display: flex; justify-content: space-around; align-items: center; }
-        .hw-btn {
-            width: 80px; height: 80px; border-radius: 50%; border: 6px solid #3a3f44; background: #222; cursor: pointer;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 11px; font-weight: bold; color: #ccc;
-            box-shadow: 0 7px 0 #111, 0 10px 15px rgba(0,0,0,0.6); transition: 0.1s; transform: translateY(-3px);
+        /* Информационные экраны */
+        .display-box {
+            background: #040814; border: 3px solid #4b6584; border-radius: 6px; padding: 12px;
+            font-family: 'Consolas', monospace; color: #51ff0d; display: flex; flex-direction: column; justify-content: space-between;
         }
-        .hw-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #111, 0 5px 5px rgba(0,0,0,0.6); }
-        .hw-btn.master-go { background: radial-gradient(#2ecc71, #1e7e34); color: #fff; border-color: #1e7e34; }
-        .hw-btn.master-brake { background: radial-gradient(#e74c3c, #bd2130); color: #fff; border-color: #bd2130; }
-        .hw-btn.door-toggle { background: radial-gradient(#f1c40f, #d39e00); color: #111; border-color: #d39e00; }
-        .hw-btn.active-light { box-shadow: 0 0 25px #f1c40f, inset 0 0 10px #fff !important; color: #fff !important; }
+        .screen-row { display: flex; justify-content: space-between; font-size: 14px; margin: 2px 0; }
+        .big-speed { font-size: 56px; font-weight: bold; color: #fff; text-align: center; font-family: 'Impact', sans-serif; line-height: 50px; }
 
-        #hud-top { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); padding: 12px 24px; border-radius: 5px; border-left: 5px solid #66fcf1; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
+        /* Кнопки и тумблеры */
+        .controls-cluster { display: flex; justify-content: space-around; align-items: center; }
+        .panel-btn {
+            width: 85px; height: 85px; border-radius: 10px; border: 4px solid #4b6584; background: #34495e;
+            color: #fff; font-weight: bold; font-size: 11px; cursor: pointer; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; box-shadow: 0 6px 0 #1e272e, 0 10px 15px rgba(0,0,0,0.5); transition: 0.1s;
+        }
+        .panel-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #1e272e, 0 4px 5px rgba(0,0,0,0.5); }
+        .panel-btn.btn-go { background: #20bf6b; border-color: #26de81; }
+        .panel-btn.btn-brake { background: #eb3b5a; border-color: #ff5252; }
+        .panel-btn.btn-whistle { background: #f7b731; border-color: #fed330; color: #000; }
+
+        #route-hud { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.85); padding: 12px 20px; border-radius: 6px; border-left: 5px solid #f7b731; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
     <div id="windshield">
-        <div id="wall-l" class="tunnel-line"></div>
-        <div id="wall-r" class="tunnel-line"></div>
-        <div id="tunnel-environment"></div>
-        <div class="tunnel-line" id="rail-left"></div>
-        <div class="tunnel-line" id="rail-right"></div>
+        <div id="ground"></div>
+        <div id="scenery-container"></div>
+        <div id="ties-container"></div>
+        <div class="rail-line" id="rail-left"></div>
+        <div class="rail-line" id="rail-right"></div>
         
         <div id="station">
-            <div id="station-wall">
-                <div id="station-name">СТАНЦИЯ: КУНЦЕВСКАЯ</div>
-                <div id="opv-marker">ОПВ</div>
+            <div id="platform"></div>
+            <div id="station-building">
+                <div id="station-title">СТАНЦИЯ: ВОРКУТА</div>
+                <div style="font-size:12px; color:#aaa; margin-top:5px;">СЕВЕРНАЯ ЖЕЛЕЗНАЯ ДОРОГА</div>
             </div>
-            <div id="passengers-group"></div>
         </div>
 
-        <div id="semaphore">
-            <div id="light-red" class="light red"></div>
-            <div id="light-yellow" class="light"></div>
-            <div id="light-green" class="light"></div>
+        <div id="way-signal">
+            <div id="signal-head">
+                <div id="w-red" class="sig-light red"></div>
+                <div id="w-yellow" class="sig-light"></div>
+                <div id="w-green" class="sig-light"></div>
+            </div>
         </div>
 
-        <div id="hud-top">
-            <div>МАРШРУТ СЛЕДОВАНИЯ: <b>№ 710</b></div>
-            <div>ОЧКИ ГРАФИКА: <span id="score-val" style="color:#fff">0</span></div>
+        <div id="route-hud">
+            <div>ПОЕЗД: <b>№ 078Я «Воркута — Ленинград»</b></div>
+            <div>СОСТАВ: <b>16 ПАССАЖИРСКИХ ВАГОНОВ (АМПЛИПЛИТУДА)</b></div>
         </div>
     </div>
 
-    <div id="control-panel">
-        <div class="gauges-side">
-            <div>
-                <div class="gauge-label"><span>ТОРМОЗНАЯ МАГИСТРАЛЬ (ТМ)</span><span id="tm-val">5.0 Атм</span></div>
-                <div class="gauge-bar-container"><div id="gauge-tm" class="gauge-bar" style="width: 100%; background: #2ecc71;"></div></div>
+    <div id="cab-panel">
+        <div class="display-box" style="color: #00ffcc; border-color: #3c6382;">
+            <div style="font-size:11px; color:#aaa; border-bottom:1px solid #222; padding-bottom:4px;">ПНЕВМАТИЧЕСКАЯ СИСТЕМА ПОВЕСТКИ</div>
+            <div class="screen-row"><span>МАГИСТРАЛЬ ТМ:</span><span id="tm-pressure" style="color:#20bf6b; font-weight:bold;">5.2 Атм</span></div>
+            <div class="screen-row"><span>ЦИЛИНДРЫ ТЦ:</span><span id="tc-pressure" style="color:#eb3b5a; font-weight:bold;">0.0 Атм</span></div>
+            <div class="screen-row"><span>ГЛАВНЫЙ РЕЗЕРВУАР:</span><span style="color:#f7b731;">8.5 Атм</span></div>
+            <div class="screen-row"><span>ПЕСОЧНИЦА:</span><span>ЗАПОЛНЕНА</span></div>
+        </div>
+
+        <div style="display: flex; align-items: center; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 6px;">
+            <div id="alsn-display">
+                <div id="alsn-g" class="alsn-unit">З</div>
+                <div id="alsn-y" class="alsn-unit">Ж</div>
+                <div id="alsn-r" class="alsn-unitactive active-red" style="color:#fff;">К</div>
             </div>
-            <div>
-                <div class="gauge-label"><span>ТОРМОЗНЫЕ ЦИЛИНДРЫ (ТЦ)</span><span id="tc-val">0.0 Атм</span></div>
-                <div class="gauge-bar-container"><div id="gauge-tc" class="gauge-bar" style="width: 0%; background: #e74c3c;"></div></div>
-            </div>
-            <div>
-                <div class="gauge-label"><span>НАПОРНАЯ МАГИСТРАЛЬ (НМ)</span><span id="nm-val">8.1 Атм</span></div>
-                <div class="gauge-bar-container"><div id="gauge-nm" class="gauge-bar" style="width: 81%; background: #f1c40f;"></div></div>
+            
+            <div class="display-box" style="flex: 1; height: 100%;">
+                <div class="screen-row"><span style="color:#aaa;">СКОРОСТЕМЕР КПД-3В</span><span id="live-time">00:00:00</span></div>
+                <div class="big-speed" id="speed-display">0</div>
+                <div class="screen-row"><span>ДО СЛЕДУЮЩЕЙ:</span><span id="dist-display" style="color:#fff; font-weight:bold;">4500 м</span></div>
+                <div class="screen-row"><span style="color:#aaa;">ПЕРЕГОН:</span><span id="current-seg" style="color:#f7b731;">ВОРКУТА - ЧУМ</span></div>
             </div>
         </div>
 
-        <div class="center-console">
-            <div class="mfd-screen">
-                <div class="mfd-header"><span>МФДУ-БОРТ v4.12</span><span id="clock">00:00:00</span></div>
-                <div class="mfd-main">
-                    <div class="speed-block">
-                        <div class="speed-val" id="speed-display">0</div>
-                        <div style="font-size:10px; color:#8b949e; font-weight:bold; margin-top:2px;">СКОРОСТЬ км/ч</div>
-                    </div>
-                    <div class="mfd-grid" style="min-width: 210px;">
-                        <span class="param" style="color: #66fcf1;">АРС ДОПУСТИМАЯ:</span><span class="val" id="ars-speed" style="color: #66fcf1;">80 км/ч</span>
-                        <span class="param">ДО СТАНЦИИ:</span><span class="val" id="dist-display">1500 м</span>
-                        <span class="param">ПАССАЖИРЫ:</span><span class="val" id="pass-count">0</span>
-                        <span class="param">РЕЖИМ КВ:</span><span class="val" id="mfd-mode" style="color:#f1c40f">ВЫБЕГ</span>
-                    </div>
-                </div>
-            </div>
-            <div id="status-text" class="sys-status" style="color: #ff3333;">СИСТЕМА: СТОЯНКА. ОЖИДАНИЕ СИГНАЛА БЛОКИРОВКИ</div>
-        </div>
-
-        <div class="hardware-controls">
-            <button class="hw-btn master-go" id="btn-accel">ХОД<br>▲</button>
-            <button class="hw-btn master-brake" id="btn-brake">ТОРМОЗ<br>▼</button>
-            <button class="hw-btn door-toggle" id="btn-doors">ДВЕРИ<br>[ || ]</button>
+        <div class="controls-cluster">
+            <button class="panel-btn btn-go" id="ctrl-accel">ТЯГА<br>(Позиции +)</button>
+            <button class="panel-btn btn-brake" id="ctrl-brake">ТОРМОЗ<br>(Кран №395)</button>
+            <button class="panel-btn btn-whistle" id="ctrl-horn">ТИФОН<br>📢</button>
         </div>
     </div>
 </div>
 
 <script>
-    // Саунд-движок Web Audio API
+    // Саунд-движок (Звук тяжелого дизеля ТЭП70 и стука колес)
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    let motorOsc = null, motorGain = null, alarmInterval = null;
+    let dieselOsc = null, dieselGain = null;
 
     function initAudio() {
-        if (motorOsc) return;
-        motorOsc = audioCtx.createOscillator();
-        motorGain = audioCtx.createGain();
-        motorOsc.type = 'sawtooth';
-        motorOsc.frequency.setValueAtTime(20, audioCtx.currentTime);
+        if (dieselOsc) return;
+        dieselOsc = audioCtx.createOscillator();
+        dieselGain = audioCtx.createGain();
+        dieselOsc.type = 'sawtooth';
+        dieselOsc.frequency.setValueAtTime(18, audioCtx.currentTime); // Низкий гул
         
         let filter = audioCtx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(120, audioCtx.currentTime);
+        filter.frequency.setValueAtTime(90, audioCtx.currentTime);
 
-        motorGain.gain.setValueAtTime(0, audioCtx.currentTime);
-        motorOsc.connect(filter);
-        filter.connect(motorGain);
-        motorGain.connect(audioCtx.destination);
-        motorOsc.start();
+        dieselGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        dieselOsc.connect(filter); filter.connect(dieselGain);
+        dieselGain.connect(audioCtx.destination);
+        dieselOsc.start();
 
-        // Стук колёсных пар на рельсовых стыках
+        // Фирменный стыковой стук длинного поезда (Та-дам... та-дам)
         setInterval(() => {
             if (speed > 10) {
-                playClick();
-                setTimeout(() => { if (speed > 35) playClick(); }, 140);
+                playWheelClick(0.06);
+                setTimeout(() => { playWheelClick(0.04); }, 160);
             }
-        }, 750);
+        }, 900);
     }
 
-    function playClick() {
-        if(!motorGain) return;
+    function playWheelClick(vol) {
+        if(!dieselGain) return;
         let osc = audioCtx.createOscillator();
         let gain = audioCtx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(45, audioCtx.currentTime);
-        gain.gain.setValueAtTime(speed * 0.0025, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+        osc.type = 'triangle'; osc.frequency.setValueAtTime(38, audioCtx.currentTime);
+        gain.gain.setValueAtTime(speed * vol * 0.003, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
         osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.12);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.15);
     }
 
-    function playBeep(freq, duration) {
+    function playHorn() {
         initAudio();
-        let osc = audioCtx.createOscillator();
-        let gain = audioCtx.createGain();
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + duration);
+        // Двухтональный гудок локомотива (Тифон)
+        let frequencies = [370, 660];
+        frequencies.forEach(f => {
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(f, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 1.2);
+        });
     }
 
-    function setArsAlarm(active) {
-        if (active && !alarmInterval) {
-            alarmInterval = setInterval(() => { playBeep(880, 0.1); }, 300);
-        } else if (!active && alarmInterval) {
-            clearInterval(alarmInterval); alarmInterval = null;
-        }
-    }
+    // Маршрут следования
+    const routeStations = [
+        { name: 'ВОРКУТА', dist: 0 },
+        { name: 'ЧУМ', dist: 4500 },
+        { name: 'ИНТА-1', dist: 6000 },
+        { name: 'ПЕЧОРА', dist: 5500 },
+        { name: 'КОТЛАС', dist: 7000 },
+        { name: 'ВОЛОГДА', dist: 6500 },
+        { name: 'ЛЕНИНГРАД-ГЛАВНЫЙ', dist: 8000 }
+    ];
+    let currentSegmentIdx = 0;
 
-    // Игровые параметры
-    let speed = 0, maxSpeed = 80, recSpeed = 80;
-    let distanceToStation = 1500; // Дистанция перегона (1.5 км)
-    let doorsOpen = false, score = 0, passengers = 0;
-    let currentPhase = 'wait_signal';
-    let stations = ['КУНЦЕВСКАЯ', 'МОЛОДЁЖНАЯ', 'КРЫЛАТСКОЕ', 'СТРОГИНО'];
-    let stationIdx = 0;
+    // Переменные поезда
+    let speed = 0;
+    let maxSpeed = 120; // Пассажирская скорость магистрали
+    let distanceToNext = 4500;
+    let currentPhase = 'wait_departure';
+    let pressureTM = 5.2, pressureTC = 3.8;
 
-    // Пневматика (Давление в атмосферах)
-    let pressureTM = 5.0, pressureTC = 3.8;
-
+    // DOM Элементы
     const speedDisplay = document.getElementById('speed-display');
-    const arsDisplay = document.getElementById('ars-speed');
     const distDisplay = document.getElementById('dist-display');
-    const passCount = document.getElementById('pass-count');
-    const mfdMode = document.getElementById('mfd-mode');
-    const statusText = document.getElementById('status-text');
-    const scoreVal = document.getElementById('score-val');
-    const station = document.getElementById('station');
-    const stationNameDiv = document.getElementById('station-name');
-    const passGroup = document.getElementById('passengers-group');
-    const lRed = document.getElementById('light-red'), lYellow = document.getElementById('light-yellow'), lGreen = document.getElementById('light-green');
-    const gaugeTM = document.getElementById('gauge-tm'), gaugeTC = document.getElementById('gauge-tc'), tmVal = document.getElementById('tm-val'), tcVal = document.getElementById('tc-val');
+    const currentSegText = document.getElementById('current-seg');
+    const stationDiv = document.getElementById('station');
+    const stationTitle = document.getElementById('station-title');
+    const tmText = document.getElementById('tm-pressure');
+    const tcText = document.getElementById('tc-pressure');
+    
+    // Светофоры
+    const wRed = document.getElementById('w-red'), wYellow = document.getElementById('w-yellow'), wGreen = document.getElementById('w-green');
+    const alsnG = document.getElementById('alsn-g'), alsnY = document.getElementById('alsn-y'), alsnR = document.getElementById('alsn-r');
 
-    function spawnPassengers() {
-        passGroup.innerHTML = '';
-        let count = Math.floor(Math.random() * 12) + 6;
-        for(let i=0; i<count; i++) {
-            let p = document.createElement('div'); p.className = 'passenger';
-            p.style.background = `hsl(${Math.random()*360}, 65%, 55%)`;
-            p.style.left = `${Math.random()*320}px`; passGroup.appendChild(p);
-        }
-    }
-    spawnPassengers();
+    // Кнопка гудка
+    document.getElementById('ctrl-horn').addEventListener('click', playHorn);
 
-    // Отрисовка окружения тоннеля
-    let tunnelElements = [];
-    function handleTunnelFX() {
-        if (speed > 0 && Math.random() < speed * 0.0025) {
-            let l = document.createElement('div'); l.className = 'wall-light';
-            l.style.left = '50%'; l.style.top = '42%'; l.style.transform = 'scale(0.1)';
-            document.getElementById('tunnel-environment').appendChild(l);
-            tunnelElements.push({ el: l, x: 50, y: 42, scale: 0.1, type: 'light' });
-        }
-        if (distanceToStation < 410 && distanceToStation > 390 && !tunnelElements.some(e => e.type === 'sign')) {
-            let s = document.createElement('div'); s.className = 'brake-sign';
-            document.getElementById('tunnel-environment').appendChild(s);
-            tunnelElements.push({ el: s, x: 47, y: 45, scale: 0.05, type: 'sign' });
-        }
-        for (let i = tunnelElements.length - 1; i >= 0; i--) {
-            let e = tunnelElements[i];
-            e.scale += speed * (e.type === 'sign' ? 0.007 : 0.0025);
-            e.y += speed * 0.075; e.x -= speed * (e.type === 'sign' ? 0.06 : 0.13);
-            e.el.style.transform = `scale(${e.scale})`;
-            e.el.style.top = e.y + '%'; e.el.style.left = e.x + '%';
-            if (e.y > 100 || e.x < 0) { e.el.remove(); tunnelElements.splice(i, 1); }
-        }
-    }
-
-    // Сигнализация отправления
+    // Логика сигналов отправления
     setTimeout(() => {
-        lRed.classList.remove('red'); lYellow.classList.add('yellow'); playBeep(440, 0.1);
-        setTimeout(() => {
-            lYellow.classList.remove('yellow'); lGreen.classList.add('green');
-            currentPhase = 'drive';
-            statusText.innerText = 'АРС: ПУТЬ СВОБОДЕН. ДОПУСТИМАЯ СКОРОСТЬ 80 КМ/Ч';
-            statusText.style.color = '#33ff33'; playBeep(523, 0.25);
-        }, 1500);
-    }, 2500);
-
-    // Логика контроллера (Управление тягой и торможением)
-    function handleController(action) {
-        initAudio();
-        if (doorsOpen && action > 0) return;
-        if (currentPhase === 'wait_signal') return;
-
-        if (action > 0) { // ХОД
-            speed = Math.min(maxSpeed, speed + 3.5);
-            pressureTM = Math.min(5.0, pressureTM + 0.3);
-            pressureTC = Math.max(0.0, pressureTC - 0.7);
-            mfdMode.innerText = 'ТЯГА'; mfdMode.style.color = '#33ff33'; playBeep(350, 0.05);
-        } else { // ТОРМОЗ
-            speed = Math.max(0, speed - 4.5);
-            pressureTM = Math.max(3.5, pressureTM - 0.4);
-            pressureTC = Math.min(3.8, pressureTC + 0.6);
-            mfdMode.innerText = 'ТОРМОЖЕНИЕ'; mfdMode.style.color = '#ff3333'; playBeep(280, 0.05);
-        }
-    }
-
-    document.getElementById('btn-accel').addEventListener('click', () => handleController(1));
-    document.getElementById('btn-brake').addEventListener('click', () => handleController(-1));
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowUp') handleController(1);
-        if (e.key === 'ArrowDown') handleController(-1);
-        if (e.key === ' ') document.getElementById('btn-doors').click();
-    });
-
-    // Посадка / Высадка и управление дверями
-    document.getElementById('btn-doors').addEventListener('click', () => {
-        initAudio(); if (speed > 0) return;
-        doorsOpen = !doorsOpen;
-        const btn = document.getElementById('btn-doors');
-
-        if (doorsOpen) {
-            btn.classList.add('active-light'); playBeep(400, 0.15);
-            if (distanceToStation <= 10 && distanceToStation >= -10) {
-                statusText.innerText = 'ИНФО: ВЫСАДКА И ПОСАДКА ПАССАЖИРОВ...'; statusText.style.color = '#f1c40f';
-                setTimeout(() => {
-                    if (doorsOpen) {
-                        passengers += Math.floor(Math.random() * 25) + 20;
-                        score += 300; passCount.innerText = passengers; scoreVal.innerText = score;
-                        statusText.innerText = 'ИНФО: ПОСАДКА ЗАВЕРШЕНА. ЗАКРОЙТЕ ДВЕРИ.'; statusText.style.color = '#33ff33';
-                    }
-                }, 2500);
-            } else {
-                statusText.innerText = 'ШТРАФ: ОТКРЫТИЕ ДВЕРЕЙ В ТОННЕЛЕ! ОПАСНОСТЬ!';
-                score = Math.max(0, score - 400); scoreVal.innerText = score;
-            }
-        } else {
-            playBeep(600, 0.2); btn.classList.remove('active-light');
-            statusText.innerText = 'СИСТЕМА: ДВЕРИ ЗАКРЫТЫ. ЦЕПЬ СБОРКИ В ПОРЯДКЕ.'; statusText.style.color = '#33ff33';
-            if (distanceToStation <= 10 && distanceToStation >= -10 && passengers > 0) {
-                prepareNextStation();
-            }
-        }
-    });
-
-    function prepareNextStation() {
-        currentPhase = 'wait_signal'; distanceToStation = 1500;
-        station.style.left = '300%'; lGreen.classList.remove('green'); lRed.classList.add('red');
-        recSpeed = 80;
-        stationIdx = (stationIdx + 1) % stations.length;
-        stationNameDiv.innerText = 'СТАНЦИЯ: ' + stations[stationIdx];
-        statusText.innerText = 'СИСТЕМА: СМЕНА БЛОК-УЧАСТКА. ОЖИДАНИЕ СИГНАЛА АРС...'; statusText.style.color = '#ff3333';
-        spawnPassengers();
-
-        setTimeout(() => {
-            lRed.classList.remove('red'); lGreen.classList.add('green'); currentPhase = 'drive';
-            statusText.innerText = 'СИСТЕМА: ПЕРЕГОН СВОБОДЕН. ОТПРАВЛЕНИЕ.'; statusText.style.color = '#33ff33'; playBeep(523, 0.2);
-        }, 3500);
-    }
-
-    // Главный симуляционный цикл
-    function updatePhysicsLoop() {
-        if (speed > 0) {
-            distanceToStation -= (speed / 36); handleTunnelFX();
-            speed = Math.max(0, speed - 0.015); // Естественное сопротивление движения (выбег)
-        }
-
-        // Автоматическая Логика АРС (Инструкции по торможению)
-        if (currentPhase === 'drive') {
-            if (distanceToStation > 400) {
-                recSpeed = 80;
-                statusText.innerText = 'СИСТЕМА: РЕЖИМ АВТОМАТИЧЕСКОГО СЛЕДОВАНИЯ (80 км/ч)'; statusText.style.color = '#33ff33';
-            } else if (distanceToStation <= 400 && distanceToStation > 200) {
-                recSpeed = 60; // Предварительное торможение
-                statusText.innerText = 'АРС: ВНИМАНИЕ! ПОДХОД К СТАНЦИИ. СНИЖАЙТЕ СКОРОСТЬ ДО 60 КМ/Ч'; statusText.style.color = '#f1c40f';
-            } else if (distanceToStation <= 200 && distanceToStation > 70) {
-                recSpeed = 40; // Скорость въезда на перрон
-                statusText.innerText = 'АРС: ПЛАТФОРМА. ОГРАНИЧЕНИЕ ВЪЕЗДА ДО 40 КМ/Ч!'; statusText.style.color = '#ff9f43';
-            } else if (distanceToStation <= 70) {
-                recSpeed = 20; // Прицельное торможение к ОПВ
-                statusText.innerText = 'АРС: ФИНАЛЬНОЕ ТОРМОЖЕНИЕ К ЗНАКУ ОПВ (20 км/ч)!'; statusText.style.color = '#ff3333';
-            }
-            // Проверка превышения скорости
-            setArsAlarm(speed > recSpeed);
-            if (speed > recSpeed) {
-                statusText.innerText = 'ВНИМАНИЕ: ПРЕВЫШЕНИЕ ДОПУСТИМОЙ СКОРОСТИ АРС! ТОРМОЗИТЕ!'; statusText.style.color = '#ff3333';
-            }
-        } else {
-            setArsAlarm(false);
-        }
-
-        // Обновление приборов пульта
-        arsDisplay.innerText = recSpeed + ' км/ч';
-        arsDisplay.style.color = (speed > recSpeed) ? '#ff3333' : '#66fcf1';
-        speedDisplay.innerText = Math.round(speed);
-        distDisplay.innerText = Math.max(0, Math.round(distanceToStation)) + ' м';
-
-        // Синхронизация звука двигателя
-        if (motorGain) {
-            motorGain.gain.setValueAtTime(speed * 0.0018, audioCtx.currentTime);
-            motorOsc.frequency.setValueAtTime(20 + speed * 0.85, audioCtx.currentTime);
-        }
-
-        // Динамика манометров торможения
-        if (mfdMode.innerText === 'ТОРМОЖЕНИЕ') pressureTC = Math.min(3.8, pressureTC + 0.06);
-        else if (speed > 0) pressureTC = Math.max(0.0, pressureTC - 0.08);
-        gaugeTC.style.width = (pressureTC / 5 * 100) + '%';
-        tcVal.innerText = pressureTC.toFixed(1) + ' Атм';
-        gaugeTM.style.width = (pressureTM / 5 * 100) + '%';
-        tmVal.innerText = pressureTM.toFixed(1) + ' Атм';
+        wRed.classList.remove('red'); wYellow.classList.add('yellow');
+        alsnR.classList.remove('active-red'); alsnY.classList.add('active-yellow');
         
-        // Визуальное приближение перрона станции
-        if (distanceToStation < 250) {
-            station.style.left = `${distanceToStation * 1.6}%`;
+        setTimeout(() => {
+            wYellow.classList.remove('yellow'); wGreen.classList.add('green');
+            alsnY.classList.remove('active-yellow'); alsnG.classList.add('active-green');
+            currentPhase = 'en_route';
+        }, 3000);
+    }, 2000);
+
+    // Управление контроллером (Тяжелый поезд — огромный накат и инерция!)
+    function moveController(direction) {
+        initAudio();
+        if (currentPhase === 'wait_departure') return;
+
+        if (direction > 0) { // Набор позиций тяги
+            speed = Math.min(maxSpeed, speed + 2.0); // Медленно ускоряется 16 вагонов
+            pressureTC = Math.max(0.0, pressureTC - 0.9);
+            playWheelClick(0.02);
+        } else { // Сброс и ступени торможения крана машиниста
+            speed = Math.max(0, speed - 3.0); // Огромный тормозной путь тяжелого состава
+            pressureTC = Math.min(3.8, pressureTC + 0.5);
+        }
+    }
+
+    document.getElementById('ctrl-accel').addEventListener('click', () => moveController(1));
+    document.getElementById('ctrl-brake').addEventListener('click', () => moveController(-1));
+    
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp') moveController(1);
+        if (e.key === 'ArrowDown') moveController(-1);
+        if (e.key === 'h' || e.key === 'r' || e.key === 'р') playHorn();
+    });
+
+    // Генератор декораций (Тайга: Елки и столбы ЛЭП)
+    let objects = [];
+    const sceneryContainer = document.getElementById('scenery-container');
+    const tiesContainer = document.getElementById('ties-container');
+
+    function createSceneryFX() {
+        if (speed > 0 && Math.random() < speed * 0.003) {
+            // Деревья слева/справа
+            let isLeft = Math.random() > 0.5;
+            let t = document.createElement('div'); t.className = 'tree';
+            t.style.left = isLeft ? '15%' : '85%';
+            sceneryContainer.appendChild(t);
+            objects.push({ el: t, x: isLeft ? 15 : 85, y: 45, scale: 0.1, type: 'tree', side: isLeft ? -1 : 1 });
+        }
+        if (speed > 0 && Math.random() < speed * 0.001) {
+            // Телеграфные столбы вдоль путей
+            let p = document.createElement('div'); p.className = 'pole';
+            p.style.left = '25%';
+            sceneryContainer.appendChild(p);
+            objects.push({ el: p, x: 25, y: 45, scale: 0.1, type: 'pole', side: -1 });
+        }
+        if (speed > 0 && Math.random() < speed * 0.05) {
+            // Набегающие шпалы под колеса
+            let tie = document.createElement('div'); tie.className = 'tie';
+            tiesContainer.appendChild(tie);
+            objects.push({ el: tie, x: 46, y: 0, scale: 0.1, type: 'tie', speedY: 1 });
+        }
+    }
+
+    function animateScenery() {
+        for (let i = objects.length - 1; i >= 0; i--) {
+            let o = objects[i];
+            if (o.type === 'tie') {
+                o.y += speed * 0.3;
+                o.scale += speed * 0.009;
+                o.el.style.bottom = o.y + 'px';
+                o.el.style.transform = `scaleX(${o.scale * 1.5})`;
+                if (o.y > 400) { o.el.remove(); objects.splice(i, 1); }
+            } else {
+                o.scale += speed * 0.0015;
+                o.y += speed * 0.04;
+                o.x += (speed * 0.09) * o.side;
+                o.el.style.transform = `scale(${o.scale})`;
+                o.el.style.top = o.y + '%';
+                o.el.style.left = o.x + '%';
+                if (o.y > 100 || o.x < -10 || o.x > 110) { o.el.remove(); objects.splice(i, 1); }
+            }
+        }
+    }
+
+    function switchNextSegment() {
+        currentPhase = 'wait_departure';
+        speed = 0;
+        currentSegmentIdx++;
+        
+        if (currentSegmentIdx >= routeStations.length - 1) {
+            // Прибыли в Ленинград!
+            stationTitle.innerText = "ПРИБЫТИЕ: ЛЕНИНГРАД!";
+            currentSegText.innerText = "КОНЕЦ МАРШРУТА";
+            distDisplay.innerText = "0 м";
+            wGreen.classList.remove('green'); wRed.classList.add('red');
+            alsnG.classList.remove('active-green'); alsnR.classList.add('active-red');
+            alert("Поздравляем! Вы успешно довели пассажирский поезд №078Я из Воркуты в Ленинград через всю северную магистраль!");
+            return;
         }
 
-        // Фиксация остановки на станции
-        if (distanceToStation <= 0 && currentPhase === 'drive') {
-            if (speed > 10) { // Проезд станции
-                statusText.innerText = 'АВАРИЯ:ПРОЕЗД СТАНЦИИ БЕЗ ОСТАНОВКИ. ШТРАФ!'; statusText.style.color = '#ff3333';
-                score = Math.max(0, score - 500); scoreVal.innerText = score;
-                speed = 0; distanceToStation = -20; playBeep(120, 0.6);
+        let nextStation = routeStations[currentSegmentIdx + 1];
+        let currentStation = routeStations[currentSegmentIdx];
+        
+        stationTitle.innerText = "СТАНЦИЯ: " + currentStation.name;
+        currentSegText.innerText = `${currentStation.name} - ${nextStation.name}`;
+        distanceToNext = currentStation.dist;
+
+        stationDiv.style.left = '0%';
+        wGreen.classList.remove('green'); wRed.classList.add('red');
+        alsnG.classList.remove('active-green'); alsnR.classList.add('active-red');
+
+        // Стоянка 5 секунд и снова отправление по зеленому
+        setTimeout(() => {
+            stationDiv.style.left = '400%';
+            wRed.classList.remove('red'); wGreen.classList.add('green');
+            alsnR.classList.remove('active-red'); alsnG.classList.add('active-green');
+            currentPhase = 'en_route';
+        }, 6000);
+    }
+
+    // Главный игровой цикл симулятора магистрали
+    function mainLoop() {
+        if (speed > 0) {
+            distanceToNext -= (speed / 30);
+            createSceneryFX();
+            animateScenery();
+            speed = Math.max(0, speed - 0.008); // Легкое торможение сопротивлением воздуха
+        }
+
+        // Обновление приборов
+        speedDisplay.innerText = Math.round(speed);
+        distDisplay.innerText = Math.max(0, Math.round(distanceToNext)) + ' м';
+        
+        // Манометры
+        if (pressureTC > 0) pressureTC = Math.max(0, pressureTC - 0.04);
+        tmText.innerText = pressureTM.toFixed(1) + " Атм";
+        tcText.innerText = pressureTC.toFixed(1) + " Атм";
+
+        // Звуковой движок локомотива
+        if (dieselGain) {
+            dieselGain.gain.setValueAtTime(speed * 0.0015, audioCtx.currentTime);
+            dieselOsc.frequency.setValueAtTime(18 + speed * 0.4, audioCtx.currentTime);
+        }
+
+        // Логика приближения к станции
+        if (distanceToNext < 300) {
+            stationDiv.style.left = `${distanceToNext * 1.3}%`; // Появление вокзала из горизонта
+        }
+
+        // Остановка или проезд
+        if (distanceToNext <= 0 && currentPhase === 'en_route') {
+            if (speed > 5) {
+                alert(`Крушение или проезд графиковой станции ${routeStations[currentSegmentIdx+1].name}! Экстренное торможение составом.`);
+                speed = 0;
+                distanceToNext = 100;
             } else if (speed === 0) {
-                currentPhase = 'station_stop';
-                statusText.innerText = 'СИСТЕМА: ОСТАНОВКА ВЫПОЛНЕНА У ОТМЕТКИ ОПВ. ОТКРОЙТЕ ДВЕРИ.'; statusText.style.color = '#33ff33';
-                playBeep(650, 0.25);
+                switchNextSegment();
             }
         }
 
-        document.getElementById('clock').innerText = new Date().toTimeString().split(' ')[0];
-        requestAnimationFrame(updatePhysicsLoop);
+        document.getElementById('live-time').innerText = new Date().toTimeString().split(' ')[0];
+        requestAnimationFrame(mainLoop);
     }
-    updatePhysicsLoop();
+
+    mainLoop();
 </script>
 </body>
 </html>
