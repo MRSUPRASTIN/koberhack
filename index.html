@@ -3,215 +3,395 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CELL-NET // SATELLITE_CONTROL</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>Симулятор Водителя Автобуса</title>
     <style>
-        :root {
-            --matrix-blue: #007acc;
-            --matrix-glow: rgba(0, 122, 204, 0.6);
-            --dark-core: #010205;
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #222;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: white;
+            overflow: hidden;
         }
 
-        body, html {
-            margin: 0; padding: 0;
-            background-color: var(--dark-core);
-            color: #fff; font-family: 'Courier New', monospace;
-            overflow: hidden; height: 100vh;
-        }
-
-        #bg-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-
-        .main-container {
-            position: relative; z-index: 2;
-            display: flex; align-items: center; justify-content: center;
-            height: 100vh; padding: 15px; box-sizing: border-box;
-        }
-
-        .terminal {
-            width: 100%; max-width: 600px;
-            background: rgba(2, 5, 10, 0.95);
-            border: 1px solid var(--matrix-blue);
-            box-shadow: 0 0 50px var(--matrix-glow);
-            padding: 20px; border-radius: 4px; backdrop-filter: blur(10px);
-        }
-
-        /* КОНТЕЙНЕР КАРТЫ */
-        #map-module {
-            display: none;
-            width: 100%;
-            height: 250px;
-            margin-bottom: 15px;
-            border: 1px solid var(--matrix-blue);
+        #gameContainer {
             position: relative;
-            filter: brightness(0.7) contrast(1.2) hue-rotate(180deg); /* Синий хакерский стиль */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            overflow: hidden;
         }
 
-        #map-view { width: 100%; height: 100%; background: #000; }
-
-        .scan-overlay {
-            position: absolute; top:0; left:0; width:100%; height:100%;
-            z-index: 1000; pointer-events: none;
-            background: linear-gradient(rgba(0,122,204,0.1) 50%, transparent 50%);
-            background-size: 100% 4px;
+        canvas {
+            display: block;
+            background-color: #87ceeb;
         }
 
-        .scanner-bar {
-            position: absolute; top:0; left:0; width:100%; height:2px;
-            background: var(--matrix-blue); box-shadow: 0 0 15px var(--matrix-blue);
-            z-index: 1001; animation: scanMove 3s infinite linear;
-        }
-        @keyframes scanMove { 0% { top: 0; } 100% { top: 100%; } }
-
-        .terminal-header {
-            border-bottom: 1px solid var(--matrix-blue);
-            padding-bottom: 8px; margin-bottom: 15px;
-            display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--matrix-blue);
-        }
-
-        input[type="text"] {
-            width: 100%; background: #000; border: 1px solid var(--matrix-blue);
-            padding: 15px; color: #fff; font-family: monospace; outline: none; box-sizing: border-box;
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+            pointer-events: none;
         }
 
-        .action-btn {
-            width: 100%; background: var(--matrix-blue); color: #000; border: none;
-            padding: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase;
+        .ui-element {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid #444;
         }
 
-        .log-box {
-            height: 100px; background: #000; border: 1px solid #112233;
-            padding: 10px; overflow-y: auto; font-size: 0.75rem; color: #aaddff; margin-top: 10px;
+        #controls-hint {
+            margin-top: 15px;
+            color: #aaa;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.5;
         }
 
-        .step-final { display: none; text-align: center; }
-        .timer { font-size: 2.5rem; color: #ff3333; font-weight: bold; margin: 15px 0; }
-        .final-link {
-            display: block; background: #00ff66; color: #000; padding: 20px;
-            text-decoration: none; font-weight: bold; border-radius: 4px;
+        .highlight {
+            color: #ffcc00;
         }
     </style>
 </head>
 <body>
 
-    <canvas id="bg-canvas"></canvas>
+    <h2 style="margin-bottom: 10px;">Симулятор Автобуса: Городской Рейс</h2>
 
-    <div class="main-container">
-        <div class="terminal">
-            <div class="terminal-header">
-                <span>GEO_RECON_UNIT_v4</span>
-                <span id="st-text">SYSTEM_READY</span>
-            </div>
-
-            <div id="block-input" style="text-align: center;">
-                <div style="margin-bottom: 15px; border: 1px solid #333; display: inline-block;">
-                    <img src="https://2ip.io/ru/privacy/bar/26098820_297f2a.png" alt="IP_DATA">
-                </div>
-                <input type="text" id="target-input" placeholder="ВВЕДИТЕ @USERNAME ЦЕЛИ">
-                <button class="action-btn" onclick="initHack()">УСТАНОВИТЬ СЛЕЖКУ</button>
-            </div>
-
-            <div id="block-loading" style="display: none;">
-                <div id="map-module">
-                    <div id="map-view"></div>
-                    <div class="scan-overlay"></div>
-                    <div class="scanner-bar"></div>
-                </div>
-                <div class="log-box" id="logs"></div>
-            </div>
-
-            <div id="block-final" class="step-final">
-                <div style="color: #00ff66; font-weight: bold;">ЦЕЛЬ ЗАФИКСИРОВАНА: ТРАФИК ПЕРЕХВАЧЕН</div>
-                <div class="timer" id="timer">05:00</div>
-                <a href="https://t.me/mirieli1977" target="_blank" class="final-link">ПОЛУЧИТЬ ПОЛНЫЙ ДОСТУП</a>
-            </div>
+    <div id="gameContainer">
+        <div id="ui">
+            <div class="ui-element">Баланс: <span id="money" class="highlight">0</span> руб.</div>
+            <div class="ui-element" id="task">Задание: <span class="highlight" style="color: #55ff55;">Двигайтесь к остановке</span></div>
+            <div class="ui-element">Пассажиры: <span id="passengers" class="highlight">0</span>/20</div>
         </div>
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        // Анимация синего огня на фоне
-        const cvs = document.getElementById('bg-canvas');
-        const ctx = cvs.getContext('2d');
-        cvs.width = window.innerWidth; cvs.height = window.innerHeight;
-        let particles = [];
-        class Particle {
-            constructor() { this.init(); }
-            init() {
-                this.x = Math.random() * cvs.width; this.y = cvs.height + 20;
-                this.s = Math.random() * 10 + 5; this.a = Math.random() * 0.4;
-                this.v = Math.random() * 1.5 + 0.5;
+    <div id="controls-hint">
+        <strong>Управление:</strong> Стрелка Влево / Вправо — газ и тормоз (назад). <br>
+        <strong>Задача:</strong> Плавно остановитесь на остановке (<span style="color: #ff5555; font-weight: bold;">Красная зона</span>), подождите посадки и везите людей дальше!
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Элементы интерфейса
+const moneyEl = document.getElementById('money');
+const taskEl = document.getElementById('task');
+const passengersEl = document.getElementById('passengers');
+
+// Игровые переменные
+let money = 0;
+let passengerCount = 0;
+let gameSpeed = 0;
+const maxSpeed = 7;
+const acceleration = 0.15;
+const friction = 0.05;
+const braking = 0.3;
+
+// Положение мира (скроллинг)
+let worldX = 0;
+
+// Клавиши управления
+const keys = { Left: false, Right: false };
+
+// Автобус
+const bus = {
+    x: 150, // Фиксированная позиция на экране
+    y: 280,
+    width: 160,
+    height: 60,
+    wheelRotation: 0
+};
+
+// Остановка
+const busStop = {
+    worldX: 900, // Позиция в мире
+    width: 120,
+    height: 80,
+    hasPassengers: true,
+    active: true,
+    timer: 0,
+    requiredStopDuration: 100 // Время на посадку/высадку
+};
+
+// Декорации (облака, деревья, дома для ощущения скорости)
+const scenery = [];
+function generateScenery() {
+    // Деревья
+    for (let i = 0; i < 20; i++) {
+        scenery.push({
+            x: i * 300 + Math.random() * 100,
+            y: 240,
+            type: 'tree',
+            size: 30 + Math.random() * 20
+        });
+    }
+    // Дома на фоне
+    for (let i = 0; i < 10; i++) {
+        scenery.push({
+            x: i * 600 + Math.random() * 200,
+            y: 160,
+            type: 'building',
+            width: 100 + Math.random() * 80,
+            height: 120 + Math.random() * 60,
+            color: `hsl(${Math.random() * 360}, 30%, 50%)`
+        });
+    }
+}
+generateScenery();
+
+// Слушатели клавиатуры
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'в') keys.Right = true;
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'ф') keys.Left = true;
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'в') keys.Right = false;
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'ф') keys.Left = false;
+});
+
+// Главный игровой цикл
+function update() {
+    // 1. Физика движения автобуса
+    if (keys.Right) {
+        gameSpeed += acceleration;
+        if (gameSpeed > maxSpeed) gameSpeed = maxSpeed;
+    } else if (keys.Left) {
+        gameSpeed -= braking;
+        if (gameSpeed < -maxSpeed / 2) gameSpeed = -maxSpeed / 2;
+    } else {
+        // Плавное замедление (инерция)
+        if (gameSpeed > 0) gameSpeed -= friction;
+        if (gameSpeed < 0) gameSpeed += friction;
+        if (Math.abs(gameSpeed) < friction) gameSpeed = 0;
+    }
+
+    // Двигаем мир вокруг автобуса
+    worldX += gameSpeed;
+    bus.wheelRotation += gameSpeed * 0.05;
+
+    // 2. Логика остановки
+    // Вычисляем экранную координату остановки
+    let stopScreenX = busStop.worldX - worldX + bus.x;
+
+    // Проверяем, находится ли автобус ровно на остановке
+    let isOnStop = (bus.x + bus.width / 2 > stopScreenX) && 
+                   (bus.x + bus.width / 2 < stopScreenX + busStop.width);
+
+    if (isOnStop && Math.abs(gameSpeed) < 0.2) {
+        gameSpeed = 0; // Полная остановка
+        busStop.timer++;
+
+        if (busStop.hasPassengers) {
+            taskEl.innerHTML = `Посадка пассажиров... <span class="highlight">${Math.round(busStop.timer / busStop.requiredStopDuration * 100)}%</span>`;
+            if (busStop.timer >= busStop.requiredStopDuration) {
+                // Пассажиры сели
+                let boarded = Math.floor(Math.random() * 8) + 5;
+                passengerCount += boarded;
+                passengersEl.innerText = passengerCount;
+                busStop.hasPassengers = false;
+                busStop.timer = 0;
+                busStop.worldX += 1200; // Перемещаем следующую остановку дальше
+                taskEl.innerHTML = `<span style="color: #ffaa00;">Езжайте к следующей остановке!</span>`;
             }
-            update() {
-                this.y -= this.v; this.a -= 0.002;
-                if(this.a <= 0) this.init();
-            }
-            draw() {
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.s, 0, Math.PI*2);
-                ctx.fillStyle = `rgba(0, 122, 255, ${this.a})`; ctx.fill();
+        } else {
+            // Высадка (если уже были пассажиры)
+            taskEl.innerHTML = `Высадка пассажиров... <span class="highlight">${Math.round(busStop.timer / busStop.requiredStopDuration * 100)}%</span>`;
+            if (busStop.timer >= busStop.requiredStopDuration) {
+                let left = Math.min(passengerCount, Math.floor(Math.random() * 6) + 4);
+                passengerCount -= left;
+                money += left * 50; // 50 рублей за билет
+                
+                moneyEl.innerText = money;
+                passengersEl.innerText = passengerCount;
+                
+                busStop.hasPassengers = true; // На следующей остановке снова будут люди
+                busStop.timer = 0;
+                busStop.worldX += 1500; // Следующая остановка дальше
+                taskEl.innerHTML = `<span style="color: #55ff55;">Отлично! Двигайтесь дальше.</span>`;
             }
         }
-        for(let i=0; i<60; i++) particles.push(new Particle());
-        function render() {
-            ctx.fillStyle = '#010205'; ctx.fillRect(0,0,cvs.width,cvs.height);
-            particles.forEach(p => { p.update(); p.draw(); });
-            requestAnimationFrame(render);
+    } else {
+        if (busStop.timer > 0 && !isOnStop) {
+            // Если уехал, не дождавшись
+            busStop.timer = 0;
+            taskEl.innerHTML = `<span style="color: #ff5555;">Вы уехали раньше времени!</span>`;
         }
-        render();
+    }
 
-        // Логика карты
-        function initHack() {
-            const user = document.getElementById('target-input').value;
-            if(!user) return;
+    draw();
+    requestAnimationFrame(update);
+}
 
-            document.getElementById('block-input').style.display = 'none';
-            document.getElementById('block-loading').style.display = 'block';
-            document.getElementById('st-text').innerText = 'LINKING_SATELLITE...';
+// Отрисовка графики
+function draw() {
+    // Очистка экрана (Небо)
+    ctx.fillStyle = '#87ceeb';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Инициализация Leaflet (спутниковые снимки Esri)
-            const map = L.map('map-view', { zoomControl: false, attributionControl: false }).setView([37.7749, -122.4194], 16);
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
-            
-            // Красный маркер цели
-            L.circleMarker([37.7749, -122.4194], { color: 'red', radius: 12, fillOpacity: 0.5 }).addTo(map);
+    // Солнце
+    ctx.fillStyle = '#fdfd96';
+    ctx.beginPath();
+    ctx.arc(700, 60, 40, 0, Math.PI * 2);
+    ctx.fill();
 
-            const logs = [
-                "> Запрос доступа к спутнику Esri-14...",
-                "> Поиск координат по IP узла...",
-                `> Триангуляция объекта ${user}...`,
-                "> Точка выхода: Сан-Франциско, Market St.",
-                "> Перехват пакетов данных...",
-                "[OK] СОЕДИНЕНИЕ УСТАНОВЛЕНО."
-            ];
+    // Рисуем задний план (декорации)
+    scenery.forEach(item => {
+        let screenX = item.x - worldX * 0.5; // Эффект параллакса (задний план движется медленнее)
+        // Цикличность декораций
+        if (screenX < -200) item.x += 3000;
+        if (screenX > canvas.width + 200) item.x -= 3000;
 
-            let i = 0;
-            const logDiv = document.getElementById('logs');
-            const interval = setInterval(() => {
-                if(i < logs.length) {
-                    const p = document.createElement('div');
-                    p.innerText = logs[i];
-                    logDiv.appendChild(p);
-                    logDiv.scrollTop = logDiv.scrollHeight;
-                    i++;
-                } else {
-                    clearInterval(interval);
-                    setTimeout(() => {
-                        document.getElementById('block-loading').style.display = 'none';
-                        document.getElementById('block-final').style.display = 'block';
-                        startTimer();
-                    }, 2000);
+        if (item.type === 'building') {
+            ctx.fillStyle = item.color;
+            ctx.fillRect(screenX, item.y, item.width, item.height);
+            // Окна
+            ctx.fillStyle = '#f0f0d0';
+            for (let wx = screenX + 10; wx < screenX + item.width - 10; wx += 25) {
+                for (let wy = item.y + 10; wy < item.y + item.height - 10; wy += 30) {
+                    ctx.fillRect(wx, wy, 15, 20);
                 }
-            }, 900);
+            }
+        } else if (item.type === 'tree') {
+            ctx.fillStyle = '#8B4513'; // Ствол
+            ctx.fillRect(screenX + 10, item.y, 10, 40);
+            ctx.fillStyle = '#228B22'; // Листва
+            ctx.beginPath();
+            ctx.arc(screenX + 15, item.y, item.size, 0, Math.PI * 2);
+            ctx.fill();
         }
+    });
 
-        function startTimer() {
-            let t = 300;
-            const el = document.getElementById('timer');
-            setInterval(() => {
-                let m = Math.floor(t/60), s = t%60;
-                el.innerText = `0${m}:${s<10?'0'+s:s}`;
-                if(t > 0) t--;
-            }, 1000);
+    // Рисуем дорогу
+    ctx.fillStyle = '#555';
+    ctx.fillRect(0, 320, canvas.width, 80);
+    
+    // Разметка дороги
+    ctx.fillStyle = '#fff';
+    let dashWidth = 40;
+    let dashGap = 30;
+    let startDashX = -(worldX % (dashWidth + dashGap));
+    for (let x = startDashX; x < canvas.width; x += dashWidth + dashGap) {
+        ctx.fillRect(x, 355, dashWidth, 6);
+    }
+
+    // Тратуар / Обочина
+    ctx.fillStyle = '#777';
+    ctx.fillRect(0, 310, canvas.width, 10);
+
+    // РИСУЕМ ОСТАНОВКУ
+    let stopScreenX = busStop.worldX - worldX + bus.x;
+    // Разметка зоны остановки (красная линия на асфальте)
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+    ctx.fillRect(stopScreenX, 310, busStop.width, 15);
+
+    // Навес остановки
+    ctx.fillStyle = '#333';
+    ctx.fillRect(stopScreenX + 10, 230, busStop.width - 20, 10); // Крыша
+    ctx.fillStyle = '#aaa';
+    ctx.fillRect(stopScreenX + 15, 240, 6, 70); // Опора левая
+    ctx.fillRect(stopScreenX + busStop.width - 21, 240, 6, 70); // Опора правая
+    ctx.fillStyle = 'rgba(0, 150, 255, 0.4)';
+    ctx.fillRect(stopScreenX + 21, 240, busStop.width - 42, 50); // Стекло
+
+    // Знак остановки
+    ctx.fillStyle = '#333';
+    ctx.fillRect(stopScreenX - 20, 220, 4, 90); // столб
+    ctx.fillStyle = '#1e90ff';
+    ctx.fillRect(stopScreenX - 30, 200, 24, 24); // синий квадрат
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText("А", stopScreenX - 23, 217); // Буква А
+
+    // Люди на остановке
+    if (busStop.hasPassengers) {
+        ctx.fillStyle = '#ff6347';
+        for(let i=0; i<5; i++) {
+            ctx.beginPath();
+            ctx.arc(stopScreenX + 30 + (i*15), 290, 6, 0, Math.PI*2); // Голова
+            ctx.fill();
+            ctx.fillRect(stopScreenX + 26 + (i*15), 296, 8, 15); // Тело
         }
-    </script>
+    }
+
+
+    // РИСУЕМ АВТОБУС
+    ctx.save();
+    // Корпус автобуса
+    ctx.fillStyle = '#ffcc00'; // Желтый городской автобус
+    ctx.fillRect(bus.x, bus.y, bus.width, bus.height);
+
+    // Нижня полоса (дизайн)
+    ctx.fillStyle = '#333';
+    ctx.fillRect(bus.x, bus.y + bus.height - 10, bus.width, 10);
+
+    // Окна автобуса
+    ctx.fillStyle = '#333';
+    for (let i = 0; i < 5; i++) {
+        // Окна пассажиров
+        ctx.fillRect(bus.x + 15 + (i * 26), bus.y + 10, 20, 22);
+    }
+    // Лобовое стекло (водителя)
+    ctx.fillStyle = '#222';
+    ctx.fillRect(bus.x + 140, bus.y + 8, 15, 24);
+
+    // Фары
+    ctx.fillStyle = '#ffffaa';
+    ctx.fillRect(bus.x + bus.width - 2, bus.y + bus.height - 20, 3, 8); // Передняя
+    ctx.fillStyle = '#ff3333';
+    ctx.fillRect(bus.x, bus.y + bus.height - 20, 2, 8); // Задняя сабвуферная
+
+    // Колёса (Анимация вращения)
+    drawWheel(bus.x + 35, bus.y + bus.height);
+    drawWheel(bus.x + bus.width - 35, bus.y + bus.height);
+
+    ctx.restore();
+}
+
+function drawWheel(x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(bus.wheelRotation);
+
+    // Шина
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.arc(0, 0, 16, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Диск
+    ctx.fillStyle = '#ccc';
+    ctx.beginPath();
+    ctx.arc(0, 0, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Спицы (чтобы было видно вращение)
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-8, 0); ctx.lineTo(8, 0);
+    ctx.moveTo(0, -8); ctx.lineTo(0, 8);
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+// Запуск игры
+update();
+</script>
+
 </body>
 </html>
