@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Штурмовик: Прорыв ПВО</title>
+    <title>3D Штурмовик: Встречный Бой</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body { background: #010409; color: #ff3333; font-family: 'Consolas', monospace; overflow: hidden; }
@@ -34,7 +34,7 @@
 
         .flex-space { display: flex; justify-content: space-between; width: 100%; }
         .hud-val { color: #fff; font-weight: bold; }
-        .alert-ui { color: #ff3333; animation: blink 0.3s infinite alternate; font-weight: bold; }
+        .alert-ui { color: #ff3333; animation: blink 0.2s infinite alternate; font-weight: bold; }
 
         #controls-bar {
             align-self: center;
@@ -50,11 +50,11 @@
 
         #damage-flash {
             position: absolute; top:0; left:0; width:100%; height:100%;
-            background: rgba(255,0,0,0.4); pointer-events: none; opacity: 0;
-            transition: opacity 0.1s ease;
+            background: rgba(255, 0, 0, 0.35); pointer-events: none; opacity: 0;
+            transition: opacity 0.05s ease;
         }
 
-        @keyframes blink { from { opacity: 0.3; } to { opacity: 1; } }
+        @keyframes blink { from { opacity: 0.2; } to { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -67,19 +67,19 @@
         <div class="flex-space">
             <div class="glass-panel">
                 <div>СКОРОСТЬ: <span class="hud-val" id="speed-out">550</span> КМ/Ч</div>
-                <div>КООРДИНАТЫ: X: <span class="hud-val" id="x-out">0</span> | Y: <span class="hud-val" id="y-out">4500</span></div>
-                <div style="color: #00ff66;">ОРУЖИЕ: <span class="hud-val" style="color:#00ff66;">БЕСКОНЕЧНЫЕ ФАБ-500</span></div>
+                <div>ТЯГА ДВИГАТЕЛЯ: <span class="hud-val" style="color:#00ffff;">МАКСИМАЛКА</span></div>
+                <div style="color: #00ff66;">ОТВЕТНЫЙ ОГОНЬ: <span class="hud-val" style="color:#00ff66;">АКТИВЕН</span></div>
             </div>
             
             <div class="glass-panel" style="text-align: right;">
-                <div>УГРОЗА ПВО: <span class="alert-ui" id="pvo-warn">ВЫСОКАЯ</span></div>
-                <div>УНИЧТОЖЕНО ТЕХНИКИ: <span id="score-out" class="hud-val" style="color: #ffcc00;">0</span></div>
-                <div style="color: #00ffff;">СБИТО ЗДАНИЙ: <span id="b-score-out" class="hud-val">0</span></div>
+                <div>УГРОЗА ОБСТРЕЛА: <span class="alert-ui" id="pvo-warn">ПОИСК ЦЕЛЕЙ</span></div>
+                <div>УНИЧТОЖЕНО ТАНКОВ/ПВО: <span id="score-out" class="hud-val" style="color: #ffcc00;">0</span></div>
+                <div style="color: #00ffff;">РАЗРУШЕНО ЗДАНИЙ: <span id="b-score-out" class="hud-val">0</span></div>
             </div>
         </div>
 
         <div id="controls-bar">
-            🚀 <b>СВОБОДНЫЙ МАНЕВР:</b> Двигай мышь для перемещения во все стороны | <b>Пробел</b> — Сброс бомб по наземным силам врага!
+            ⚔️ <b>ВРАГИ ВЕДУТ ОГОНЬ!</b> Танки косят очередями, ПВО пускает ракеты. Маневрируй мышкой, чтобы уйти от трассеров!
         </div>
     </div>
 </div>
@@ -96,30 +96,28 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // Физическая модель штурмовика со свободным перемещением
+    // Физика МиГа
     let jet = {
-        x: 0, y: 0, // Позиция в 3D мире
+        x: 0, y: 0,
         roll: 0, pitch: 0,
-        targetX: 0, targetY: 0, // Куда стремится самолет за мышкой
+        targetX: 0, targetY: 0,
         speed: 550, altitude: 4000
     };
 
     let bombs = [];
     let explosions = [];
     let buildings = [];
-    let enemies = [];     // Танки и ПВО
-    let aaFlak = [];      // Снаряды ПВО
+    let enemies = [];     
+    let enemyProjectiles = []; // Снаряды и ракеты врагов
     let scoreVehicles = 0;
     let scoreBuildings = 0;
     let isSpacePressed = false; 
     let bombTimer = 0;          
 
-    // Генерация динамического окружения
     function initWorld() {
         buildings = [];
         enemies = [];
         
-        // Создаем сетку кварталов
         for (let x = -10; x <= 10; x += 2.5) {
             for (let z = 4; z <= 28; z += 4) {
                 let worldX = x * 1400 + (Math.random() * 200 - 100);
@@ -131,16 +129,15 @@
                     alive: true
                 });
 
-                // С шансом 40% рядом со зданиями спавнятся танки или ПВО
-                if (Math.random() < 0.4) {
+                if (Math.random() < 0.5) {
                     enemies.push({
-                        x: worldX + (Math.random() * 500 - 250),
+                        x: worldX + (Math.random() * 400 - 200),
                         y: -2500,
-                        z: worldZ + 200,
-                        type: Math.random() > 0.5 ? 'tank' : 'pvo',
+                        z: worldZ + 150,
+                        type: Math.random() > 0.4 ? 'tank' : 'pvo',
                         w: 90, h: 50,
                         alive: true,
-                        shootCooldown: Math.random() * 60,
+                        shootCooldown: Math.floor(Math.random() * 50),
                         moveDir: Math.random() > 0.5 ? 1 : -1
                     });
                 }
@@ -149,7 +146,6 @@
     }
     initWorld();
 
-    // Звуковой движок
     let audioCtx = null;
     function playSound(type) {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -165,29 +161,25 @@
         } else if (type === 'boom') {
             osc.type = 'sawtooth'; osc.frequency.setValueAtTime(65, audioCtx.currentTime);
             osc.frequency.linearRampToValueAtTime(5, audioCtx.currentTime + 0.5);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
             osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-        } else if (type === 'pvo') {
-            osc.type = 'square'; osc.frequency.setValueAtTime(180, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.15);
-            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+        } else if (type === 'fire') {
+            osc.type = 'square'; osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
         }
     }
 
-    // Управление — теперь мышь координирует физическое смещение
     window.addEventListener('mousemove', (e) => {
         let nX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
         let nY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
-        
         jet.roll = nX * 0.9;
         jet.pitch = nY * 0.3;
-        
-        // Целевые координаты смещения самолета на карте
-        jet.targetX = nX * 3200;
-        jet.targetY = -nY * 800;
+        jet.targetX = nX * 3400;
+        jet.targetY = -nY * 900;
     });
 
     window.addEventListener('keydown', (e) => {
@@ -199,25 +191,22 @@
 
     function triggerFlash() {
         flashEl.style.opacity = '1';
-        setTimeout(() => { flashEl.style.opacity = '0'; }, 80);
+        setTimeout(() => { flashEl.style.opacity = '0'; }, 60);
     }
 
     function spawnBomb() {
-        // Бомба летит с учетом текущего положения штурмовика во вселенной
         bombs.push({
             x: jet.x,
-            y: jet.y - 150, 
-            z: 300,
-            vx: jet.roll * 20, 
-            vy: -5, 
+            y: jet.y - 120, 
+            z: 250,
+            vx: jet.roll * 22, 
+            vy: -4, 
             vz: jet.speed * 0.16 
         });
         playSound('whistle');
     }
 
-    // Универсальная 3D Матрица проекции с учетом свободного сдвига самолета по осям X и Y
     function project3D(worldX, worldY, worldZ) {
-        // Вычисляем положение объекта относительно летящего самолета
         let relX = worldX - jet.x;
         let relY = worldY - jet.y;
 
@@ -239,7 +228,6 @@
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Плавный полет штурмовика по X и Y
         jet.x += (jet.targetX - jet.x) * 0.08;
         jet.y += (jet.targetY - jet.y) * 0.08;
 
@@ -247,12 +235,11 @@
 
         if (isSpacePressed && ++bombTimer % 6 === 0) spawnBomb();
 
-        // Отрисовка разделения неба и земли
         let horizonY = (canvas.height * 0.45) - (jet.pitch * 350) + (jet.y * 0.2);
         ctx.fillStyle = '#010205'; ctx.fillRect(0, 0, canvas.width, horizonY);
         ctx.fillStyle = '#02050e'; ctx.fillRect(0, horizonY, canvas.width, canvas.height);
 
-        // 1. Отрисовка и логика Зданий Города
+        // 1. Здания
         buildings.forEach(b => {
             b.z -= speedMult; 
             if (b.z <= -600) { b.z = 25000; b.alive = true; }
@@ -271,7 +258,6 @@
                     ctx.fillRect(topProj.x - w3d/2, topProj.y, w3d, h3d);
                     ctx.strokeRect(topProj.x - w3d/2, topProj.y, w3d, h3d);
 
-                    // Быстрый рендеринг оконных блоков
                     ctx.fillStyle = '#ffa500';
                     let stepX = Math.max(8, w3d / 5);
                     let stepY = Math.max(10, h3d / 8);
@@ -287,46 +273,59 @@
             }
         });
 
-        // 2. Вражеские силы: Танки и мобильные ПВО
-        let pvoIsLocking = false;
+        // 2. Враги (Танки и ПВО) + логика ведения огня
+        let alertStatus = "ЧИСТО";
         enemies.forEach(e => {
             e.z -= speedMult;
             if (e.z <= -600) { e.z = 25000; e.alive = true; }
 
             if (e.alive) {
-                // Танки маневрируют по улицам взад-вперед
-                if (e.type === 'tank') e.x += e.moveDir * 4;
+                if (e.type === 'tank') e.x += e.moveDir * 5;
 
                 let proj = project3D(e.x, e.y, e.z);
                 if (proj.visible && proj.y > horizonY) {
                     let sz = e.w * proj.scale;
 
                     if (e.type === 'tank') {
-                        // Рисуем танк врага
                         ctx.fillStyle = '#2e4a23'; ctx.strokeStyle = '#00ff66';
                         ctx.fillRect(proj.x - sz/2, proj.y - sz*0.3, sz, sz*0.4);
-                        ctx.fillStyle = '#1c3015'; // Башня танков
+                        ctx.fillStyle = '#1c3015'; 
                         ctx.fillRect(proj.x - sz*0.2, proj.y - sz*0.5, sz*0.4, sz*0.25);
+
+                        // Танки поливают очередями на дистанциях от 1500 до 12000
+                        if (e.z > 1500 && e.z < 12000) {
+                            if (alertStatus !== "CRITICAL LOCK") alertStatus = "ОБСТРЕЛ ИЗ ПУЛЕМЕТОВ";
+                            e.shootCooldown++;
+                            if (e.shootCooldown % 15 === 0) { // Высокий темп стрельбы танков
+                                enemyProjectiles.push({
+                                    x: e.x, y: e.y + 100, z: e.z,
+                                    vx: (jet.x - e.x) / 25 + (Math.random() * 80 - 40), // Разброс пуль
+                                    vy: (jet.y - e.y) / 25,
+                                    vz: -e.z / 25,
+                                    type: 'bullet'
+                                });
+                                playSound('fire');
+                            }
+                        }
                     } else {
-                        // Рисуем комплекс ПВО
                         ctx.fillStyle = '#4a2323'; ctx.strokeStyle = '#ff3333';
                         ctx.fillRect(proj.x - sz/2, proj.y - sz*0.3, sz, sz*0.4);
-                        ctx.fillStyle = '#ffcc00'; // Радар ПВО
+                        ctx.fillStyle = '#ffcc00'; 
                         ctx.fillRect(proj.x - sz*0.1, proj.y - sz*0.6, sz*0.2, sz*0.3);
 
-                        // Логика атаки ПВО по самолету
-                        if (e.z > 2000 && e.z < 16000) {
-                            pvoIsLocking = true;
+                        // Комплексы ПВО пускают зенитные ракеты
+                        if (e.z > 2500 && e.z < 18000) {
+                            alertStatus = "CRITICAL LOCK (РАКЕТА ПВО)";
                             e.shootCooldown++;
-                            if (e.shootCooldown % 45 === 0) {
-                                // ПВО выпускает скоростной трассирующий снаряд вверх
-                                aaFlak.push({
-                                    x: e.x, y: e.y, z: e.z,
-                                    vx: (jet.x - e.x) / 35,
-                                    vy: (jet.y - e.y) / 35,
-                                    vz: -e.z / 35 
+                            if (e.shootCooldown % 50 === 0) {
+                                enemyProjectiles.push({
+                                    x: e.x, y: e.y + 200, z: e.z,
+                                    vx: (jet.x - e.x) / 30,
+                                    vy: (jet.y - e.y) / 30,
+                                    vz: -e.z / 30,
+                                    type: 'missile'
                                 });
-                                playSound('pvo');
+                                playSound('fire');
                             }
                         }
                     }
@@ -334,38 +333,46 @@
             }
         });
 
-        document.getElementById('pvo-warn').innerText = pvoIsLocking ? "ОГОНЬ ВЕДЕТСЯ!" : "СПОКОЙНО";
-        document.getElementById('pvo-warn').className = pvoIsLocking ? "alert-ui" : "";
+        // Обновление СПО на интерфейсе
+        let warnEl = document.getElementById('pvo-warn');
+        warnEl.innerText = alertStatus;
+        if (alertStatus === "ЧИСТО") warnEl.className = "";
+        else warnEl.className = "alert-ui";
 
-        // 3. Физика зенитных снарядов ПВО (атакуют игрока)
-        for (let i = aaFlak.length - 1; i >= 0; i--) {
-            let f = aaFlak[i];
-            f.x += f.vx; f.y += f.vy; f.z += f.vz;
+        // 3. Обработка летящих снарядов врагов
+        for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
+            let p = enemyProjectiles[i];
+            p.x += p.vx; p.y += p.vy; p.z += p.vz;
 
-            let fProj = project3D(f.x, f.y, f.z);
+            let pProj = project3D(p.x, p.y, p.z);
 
-            if (!fProj.visible || f.z <= 0) {
-                // Если снаряд подлетел вплотную к экрану (z -> 0) — проверяем попадание по МиГу
-                if (Math.abs(f.x - jet.x) < 450 && Math.abs(f.y - jet.y) < 350) {
+            // Если снаряд долетел до плоскости самолета (z <= 0)
+            if (!pProj.visible || p.z <= 0) {
+                if (Math.abs(p.x - jet.x) < 500 && Math.abs(p.y - jet.y) < 400) {
                     triggerFlash();
-                    jet.speed = Math.max(300, jet.speed - 30); // Потеря скорости при попадании
+                    // Зенитная ракета бьет сильнее, чем пулемет танка
+                    let damage = p.type === 'missile' ? 60 : 15;
+                    jet.speed = Math.max(250, jet.speed - damage);
                 }
-                aaFlak.splice(i, 1);
+                enemyProjectiles.splice(i, 1);
                 continue;
             }
 
-            // Рисуем красные трассеры снарядов
-            ctx.fillStyle = '#ff3333';
-            ctx.shadowBlur = 10; ctx.shadowColor = '#ff0000';
-            ctx.beginPath(); ctx.arc(fProj.x, fProj.y, Math.max(2, fProj.scale * 15), 0, Math.PI * 2); ctx.fill();
-            ctx.shadowBlur = 0; // Сброс свечения ради оптимизации
+            // Отрисовка трассеров
+            if (p.type === 'bullet') {
+                ctx.fillStyle = '#00ff66'; // Зеленые пули танков
+                ctx.fillRect(pProj.x - 2, pProj.y - 2, Math.max(2, pProj.scale * 8), Math.max(2, pProj.scale * 8));
+            } else {
+                ctx.fillStyle = '#ff2222'; // Красные опасные ракеты ПВО
+                ctx.beginPath(); ctx.arc(pProj.x, pProj.y, Math.max(4, pProj.scale * 20), 0, Math.PI * 2); ctx.fill();
+            }
         }
 
-        // 4. Логика сброшенных игроком бомб
+        // 4. Бомбы игрока
         for (let i = bombs.length - 1; i >= 0; i--) {
             let bomb = bombs[i];
             bomb.x += bomb.vx; bomb.y += bomb.vy; bomb.z += bomb.vz;
-            bomb.vy -= 0.55; // Падение под гравитацией
+            bomb.vy -= 0.55;
 
             let bProj = project3D(bomb.x, bomb.y, bomb.z);
 
@@ -377,7 +384,6 @@
             ctx.fillStyle = '#8e9eab';
             ctx.beginPath(); ctx.arc(bProj.x, bProj.y, Math.max(3, bProj.scale * 12), 0, Math.PI * 2); ctx.fill();
 
-            // Проверка детонации по зданиям
             buildings.forEach(b => {
                 if (b.alive && Math.abs(bomb.x - b.x) < b.w && Math.abs(bomb.z - b.z) < 400) {
                     if (bomb.y <= b.y + b.h && bomb.y >= b.y) {
@@ -390,7 +396,6 @@
                 }
             });
 
-            // Проверка детонации по технике врага (Танки/ПВО)
             enemies.forEach(e => {
                 if (e.alive && Math.abs(bomb.x - e.x) < e.w * 1.5 && Math.abs(bomb.z - e.z) < 500) {
                     if (Math.abs(bomb.y - e.y) < 300) {
@@ -403,7 +408,6 @@
                 }
             });
 
-            // Взрыв при ударе об асфальт
             if (bomb.y <= -2500) {
                 explosions.push({ x: bProj.x, y: bProj.y, r: 5, maxR: 35 });
                 playSound('boom');
@@ -411,7 +415,7 @@
             }
         }
 
-        // 5. Отрисовка взрывов сфер пламени
+        // 5. Взрывы
         for (let i = explosions.length - 1; i >= 0; i--) {
             let exp = explosions[i]; exp.r += 4;
             ctx.fillStyle = 'rgba(255, 60, 0, ' + (1 - exp.r / exp.maxR) + ')';
@@ -421,8 +425,7 @@
             if (exp.r >= exp.maxR) explosions.splice(i, 1);
         }
 
-        // 6. Отрисовка твоего штурмовика по текущим физическим координатам
-        // Теперь самолет плавно двигается по экрану вслед за мышкой, кренясь на бок
+        // 6. Спрайт самолета mig.png
         let screenJetX = (canvas.width / 2) + (jet.x * 0.18);
         let screenJetY = (canvas.height * 0.55) - (jet.y * 0.25);
         
@@ -430,7 +433,6 @@
         ctx.translate(screenJetX, screenJetY);
         ctx.rotate(jet.roll);
         
-        // Эффект реактивного выхлопа
         ctx.fillStyle = 'rgba(255, 90, 0, 0.85)';
         ctx.fillRect(-12, 38, 5, 14); ctx.fillRect(7, 38, 5, 14);
 
@@ -438,10 +440,7 @@
         ctx.drawImage(jetImage, -imgSize / 2, -imgSize / 2, imgSize, imgSize);
         ctx.restore();
 
-        // Обновление HUD телеметрии
         document.getElementById('speed-out').innerText = Math.floor(jet.speed);
-        document.getElementById('x-out').innerText = Math.floor(jet.x);
-        document.getElementById('y-out').innerText = Math.floor(jet.altitude + jet.y);
 
         requestAnimationFrame(loop);
     }
