@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Бомбардировщик: Ковровая Бомбардировка</title>
+    <title>3D Бомбардировщик: Исправленный Город</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body { background: #010409; color: #ff3333; font-family: 'Consolas', monospace; overflow: hidden; }
 
         #game-container { position: relative; width: 100vw; height: 100vh; }
-        canvas { width: 100%; height: 100%; display: block; background: linear-gradient(to bottom, #020617 0%, #0b1528 60%, #1e293b 100%); }
+        canvas { width: 100%; height: 100%; display: block; background: linear-gradient(to bottom, #020617 0%, #0b1528 60%, #1a2436 100%); }
 
         /* HUD Панель */
         #ui-layer {
@@ -66,7 +66,7 @@
             
             <div class="glass-panel" style="text-align: right;">
                 <div>РЕЖИМ: <span class="bomb-alert">КОВРОВАЯ БОМБАРДИРОВКА</span></div>
-                <div>ГОРОД ВНИЗУ: <span class="hud-val" style="color: #ff3333;">МЕГАПОЛИС ВКЛ</span></div>
+                <div>ГОРОД ВНИЗУ: <span class="hud-val" style="color: #00ff66;">ИСПРАВЛЕН</span></div>
                 <div style="color: #ffcc00;">УНИЧТОЖЕНО ЗДАНИЙ: <span id="score-out" class="hud-val">0</span></div>
             </div>
         </div>
@@ -102,21 +102,21 @@
     let explosions = [];
     let buildings = [];
     let score = 0;
-    let isSpacePressed = false; // Трекинг зажатого пробела
-    let bombTimer = 0;          // Таймер частоты сброса
+    let isSpacePressed = false; 
+    let bombTimer = 0;          
 
-    // Генерируем бесконечную сетку 3D зданий мегаполиса под самолетом
+    // Генерируем сетку 3D зданий города
     function generateCity() {
         buildings = [];
         for (let x = -14; x <= 14; x += 2) {
             for (let z = 2; z <= 36; z += 2.5) {
-                let height = 400 + Math.random() * 900;
+                let height = 300 + Math.random() * 600;
                 buildings.push({
                     x: x * 850 + (Math.random() * 200 - 100),
-                    y: -1500, // Уровень земли
+                    y: -600,   // Базовый уровень земли в 3D
                     z: z * 1000,
-                    w: 260,   // Ширина здания
-                    h: height, // Высота здания
+                    w: 260,    // Ширина
+                    h: height, // Высота
                     alive: true
                 });
             }
@@ -132,15 +132,15 @@
         osc.connect(gain); gain.connect(audioCtx.destination);
 
         if (type === 'whistle') {
-            osc.type = 'sine'; osc.frequency.setValueAtTime(700, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(200, audioCtx.currentTime + 0.8);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(150, audioCtx.currentTime + 0.8);
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
             osc.start(); osc.stop(audioCtx.currentTime + 0.8);
         } else if (type === 'boom') {
             osc.type = 'sawtooth'; osc.frequency.setValueAtTime(90, audioCtx.currentTime);
             osc.frequency.linearRampToValueAtTime(15, audioCtx.currentTime + 0.9);
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.9);
             osc.start(); osc.stop(audioCtx.currentTime + 0.9);
         }
@@ -154,35 +154,29 @@
         jet.targetPitch = nY * 0.5;
     });
 
-    // Регистрация нажатия клавиш
     window.addEventListener('keydown', (e) => {
-        if (e.key === ' ' || e.code === 'Space') {
-            isSpacePressed = true;
-        }
+        if (e.key === ' ' || e.code === 'Space') isSpacePressed = true;
         if (e.key === 'w' || e.key === 'W') jet.throttle = Math.min(100, jet.throttle + 10);
         if (e.key === 's' || e.key === 'S') jet.throttle = Math.max(20, jet.throttle - 10);
     });
 
     window.addEventListener('keyup', (e) => {
-        if (e.key === ' ' || e.code === 'Space') {
-            isSpacePressed = false;
-        }
+        if (e.key === ' ' || e.code === 'Space') isSpacePressed = false;
     });
 
-    // Функция создания одной бомбы
     function spawnBomb() {
         bombs.push({
             x: jet.roll * 45,
-            y: -100, 
+            y: 100, // Сброс вниз из-под самолета
             z: 200,
             vx: jet.roll * 16, 
-            vy: 4,             
+            vy: -4, // Начальный вектор падения вниз
             vz: jet.speed * 0.13 
         });
         playSound('whistle');
     }
 
-    // 3D Матрица проекции
+    // Исправленная 3D Проекция (Инвертирована ось Y, чтобы земля была внизу)
     function project3D(x, y, z, pitch, roll) {
         let x1 = x * Math.cos(roll) - y * Math.sin(roll);
         let y1 = x * Math.sin(roll) + y * Math.cos(roll);
@@ -193,31 +187,27 @@
         let scale = fov / (z2 + 1500);
         return {
             x: (window.innerWidth / 2) + (x1 * scale),
-            y: (window.innerHeight * 0.45) + (y2 * scale),
+            // Знак МИНУС переносит отрисовку объектов вниз экрана относительно центра горизонта
+            y: (window.innerHeight * 0.5) - (y2 * scale),
             scale: scale,
             visible: z2 + 1500 > 0
         };
     }
 
-    // Отрисовка твоего mig.png
     function drawPlayerJet(x, y, roll) {
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(roll);
 
-        // Реактивное пламя двигателей
         ctx.fillStyle = 'rgba(255, 70, 0, 0.85)';
         ctx.fillRect(-14, 45, 6, 20);
         ctx.fillRect(8, 45, 6, 20);
 
-        // Отрисовка текстуры
         const size = 190;
         ctx.drawImage(jetImage, -size / 2, -size / 2, size, size);
-
         ctx.restore();
     }
 
-    // Основной цикл симулятора
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -229,43 +219,45 @@
 
         let speedMult = jet.speed * 0.15;
 
-        // Логика бесконечного автоматического сброса при зажатом пробеле
         if (isSpacePressed) {
             bombTimer++;
-            if (bombTimer % 6 === 0) { // Каждые 6 кадров сбрасывается новая бомба (высокий темп)
-                spawnBomb();
-            }
+            if (bombTimer % 6 === 0) spawnBomb();
         }
 
-        // Горизонт
-        let horizonY = (canvas.height * 0.45) + (jet.pitch * 400);
-        ctx.fillStyle = '#050912';
+        // Небо/Земля
+        let horizonY = (canvas.height * 0.5) - (jet.pitch * 400);
+        ctx.fillStyle = '#030611';
+        ctx.fillRect(0, 0, canvas.width, horizonY);
+        ctx.fillStyle = '#060a14';
         ctx.fillRect(0, horizonY, canvas.width, canvas.height);
 
-        // Отрисовка 3D города
+        // Отрисовка 3D зданий (Теперь растут снизу вверх)
         buildings.forEach(b => {
             b.z -= speedMult; 
             if (b.z <= -400) { 
                 b.z = 26000; 
                 b.alive = true; 
-                b.h = 400 + Math.random() * 900; // Новые небоскребы на горизонте
+                b.h = 300 + Math.random() * 600; 
             }
 
             if (b.alive) {
-                let bottomProj = project3D(b.x, b.y - jet.altitude, b.z, jet.pitch, jet.roll);
-                let topProj = project3D(b.x, (b.y + b.h) - jet.altitude, b.z, jet.pitch, jet.roll);
+                // Земля внизу, крыша вверху
+                let bottomProj = project3D(b.x, b.y, b.z, jet.pitch, jet.roll);
+                let topProj = project3D(b.x, b.y + b.h, b.z, jet.pitch, jet.roll);
 
                 if (topProj.visible) {
                     let w3d = b.w * topProj.scale;
-                    let h3d = bottomProj.y - topProj.y;
+                    let h3d = bottomProj.y - topProj.y; // Высота теперь считается правильно
 
                     ctx.fillStyle = 'rgba(16, 24, 48, 0.95)';
                     ctx.strokeStyle = 'rgba(255, 40, 40, 0.45)';
                     ctx.lineWidth = 1;
+                    
+                    // Рисуем коробку здания снизу вверх
                     ctx.fillRect(topProj.x - w3d/2, topProj.y, w3d, h3d);
                     ctx.strokeRect(topProj.x - w3d/2, topProj.y, w3d, h3d);
 
-                    // Светящиеся окна мегаполиса
+                    // Окна внутри небоскребов
                     ctx.fillStyle = '#ffcc00';
                     for (let oy = topProj.y + 12; oy < bottomProj.y - 12; oy += 24) {
                         for (let ox = topProj.x - w3d/2 + 8; ox < topProj.x + w3d/2 - 8; ox += 14) {
@@ -276,11 +268,12 @@
                     }
                 }
             } else {
-                // Горящие руины разрушенных зданий
-                let bottomProj = project3D(b.x, b.y - jet.altitude, b.z, jet.pitch, jet.roll);
+                // Разрушенные руины на уровне земли
+                let bottomProj = project3D(b.x, b.y, b.z, jet.pitch, jet.roll);
                 if (bottomProj.visible) {
+                    let w3d = b.w * bottomProj.scale;
                     ctx.fillStyle = '#121212';
-                    ctx.fillRect(bottomProj.x - (b.w * bottomProj.scale)/2, bottomProj.y - 10, b.w * bottomProj.scale, 14);
+                    ctx.fillRect(bottomProj.x - w3d/2, bottomProj.y - 10, w3d, 14);
                     if (Math.random() < 0.4) { 
                         ctx.fillStyle = '#ff4400';
                         ctx.fillRect(bottomProj.x + (Math.random()*50-25), bottomProj.y - 16, 12, 12);
@@ -289,14 +282,14 @@
             }
         });
 
-        // Физика бесконечных летящих бомб
+        // Физика летящих бомб
         for (let i = bombs.length - 1; i >= 0; i--) {
             let bomb = bombs[i];
             
             bomb.x += bomb.vx;
-            bomb.y -= bomb.vy; 
+            bomb.y += bomb.vy; // Изменен знак: бомба падает вниз
             bomb.z += bomb.vz;
-            bomb.vy += 0.45; // Гравитация
+            bomb.vy -= 0.45;   // Ускорение свободного падения к земле
 
             let bProj = project3D(bomb.x, bomb.y, bomb.z, jet.pitch, jet.roll);
 
@@ -306,23 +299,22 @@
                 ctx.arc(bProj.x, bProj.y, Math.max(3, bProj.scale * 14), 0, Math.PI * 2);
                 ctx.fill();
 
-                let absoluteBombHeight = bomb.y + jet.altitude;
-
                 buildings.forEach(b => {
                     if (b.alive && Math.abs(bomb.x - b.x) < b.w && Math.abs(bomb.z - b.z) < b.w) {
-                        if (absoluteBombHeight <= b.y + b.h && absoluteBombHeight >= b.y) {
+                        // Проверка пересечения с высотой здания
+                        if (bomb.y <= b.y + b.h && bomb.y >= b.y) {
                             b.alive = false; 
                             score++;
                             document.getElementById('score-out').innerText = score;
                             playSound('boom');
-                            
                             explosions.push({ x: bProj.x, y: bProj.y, r: 10, maxR: 75 });
                             bombs.splice(i, 1);
                         }
                     }
                 });
 
-                if (absoluteBombHeight <= -1500) {
+                // Бомба достигла уровня земли
+                if (bomb.y <= -600) {
                     explosions.push({ x: bProj.x, y: bProj.y, r: 6, maxR: 45 });
                     playSound('boom');
                     bombs.splice(i, 1);
@@ -332,26 +324,22 @@
             }
         }
 
-        // Рендеринг взрывов
+        // Взрывы
         for (let i = explosions.length - 1; i >= 0; i--) {
             let exp = explosions[i];
             exp.r += 4.5;
-            
             ctx.fillStyle = 'rgba(255, 60, 0, ' + (1 - exp.r / exp.maxR) + ')';
             ctx.beginPath(); ctx.arc(exp.x, exp.y, exp.r, 0, Math.PI * 2); ctx.fill();
-
             ctx.fillStyle = 'rgba(255, 210, 0, ' + (1 - exp.r / exp.maxR) + ')';
             ctx.beginPath(); ctx.arc(exp.x, exp.y, exp.r * 0.55, 0, Math.PI * 2); ctx.fill();
-
             if (exp.r >= exp.maxR) explosions.splice(i, 1);
         }
 
-        // Отрисовка «МиГа»
+        // Наш самолет в воздухе
         let myX = (canvas.width / 2) + (jet.roll * 60);
-        let myY = (canvas.height * 0.65) + (jet.pitch * 40);
+        let myY = (canvas.height * 0.5) + (jet.pitch * 40);
         drawPlayerJet(myX, myY, jet.roll);
 
-        // Обновление HUD датчиков
         document.getElementById('speed-out').innerText = Math.floor(jet.speed);
         document.getElementById('alt-out').innerText = Math.floor(jet.altitude);
 
