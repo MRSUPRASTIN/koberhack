@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Авиасимулятор: Воздушный Бой</title>
+    <title>3D Авиасимулятор: Умное Самонаведение</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body { background: #010409; color: #00ff66; font-family: 'Consolas', monospace; overflow: hidden; }
 
         #game-container { position: relative; width: 100vw; height: 100vh; }
-        canvas { width: 100%; height: 100%; display: block; background: linear-gradient(to bottom, #050f26 0%, #0a2246 50%, #153b65 100%); }
+        canvas { width: 100%; height: 100%; display: block; background: linear-gradient(to bottom, #030a1e 0%, #081735 50%, #112d52 100%); }
 
         /* HUD Панель */
         #ui-layer {
@@ -23,7 +23,7 @@
         }
 
         .glass-panel {
-            background: rgba(3, 13, 28, 0.8);
+            background: rgba(3, 13, 28, 0.85);
             border: 2px solid #00ff66;
             border-radius: 6px;
             padding: 12px 20px;
@@ -34,12 +34,12 @@
 
         .flex-space { display: flex; justify-content: space-between; width: 100%; }
         .hud-val { color: #fff; font-weight: bold; }
-        .target-alert { color: #ff3333; animation: blink 0.5s infinite alternate; }
+        .target-lock { color: #ff3333; animation: blink 0.3s infinite alternate; font-weight: bold; }
 
         #controls-bar {
             align-self: center;
-            background: rgba(0,0,0,0.85);
-            border: 1px solid #ff3333;
+            background: rgba(0,0,0,0.9);
+            border: 1px solid #00ff66;
             padding: 10px 25px;
             border-radius: 30px;
             font-size: 13px;
@@ -48,7 +48,7 @@
             color: #fff;
         }
 
-        @keyframes blink { from { opacity: 0.3; } to { opacity: 1; } }
+        @keyframes blink { from { opacity: 0.4; } to { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -59,20 +59,20 @@
     <div id="ui-layer">
         <div class="flex-space">
             <div class="glass-panel">
-                <div>СКОРОСТЬ: <span class="hud-val" id="speed-out">550</span> КМ/Ч</div>
-                <div>ВЫСОТА: <span class="hud-val" id="alt-out">1500</span> М</div>
-                <div>РАКЕТЫ: <span class="hud-val" style="color:#ffcc00;">БЕСКОНЕЧНО</span></div>
+                <div>СКОРОСТЬ: <span class="hud-val" id="speed-out">600</span> КМ/Ч</div>
+                <div>ВЫСОТА: <span class="hud-val" id="alt-out">2000</span> М</div>
+                <div>РАКЕТЫ: <span class="hud-val" style="color:#00ffff;">Р-73 (АКТИВНЫ)</span></div>
             </div>
             
             <div class="glass-panel" style="text-align: right;">
-                <div>ЦЕЛЬ: <span class="hud-val target-alert" id="target-status">В ЗОНЕ ВИДИМОСТИ</span></div>
-                <div>ДИСТАНЦИЯ: <span class="hud-val" id="target-dist">1200</span> М</div>
+                <div>ОРУЖИЕ: <span class="target-lock" id="target-status">АВТОНАВЕДЕНИЕ ОК</span></div>
+                <div>ДИСТАНЦИЯ: <span class="hud-val" id="target-dist">1500</span> М</div>
                 <div style="color: #00ffff;">СБИТО ВРАГОВ: <span id="score-out" class="hud-val">0</span></div>
             </div>
         </div>
 
         <div id="controls-bar">
-            🚀 <b>БОЕВОЙ РЕЖИМ:</b> Мышь — Наведение и Крен | <b>W / S</b> — Скорость | <b style="color: #ff3333;">ПРОБЕЛ — ПУСК РАКЕТЫ</b>
+            🎯 <b>ПРОКАЧАННЫЕ РАКЕТЫ:</b> Держи цель в поле зрения и жми <b>ПРОБЕЛ</b> — ракета скорректирует траекторию!
         </div>
     </div>
 </div>
@@ -90,43 +90,43 @@
         x: 0, y: 0,
         roll: 0, pitch: 0,
         targetRoll: 0, targetPitch: 0,
-        speed: 550, altitude: 1500, throttle: 60
+        speed: 600, altitude: 2000, throttle: 70
     };
 
-    // Вражеская цель (в 3D пространстве)
-    let enemy = { x: 0, y: 200, z: 3000, alive: true, size: 40, t: 0 };
+    // Вражеская цель
+    let enemy = { x: 0, y: 300, z: 3500, alive: true, size: 40, t: 0 };
 
-    // Массив выпущенных ракет
+    // Массив выпущенных самонаводящихся ракет
     let missiles = [];
     let score = 0;
 
     // Сетка земли
     let terrainGrid = [];
-    for (let x = -15; x <= 15; x += 3) {
-        for (let z = 1; z <= 30; z += 3) {
-            terrainGrid.push({ x: x * 1200, y: -1000, z: z * 1200 });
+    for (let x = -20; x <= 20; x += 4) {
+        for (let z = 1; z <= 40; z += 4) {
+            terrainGrid.push({ x: x * 1500, y: -1500, z: z * 1500 });
         }
     }
 
-    // Простая звуковая плата Web Audio API
+    // Аудиоэффекты
     let audioCtx = null;
     function playCombatSound(type) {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
         osc.connect(gain); gain.connect(audioCtx.destination);
 
-        if (type === 'missile') { // Звук пуска ракеты
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.5);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-        } else if (type === 'boom') { // Взрыв цели
-            osc.type = 'triangle'; osc.frequency.setValueAtTime(100, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(20, audioCtx.currentTime + 0.8);
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.8);
+        if (type === 'missile') {
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.4);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        } else if (type === 'boom') {
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(130, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.7);
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.7);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.7);
         }
     }
 
@@ -138,25 +138,28 @@
         jet.targetPitch = nY * 0.6;
     });
 
-    // Огонь на Пробел
+    // Огонь
     window.addEventListener('keydown', (e) => {
         if (e.key === ' ' || e.code === 'Space') {
-            // Пускаем ракету из-под крыла
-            missiles.push({ x: jet.roll * 80, y: 80, z: 200, speed: jet.speed * 0.2 + 40 });
+            // Пуск ракеты прямо по вектору движения
+            missiles.push({ 
+                x: jet.roll * 50, 
+                y: -50, 
+                z: 100, 
+                speed: 120 // Увеличенная скорость ракеты (гиперзвук)
+            });
             playCombatSound('missile');
         }
-        if (e.key === 'w' || e.key === 'W') jet.throttle = Math.min(100, jet.throttle + 10);
-        if (e.key === 's' || e.key === 'S') jet.throttle = Math.max(20, jet.throttle - 10);
     });
 
-    // Матрица 3D проекции на экран
+    // Матрица 3D проекции
     function project3D(x, y, z, pitch, roll) {
         let x1 = x * Math.cos(roll) - y * Math.sin(roll);
         let y1 = x * Math.sin(roll) + y * Math.cos(roll);
         let y2 = y1 * Math.cos(pitch) - z * Math.sin(pitch);
         let z2 = y1 * Math.sin(pitch) + z * Math.cos(pitch);
 
-        const fov = 800;
+        const fov = 900;
         let scale = fov / (z2 + 1500);
         return {
             x: (window.innerWidth / 2) + (x1 * scale),
@@ -166,181 +169,124 @@
         };
     }
 
-    // Рисуем наш истребитель (Вид сзади)
-    function drawOurJet(x, y, roll, pitch) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(roll);
-        
-        ctx.strokeStyle = '#00ff66';
-        ctx.lineWidth = 2;
-        ctx.fillStyle = '#112233';
-
-        // Крылья
-        ctx.beginPath();
-        ctx.moveTo(0, -5); ctx.lineTo(-100, 15); ctx.lineTo(-70, 30);
-        ctx.lineTo(0, 12); ctx.lineTo(70, 30); ctx.lineTo(100, 15);
-        ctx.closePath(); ctx.fill(); ctx.stroke();
-
-        // Фюзеляж
-        ctx.beginPath();
-        ctx.moveTo(0, -45); ctx.lineTo(-12, -5); ctx.lineTo(-12, 30);
-        ctx.lineTo(12, 30); ctx.lineTo(12, -5);
-        ctx.closePath(); ctx.fill(); ctx.stroke();
-
-        // Хвост
-        ctx.beginPath();
-        ctx.moveTo(0, 12); ctx.lineTo(-35, 40); ctx.lineTo(0, 25); ctx.lineTo(35, 40);
-        ctx.closePath(); ctx.fill(); ctx.stroke();
-
-        // Сопла (Реактивный след)
-        ctx.fillStyle = 'rgba(0, 255, 255, 0.4)';
-        ctx.fillRect(-8, 30, 4, 12); ctx.fillRect(4, 30, 4, 12);
-
+    function drawOurJet(x, y, roll) {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(roll);
+        ctx.strokeStyle = '#00ff66'; ctx.lineWidth = 2; ctx.fillStyle = '#0b192e';
+        ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(-100, 15); ctx.lineTo(-70, 30); ctx.lineTo(0, 12); ctx.lineTo(70, 30); ctx.lineTo(100, 15); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, -45); ctx.lineTo(-12, -5); ctx.lineTo(-12, 30); ctx.lineTo(12, 30); ctx.lineTo(12, -5); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = 'rgba(255, 100, 0, 0.6)'; ctx.fillRect(-7, 30, 3, 10); ctx.fillRect(4, 30, 3, 10);
         ctx.restore();
     }
 
-    // Рисуем Вражеский Су-27 (3D модель на расстоянии)
     function drawEnemyJet(projX, projY, scale) {
-        ctx.save();
-        ctx.translate(projX, projY);
-        ctx.scale(scale * 15, scale * 15); // Пропорции от дальности
-
-        ctx.strokeStyle = '#ff3333';
-        ctx.lineWidth = 1.5;
-        ctx.fillStyle = '#2a1010';
-
-        // Силуэт врага сзади
-        ctx.beginPath();
-        ctx.moveTo(0, -10); ctx.lineTo(-40, 5); ctx.lineTo(-25, 10);
-        ctx.lineTo(0, 3); ctx.lineTo(25, 10); ctx.lineTo(40, 5);
-        ctx.closePath(); ctx.fill(); ctx.stroke();
-
-        // Корпус врага
-        ctx.fillRect(-5, -2, 10, 10);
-
+        ctx.save(); ctx.translate(projX, projY); ctx.scale(scale * 15, scale * 15);
+        ctx.strokeStyle = '#ff3333'; ctx.lineWidth = 1.5; ctx.fillStyle = '#3a0d0d';
+        ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(-42, 6); ctx.lineTo(-25, 12); ctx.lineTo(0, 4); ctx.lineTo(25, 12); ctx.lineTo(42, 6); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillRect(-6, -2, 12, 9);
         ctx.restore();
     }
 
-    // Игровой цикл
+    // Главный цикл
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Расчет инерции полета
         jet.roll += (jet.targetRoll - jet.roll) * 0.1;
         jet.pitch += (jet.targetPitch - jet.pitch) * 0.1;
-        jet.speed += ((jet.throttle * 9) - jet.speed) * 0.05;
-        jet.altitude += Math.sin(-jet.pitch) * (jet.speed * 0.03);
-        if (jet.altitude < 10) jet.altitude = 10;
-
         let speedMult = jet.speed * 0.15;
 
-        // 1. Отрисовка 3D земли
+        // Линия горизонта и земля
         let horizonY = (canvas.height * 0.5) + (jet.pitch * 400);
-        ctx.fillStyle = '#051104';
-        ctx.fillRect(0, horizonY, canvas.width, canvas.height);
+        ctx.fillStyle = '#030c03'; ctx.fillRect(0, horizonY, canvas.width, canvas.height);
 
-        ctx.strokeStyle = 'rgba(0, 255, 102, 0.08)';
+        ctx.strokeStyle = 'rgba(0, 255, 102, 0.07)';
         terrainGrid.forEach(p => {
-            p.z -= speedMult;
-            if (p.z <= 0) p.z = 25000;
+            p.z -= speedMult; if (p.z <= 0) p.z = 25000;
             let proj = project3D(p.x, p.y - jet.altitude, p.z, jet.pitch, jet.roll);
-            if (proj.visible) {
-                ctx.fillStyle = 'rgba(0,255,102,0.15)';
-                ctx.fillRect(proj.x, proj.y, 2, 2);
-            }
+            if (proj.visible) { ctx.fillStyle = 'rgba(0,255,102,0.12)'; ctx.fillRect(proj.x, proj.y, 2, 2); }
         });
 
-        // 2. ИИ Логика врага
+        // ИИ Врага (Динамичные маневры)
         if (enemy.alive) {
-            enemy.t += 0.02;
-            // Враг маневрирует по спирали, уходя от прицела
-            enemy.x = Math.sin(enemy.t) * 600;
-            enemy.y = 200 + Math.cos(enemy.t * 1.5) * 300;
-            enemy.z -= (speedMult - 40); // Скорость сближения
+            enemy.t += 0.025;
+            enemy.x = Math.sin(enemy.t) * 700;
+            enemy.y = 300 + Math.cos(enemy.t * 1.3) * 250;
+            enemy.z -= (speedMult - 45); // Скорость сближения
 
-            // Если пролетели врага, респавним его впереди
             if (enemy.z < -200) { enemy.z = 4000; enemy.alive = true; }
 
-            // Проекция врага на экран
             let eProj = project3D(enemy.x, enemy.y - jet.altitude, enemy.z, jet.pitch, jet.roll);
             
             if (eProj.visible) {
                 drawEnemyJet(eProj.x, eProj.y, eProj.scale);
 
-                // Отрисовка Квадрата Захвата Цели (HUD Target Lock)
-                let boxSize = Math.max(30, eProj.scale * 400);
-                ctx.strokeStyle = '#ff3333';
-                ctx.lineWidth = 1.5;
+                // HUD рамка
+                let boxSize = Math.max(35, eProj.scale * 450);
+                ctx.strokeStyle = '#ff3333'; ctx.lineWidth = 2;
                 ctx.strokeRect(eProj.x - boxSize/2, eProj.y - boxSize/2, boxSize, boxSize);
-
-                // Текст под целью
-                ctx.fillStyle = '#ff3333';
-                ctx.font = '12px Consolas';
-                ctx.fillText(`ЦЕЛЬ [ЕХ-88]: ${Math.round(enemy.z)}м`, eProj.x + boxSize/2 + 5, eProj.y);
                 
-                // Обновление Телеметрии
-                document.getElementById('target-status').innerText = "ЗАХВАТ (LOCK)";
+                // Перекрестие захвата
+                ctx.beginPath(); ctx.arc(eProj.x, eProj.y, 6, 0, Math.PI*2); ctx.fillStyle = '#ff3333'; ctx.fill();
+
+                ctx.fillStyle = '#ff3333'; ctx.font = '12px Consolas';
+                ctx.fillText(`LOCK ON [SU-27]: ${Math.round(enemy.z)}m`, eProj.x + boxSize/2 + 5, eProj.y);
+                
+                document.getElementById('target-status').innerText = "ЦЕЛЬ ЗАХВАЧЕНА";
                 document.getElementById('target-status').style.color = '#ff3333';
                 document.getElementById('target-dist').innerText = Math.round(enemy.z) + " М";
             }
         } else {
-            // Если враг сбит, респавн через 2 секунды впереди
             document.getElementById('target-status').innerText = "ПОИСК ЦЕЛИ...";
             document.getElementById('target-status').style.color = '#ffcc00';
             document.getElementById('target-dist').innerText = "---";
-            if (Math.random() < 0.01) { enemy.z = 4500; enemy.alive = true; }
+            if (Math.random() < 0.015) { enemy.z = 4500; enemy.alive = true; }
         }
 
-        // 3. Физика летящих Ракет
+        // Логика УМНЫХ ракет
         for (let i = missiles.length - 1; i >= 0; i--) {
             let m = missiles[i];
-            m.z += m.speed; // Ракета ускоряется вперед
-            
-            // Наведение ракеты на цель (Тепловой захват)
+            m.z += m.speed;
+
             if (enemy.alive) {
-                m.x += (enemy.x - m.x) * 0.08;
-                m.y += ((enemy.y - jet.altitude) - m.y) * 0.08;
+                // Мощное угловое наведение: ракета корректирует траекторию точно на врага
+                // Добавлено плавное донаведение (догон)
+                m.x += (enemy.x - m.x) * 0.22; 
+                m.y += ((enemy.y - jet.altitude) - m.y) * 0.22;
             }
 
             let mProj = project3D(m.x, m.y, m.z, jet.pitch, jet.roll);
 
             if (mProj.visible && m.z < 6000) {
-                // Рисуем ракету (светящаяся точка и белый дымный хвост)
-                ctx.fillStyle = '#ffffff';
-                ctx.beginPath(); ctx.arc(mProj.x, mProj.y, 4, 0, Math.PI*2); ctx.fill();
-                
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-                ctx.beginPath(); ctx.moveTo(mProj.x, mProj.y); ctx.lineTo(mProj.x, mProj.y + 20); ctx.stroke();
+                // Инверсионный след ракеты
+                ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(mProj.x, mProj.y, 4, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 150, 0, 0.6)'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(mProj.x, mProj.y); ctx.lineTo(mProj.x, mProj.y + 15); ctx.stroke();
 
-                // Проверка попадания в цель (Хитбокс по 3D расстоянию)
-                let distToEnemy = Math.sqrt(Math.pow(m.x - enemy.x, 2) + Math.pow(m.y - (enemy.y - jet.altitude), 2) + Math.pow(m.z - enemy.z, 2));
+                // Расчет расстояния (3D радиус)
+                let dist = Math.sqrt(Math.pow(m.x - enemy.x, 2) + Math.pow(m.y - (enemy.y - jet.altitude), 2) + Math.pow(m.z - enemy.z, 2));
                 
-                if (distToEnemy < 180 && enemy.alive) {
-                    // Бабах!
+                // Бесконтактный радиус взрыва увеличен до 300 единиц (теперь ракета точно зацепит цель!)
+                if (dist < 300 && enemy.alive) {
                     enemy.alive = false;
                     missiles.splice(i, 1);
                     playCombatSound('boom');
                     score++;
                     document.getElementById('score-out').innerText = score;
-                    
-                    // Эффект огненной вспышки на месте взрыва
-                    ctx.fillStyle = '#ff6600';
-                    ctx.beginPath(); ctx.arc(mProj.x, mProj.y, 80, 0, Math.PI*2); ctx.fill();
+
+                    // Отрисовка взрыва на ИЛС
+                    ctx.fillStyle = '#ff3300'; ctx.beginPath(); ctx.arc(mProj.x, mProj.y, 90, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#ffcc00'; ctx.beginPath(); ctx.arc(mProj.x, mProj.y, 50, 0, Math.PI*2); ctx.fill();
                     continue;
                 }
             } else {
-                missiles.splice(i, 1); // Удаляем улетевшие ракеты
+                missiles.splice(i, 1);
             }
         }
 
-        // 4. Отрисовка нашего самолета по центру
+        // Отрисовка нашего истребителя
         let myX = (canvas.width / 2) + (jet.roll * 60);
         let myY = (canvas.height * 0.65) + (jet.pitch * 40);
-        drawOurJet(myX, myY, jet.roll, jet.pitch);
+        drawOurJet(myX, myY, jet.roll);
 
-        // Вывод HUD панели данных
-        document.getElementById('speed-out').innerText = Math.floor(jet.speed);
         document.getElementById('alt-out').innerText = Math.floor(jet.altitude);
 
         requestAnimationFrame(loop);
