@@ -2,13 +2,13 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Штурмовик: Работайте, Братья!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Штурмовик: Мобильная Версия</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background: #010409; color: #ff3333; font-family: 'Consolas', monospace; overflow: hidden; width: 100vw; height: 100vh; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        body { background: #010409; color: #ff3333; font-family: 'Consolas', monospace; overflow: hidden; width: 100vw; height: 100vh; touch-action: none; }
 
-        #game-container { position: relative; width: 100vw; height: 100vh; display: none; }
+        #game-container { position: relative; width: 100vw; height: 100vh; display: none; touch-action: none; }
         canvas { width: 100%; height: 100%; display: block; background: linear-gradient(to bottom, #010206 0%, #030611 60%, #070b19 100%); }
 
         /* ЭКРАН ВСТУПЛЕНИЯ */
@@ -21,37 +21,35 @@
             transition: opacity 0.6s ease-out;
         }
 
-        .matrix-text { color: #551111; font-size: 14px; margin-bottom: 20px; font-weight: bold; letter-spacing: 2px; animation: blink 1.5s infinite alternate; }
+        .matrix-text { color: #551111; font-size: 11px; margin-bottom: 20px; font-weight: bold; letter-spacing: 1px; animation: blink 1.5s infinite alternate; }
         
         .main-slogan {
-            font-size: 56px; font-weight: 900; color: #ffffff;
-            text-shadow: 0 0 10px #ff0000, 0 0 30px #ff0000, 0 0 50px #ff3300;
-            letter-spacing: 6px; margin-bottom: 10px;
+            font-size: 32px; font-weight: 900; color: #ffffff;
+            text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+            letter-spacing: 3px; margin-bottom: 10px;
             animation: shake 0.3s infinite alternate;
         }
 
-        .sub-slogan { font-size: 20px; color: #ff3333; letter-spacing: 4px; margin-bottom: 40px; text-shadow: 0 0 5px #ff0000; }
+        .sub-slogan { font-size: 14px; color: #ff3333; letter-spacing: 2px; margin-bottom: 40px; }
 
         .start-btn {
             background: transparent; border: 2px solid #ff3333; color: #ffffff;
-            padding: 15px 45px; font-family: 'Consolas', monospace; font-size: 18px; font-weight: bold;
+            padding: 15px 35px; font-family: 'Consolas', monospace; font-size: 16px; font-weight: bold;
             cursor: pointer; border-radius: 4px; letter-spacing: 2px;
             box-shadow: 0 0 15px rgba(255, 51, 51, 0.4);
-            transition: all 0.2s ease; pointer-events: auto;
         }
-        .start-btn:hover { background: #ff3333; color: #000; box-shadow: 0 0 30px #ff3333; transform: scale(1.05); }
 
         /* ИГРОВОЙ ИНТЕРФЕЙС */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; display: flex; flex-direction: column;
-            justify-content: space-between; padding: 20px;
+            justify-content: space-between; padding: 10px;
         }
 
         .glass-panel {
-            background: rgba(5, 9, 20, 0.9); border: 2px solid #ff1111; border-radius: 6px;
-            padding: 12px 20px; box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
-            font-size: 15px; text-shadow: 0 0 5px #ff3333;
+            background: rgba(5, 9, 20, 0.9); border: 1px solid #ff1111; border-radius: 6px;
+            padding: 8px 12px; box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+            font-size: 11px; text-shadow: 0 0 3px #ff3333; max-width: 48%;
         }
 
         .flex-space { display: flex; justify-content: space-between; width: 100%; }
@@ -59,39 +57,42 @@
         .alert-ui { color: #ff1111; animation: blink 0.2s infinite alternate; font-weight: bold; }
 
         #radio-intercept {
-            position: absolute; bottom: 80px; left: 20px;
+            position: absolute; bottom: 120px; left: 10px;
             background: rgba(0, 5, 15, 0.85); border: 1px dashed #00ff66; color: #00ff66;
-            padding: 10px 15px; font-size: 13px; border-radius: 4px; max-width: 350px;
+            padding: 6px 10px; font-size: 11px; border-radius: 4px; max-width: 280px;
             text-shadow: 0 0 4px #00ff66; opacity: 0; transition: opacity 0.3s;
         }
 
-        #controls-bar {
-            align-self: center; background: rgba(0,0,0,0.95); border: 2px solid #ff0000;
-            padding: 12px 30px; border-radius: 30px; font-size: 14px; pointer-events: auto;
-            margin-bottom: 10px; color: #fff; text-shadow: 0 0 5px #ff0000;
-            box-shadow: 0 0 25px rgba(255, 0, 0, 0.6);
+        /* МОБИЛЬНАЯ КНОПКА ОГНЯ */
+        #fire-button {
+            position: absolute; bottom: 25px; right: 25px;
+            width: 85px; height: 85px; background: rgba(150, 0, 0, 0.3);
+            border: 3px solid #ff0000; border-radius: 50%;
+            color: #ffffff; font-weight: bold; font-family: 'Consolas', monospace;
+            font-size: 16px; display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            pointer-events: auto; touch-action: none;
+            text-shadow: 0 0 5px #fff;
         }
+        #fire-button:active { background: rgba(255, 0, 0, 0.7); scale: 0.95; box-shadow: 0 0 35px #ff0000; }
 
-        /* Экраны вспышек */
         #nuclear-flash { position: absolute; top:0; left:0; width:100%; height:100%; background: #ffffff; pointer-events: none; opacity: 0; z-index: 50; }
 
-        /* АНИМАЦИИ */
         @keyframes blink { from { opacity: 0.3; } to { opacity: 1; } }
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            100% { transform: translate(-1px, -1px) rotate(0.5deg); }
-        }
+        @keyframes shake { 0% { transform: translate(1px, 1px); } 100% { transform: translate(-1px, -1px); } }
     </style>
 </head>
 <body>
 
+<!-- ВСТУПЛЕНИЕ -->
 <div id="intro-screen">
-    <div class="matrix-text">СИСТЕМА БУК-М3 // ПОДКЛЮЧЕНИЕ К ОРТК "ОРЕШНИК" // КОРРЕКЦИЯ ТРАЕКТОРИИ ББ... ПОДТВЕРЖДЕНО.</div>
+    <div class="matrix-text">СИСТЕМА БУК-М3 // МОБИЛЬНЫЙ ДЕСАНТ // КОРРЕКЦИЯ ТРАЕКТОРИИ... ПОДТВЕРЖДЕНО.</div>
     <div class="main-slogan">РАБОТАЙТЕ, БРАТЬЯ!</div>
-    <div class="sub-slogan">ГИПЕРЗВУКОВОЙ ТЕКТОНИЧЕСКИЙ УДАР СВЕРХВЫСОКОЙ МОЩНОСТИ</div>
+    <div class="sub-slogan">ТАКТИЛЬНЫЙ ГИПЕРЗВУКОВОЙ СИМУЛЯТОР</div>
     <button class="start-btn" onclick="launchGameWithTransition()">ЗАПУСК СИСТЕМ</button>
 </div>
 
+<!-- ГЕЙМПЛЕЙ -->
 <div id="game-container">
     <canvas id="stage"></canvas>
     <div id="nuclear-flash"></div>
@@ -100,22 +101,19 @@
         <div class="flex-space">
             <div class="glass-panel">
                 <div>СКОРОСТЬ: <span class="hud-val" id="speed-out">550</span> КМ/Ч</div>
-                <div>ОРУЖИЕ: <span class="hud-val" style="color:#ff3300; text-shadow: 0 0 10px #ff0000;">ОРТК "ОРЕШНИК" [АД]</span></div>
-                <div style="color: #ff9900;">РАДИОПЕРЕХВАТ: <span class="hud-val" style="color:#00ff66;">АКТИВЕН</span></div>
+                <div>ОРУЖИЕ: <span class="hud-val" style="color:#ff3300;">"ОРЕШНИК"</span></div>
             </div>
             
             <div class="glass-panel" style="text-align: right;">
-                <div>СПО «БЕРЕЗА»: <span class="alert-ui" id="pvo-warn">ПОИСК ЦЕЛЕЙ</span></div>
-                <div>УНИЧТОЖЕНО ТЕХНИКИ: <span id="score-out" class="hud-val" style="color: #ffcc00;">0</span></div>
-                <div style="color: #00ffff;">РАЗРУШЕНО ЗДАНИЙ: <span id="b-score-out" class="hud-val">0</span></div>
+                <div>СПО: <span class="alert-ui" id="pvo-warn">ПОИСК ЦЕЛЕЙ</span></div>
+                <div>СНЕСЕНО ДОМОВ: <span id="b-score-out" class="hud-val">0</span></div>
             </div>
         </div>
 
-        <div id="radio-intercept">📻 [РАДИОПЕРЕХВАТ]: ПРОВЕРКА ЧАСТОТЫ...</div>
+        <div id="radio-intercept">📻 [РАДИОПЕРЕХВАТ]: ...</div>
 
-        <div id="controls-bar">
-            ☢️ ЗАЖМИ <b>ПРОБЕЛ</b> ДЛЯ КАЛЬКУЛЯЦИИ ГИПЕРЗВУКОВЫХ УДАРОВ ПО КВАРТАЛАМ!
-        </div>
+        <!-- Сенсорная гашетка -->
+        <div id="fire-button">ОГОНЬ</div>
     </div>
 </div>
 
@@ -126,6 +124,7 @@
     const ctx = canvas.getContext('2d');
     const flashEl = document.getElementById('nuclear-flash');
     const radioEl = document.getElementById('radio-intercept');
+    const fireBtn = document.getElementById('fire-button');
 
     const jetImage = new Image();
     jetImage.src = 'mig.png';
@@ -137,68 +136,53 @@
     let jet = { x: 0, y: 0, roll: 0, pitch: 0, targetX: 0, targetY: 0, speed: 550 };
     let bombs = []; let explosions = []; let buildings = []; let enemies = [];     
     let scoreVehicles = 0; let scoreBuildings = 0;
-    let isSpacePressed = false; let bombTimer = 0; let muzzleFlash = 0; 
+    let isFirePressed = false; let bombTimer = 0; let muzzleFlash = 0; 
     let isGameRunning = false;
 
     const radioPhrases = [
-        "Внимание! Зафиксирован разделяющийся гиперзвуковой блок!",
+        "Внимание! Зафиксирован разделяющийся блок!",
         "Первый сектор полностью уничтожен! Связи нет!",
         "ПВО не видит цель! Скорость запредельная!",
-        "У нас минус квартал! Всем подразделениям отойти!",
+        "У нас минус квартал! Всем отходить!",
         "Ударная волна колоссальная! Город горит!",
-        "Катастрофические разрушения в секторе Браво!",
-        "Потеряна связь с батальоном ПВО! Нас выжигают!"
+        "Потеряна связь с базой! Нас выжигают!"
     ];
 
-    // КРАСИВЫЙ ПЕРЕХОД ИЗ ИНТРО В ИГРУ
     function launchGameWithTransition() {
-        // Игра инициализируется звуками
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        // Глитч-звук старта двигателей
         let osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
         osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(40, audioCtx.currentTime);
-        osc.frequency.linearRampToValueAtTime(300, audioCtx.currentTime + 0.5);
-        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(50, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(280, audioCtx.currentTime + 0.4);
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
 
-        // Эффект вспышки перехода
         introScreen.style.opacity = '0';
         setTimeout(() => {
             introScreen.style.display = 'none';
             gameContainer.style.display = 'block';
             resize();
             
-            // Ослепительная вспышка при входе в игру
             flashEl.style.opacity = '1';
             let initialFade = setInterval(() => {
-                flashEl.style.opacity = parseFloat(flashEl.style.opacity) - 0.04;
+                flashEl.style.opacity = parseFloat(flashEl.style.opacity) - 0.05;
                 if (flashEl.style.opacity <= 0) { flashEl.style.opacity = '0'; clearInterval(initialFade); }
             }, 30);
 
             isGameRunning = true;
-            // Первая реплика в рации сразу на старте
             setTimeout(speakRadio, 600);
         }, 600);
     }
 
     function initWorld() {
         buildings = []; enemies = [];
-        for (let x = -10; x <= 10; x += 2) {
-            for (let z = 4; z <= 26; z += 3) {
-                let worldX = x * 1500 + (Math.random() * 100 - 50);
-                let worldZ = z * 1200;
-                buildings.push({ x: worldX, y: -2500, h: 700 + Math.random() * 1200, w: 480, alive: true });
-
-                if (Math.random() < 0.5) {
-                    enemies.push({
-                        x: worldX + (Math.random() * 200 - 100), y: -2500, z: worldZ + 100,
-                        type: Math.random() > 0.4 ? 'tank' : 'pvo', w: 110, h: 60, alive: true,
-                        shootCooldown: Math.floor(Math.random() * 50), moveDir: Math.random() > 0.5 ? 1 : -1
-                    });
-                }
+        for (let x = -8; x <= 8; x += 2) {
+            for (let z = 4; z <= 24; z += 3) {
+                let worldX = x * 1600 + (Math.random() * 100 - 50);
+                let worldZ = z * 1300;
+                buildings.push({ x: worldX, y: -2500, h: 600 + Math.random() * 1100, w: 450, alive: true });
             }
         }
     }
@@ -212,16 +196,16 @@
 
         if (type === 'whistle') {
             osc.type = 'sawtooth'; osc.frequency.setValueAtTime(450, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(80, audioCtx.currentTime + 0.6);
-            gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+            osc.frequency.linearRampToValueAtTime(90, audioCtx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
         } else if (type === 'oreshnik') {
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(35, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(1, audioCtx.currentTime + 2.2);
-            gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 2.2);
-            osc.start(); osc.stop(audioCtx.currentTime + 2.2);
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(40, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(1, audioCtx.currentTime + 1.8);
+            gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 1.8);
+            osc.start(); osc.stop(audioCtx.currentTime + 1.8);
         }
     }
 
@@ -229,35 +213,41 @@
         if ('speechSynthesis' in window && isGameRunning) {
             window.speechSynthesis.cancel(); 
             let phrase = radioPhrases[Math.floor(Math.random() * radioPhrases.length)];
-            
             radioEl.innerText = `📻 [ПЕРЕХВАТ]: "${phrase.toUpperCase()}"`;
             radioEl.style.opacity = '1';
             
             let utterance = new SpeechSynthesisUtterance(phrase);
-            utterance.lang = 'ru-RU';
-            utterance.pitch = 0.55; 
-            utterance.rate = 1.15; 
-
-            utterance.onend = () => { setTimeout(() => { radioEl.style.opacity = '0'; }, 1500); };
+            utterance.lang = 'ru-RU'; utterance.pitch = 0.6; utterance.rate = 1.2; 
+            utterance.onend = () => { setTimeout(() => { radioEl.style.opacity = '0'; }, 1200); };
             window.speechSynthesis.speak(utterance);
         }
     }
 
-    window.addEventListener('mousemove', (e) => {
+    // ТАЧ-УПРАВЛЕНИЕ ДЛЯ СМАРТФОНОВ (ДВИЖЕНИЕ ПАЛЬЦЕМ В ЛЮБОЙ ТОЧКЕ ЭКРАНА)
+    window.addEventListener('touchmove', (e) => {
         if (!isGameRunning) return;
-        let nX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
-        let nY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
-        jet.roll = nX * 0.9; jet.pitch = nY * 0.3;
-        jet.targetX = nX * 3400; jet.targetY = -nY * 900;
-    });
+        let touch = e.touches[0];
+        
+        // Расчет смещения относительно центра экрана
+        let nX = (touch.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+        let nY = (touch.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+        
+        // Ограничиваем диапазоны
+        nX = Math.max(-1, Math.min(1, nX));
+        nY = Math.max(-1, Math.min(1, nY));
 
-    window.addEventListener('keydown', (e) => { if (e.key === ' ' || e.code === 'Space') isSpacePressed = true; });
-    window.addEventListener('keyup', (e) => { if (e.key === ' ' || e.code === 'Space') isSpacePressed = false; });
+        jet.roll = nX * 0.8; jet.pitch = nY * 0.25;
+        jet.targetX = nX * 3200; jet.targetY = -nY * 800;
+    }, { passive: true });
+
+    // КНОПКА СБРОСА БОМБ (ОТДЕЛЬНЫЙ ТАЧ-ТРИГГЕР)
+    fireBtn.addEventListener('touchstart', (e) => { e.stopPropagation(); isFirePressed = true; });
+    fireBtn.addEventListener('touchend', (e) => { e.stopPropagation(); isFirePressed = false; });
 
     function triggerOreshnikFlash() {
-        flashEl.style.opacity = '0.8';
+        flashEl.style.opacity = '0.7';
         let fade = setInterval(() => {
-            flashEl.style.opacity = parseFloat(flashEl.style.opacity) - 0.05;
+            flashEl.style.opacity = parseFloat(flashEl.style.opacity) - 0.06;
             if (flashEl.style.opacity <= 0) { flashEl.style.opacity = '0'; clearInterval(fade); }
         }, 40);
     }
@@ -276,15 +266,12 @@
         let y1 = relX * Math.sin(jet.roll) + relY * Math.cos(jet.roll);
         let y2 = y1 * Math.cos(jet.pitch) - worldZ * Math.sin(jet.pitch);
         let z2 = y1 * Math.sin(jet.pitch) + worldZ * Math.cos(jet.pitch);
-        const fov = 1000; let scale = fov / (z2 + 1800);
-        return { x: (window.innerWidth / 2) + (x1 * scale), y: (window.innerHeight * 0.45) - (y2 * scale), scale: scale, visible: (z2 + 1800 > 0) && (z2 < 28000) };
+        const fov = 900; let scale = fov / (z2 + 1600);
+        return { x: (window.innerWidth / 2) + (x1 * scale), y: (window.innerHeight * 0.45) - (y2 * scale), scale: scale, visible: (z2 + 1600 > 0) && (z2 < 26000) };
     }
 
     function detonateMegaOreshnik(targetX, targetZ, screenX, screenY) {
-        triggerOreshnikFlash();
-        playSound('oreshnik');
-        speakRadio();
-
+        triggerOreshnikFlash(); playSound('oreshnik'); speakRadio();
         const blastRadiusX = 3500; const blastRadiusZ = 3000;
 
         buildings.forEach(b => {
@@ -292,19 +279,12 @@
                 b.alive = false; scoreBuildings++;
             }
         });
-        enemies.forEach(e => {
-            if (e.alive && Math.abs(e.x - targetX) < blastRadiusX && Math.abs(e.z - targetZ) < blastRadiusZ) {
-                e.alive = false; scoreVehicles++;
-            }
-        });
-
         document.getElementById('b-score-out').innerText = scoreBuildings;
-        document.getElementById('score-out').innerText = scoreVehicles;
 
-        // Взрывной купол (500% размеров)
-        explosions.push({ x: screenX, y: screenY, r: 20, maxR: 450 + Math.random() * 200, speed: 10, alpha: 1.0 });
-        for(let i=0; i<8; i++) {
-            explosions.push({ x: screenX + (Math.random() * 300 - 150), y: screenY + (Math.random() * 100 - 50), r: 10, maxR: 150 + Math.random() * 150, speed: 6, alpha: 0.9 });
+        // Термоядерный гриб взрыва под мобильные экраны
+        explosions.push({ x: screenX, y: screenY, r: 15, maxR: 280 + Math.random() * 120, speed: 8, alpha: 1.0 });
+        for(let i=0; i<4; i++) {
+            explosions.push({ x: screenX + (Math.random() * 160 - 80), y: screenY + (Math.random() * 60 - 30), r: 8, maxR: 110 + Math.random() * 90, speed: 5, alpha: 0.9 });
         }
     }
 
@@ -316,16 +296,15 @@
         jet.x += (jet.targetX - jet.x) * 0.08; jet.y += (jet.targetY - jet.y) * 0.08;
         let speedMult = jet.speed * 0.2;
 
-        if (isSpacePressed) {
+        if (isFirePressed) {
             bombTimer++;
-            if (bombTimer % 35 === 0) spawnOreshnik();
+            if (bombTimer % 25 === 0) spawnOreshnik();
         }
 
         let horizonY = (canvas.height * 0.45) - (jet.pitch * 350) + (jet.y * 0.2);
         ctx.fillStyle = '#010206'; ctx.fillRect(0, 0, canvas.width, horizonY);
         ctx.fillStyle = '#020511'; ctx.fillRect(0, horizonY, canvas.width, canvas.height);
 
-        // Отрисовка зданий и остовов
         buildings.forEach(b => {
             b.z -= speedMult; if (b.z <= -600) { b.z = 25000; b.alive = true; }
             let bottomProj = project3D(b.x, b.y, b.z); let topProj = project3D(b.x, b.y + b.h, b.z);
@@ -333,43 +312,22 @@
             if (topProj.visible && topProj.y > horizonY) {
                 let w3d = b.w * topProj.scale; let h3d = bottomProj.y - topProj.y;
                 if (b.alive) {
-                    ctx.fillStyle = 'rgba(18, 28, 54, 0.95)'; ctx.strokeStyle = '#ff2222'; ctx.lineWidth = 1.5;
+                    ctx.fillStyle = 'rgba(18, 28, 54, 0.95)'; ctx.strokeStyle = '#ff2222'; ctx.lineWidth = 1;
                     ctx.fillRect(topProj.x - w3d/2, topProj.y, w3d, h3d); ctx.strokeRect(topProj.x - w3d/2, topProj.y, w3d, h3d);
-                    ctx.fillStyle = '#ff9900';
-                    let stepX = Math.max(10, w3d / 5); let stepY = Math.max(12, h3d / 7);
-                    for (let oy = topProj.y + 12; oy < bottomProj.y - 12; oy += stepY) {
-                        for (let ox = topProj.x - w3d/2 + 6; ox < topProj.x + w3d/2 - 6; ox += stepX) { ctx.fillRect(ox, oy, 2, 3); }
-                    }
                 } else {
-                    ctx.fillStyle = '#08080f'; ctx.strokeStyle = 'rgba(255, 60, 0, 0.2)'; ctx.lineWidth = 1;
+                    ctx.fillStyle = '#08080f'; ctx.strokeStyle = 'rgba(255, 60, 0, 0.15)';
                     ctx.fillRect(bottomProj.x - w3d/2, bottomProj.y - h3d * 0.2, w3d, h3d * 0.2);
                     ctx.strokeRect(bottomProj.x - w3d/2, bottomProj.y - h3d * 0.2, w3d, h3d * 0.2);
-                    ctx.fillStyle = 'rgba(255, 30, 0, 0.08)'; ctx.beginPath(); ctx.ellipse(bottomProj.x, bottomProj.y, w3d * 1.5, w3d * 0.4, 0, 0, Math.PI * 2); ctx.fill();
                 }
             }
         });
 
-        // Враги
-        enemies.forEach(e => {
-            e.z -= speedMult; if (e.z <= -600) { e.z = 25000; e.alive = true; }
-            if (e.alive) {
-                if (e.type === 'tank') e.x += e.moveDir * 5;
-                let proj = project3D(e.x, e.y, e.z);
-                if (proj.visible && proj.y > horizonY) {
-                    let sz = e.w * proj.scale;
-                    ctx.fillStyle = e.type === 'tank' ? '#2e4a23' : '#4a2323'; ctx.strokeStyle = e.type === 'tank' ? '#00ff66' : '#ff3333';
-                    ctx.fillRect(proj.x - sz/2, proj.y - sz*0.3, sz, sz*0.4);
-                }
-            }
-        });
-
-        // Бомбы
         for (let i = bombs.length - 1; i >= 0; i--) {
             let bomb = bombs[i]; bomb.x += bomb.vx; bomb.y += bomb.vy; bomb.z += bomb.vz; bomb.vy -= 1.4; 
             let bProj = project3D(bomb.x, bomb.y, bomb.z);
             if (!bProj.visible || bProj.y > canvas.height || bomb.z > 26000) { bombs.splice(i, 1); continue; }
 
-            let bWidth = Math.max(12, bProj.scale * 30); let bHeight = Math.max(24, bProj.scale * 60);
+            let bWidth = Math.max(8, bProj.scale * 25); let bHeight = Math.max(16, bProj.scale * 50);
             ctx.save(); ctx.translate(bProj.x, bProj.y);
             let fallAngle = Math.atan2(-bomb.vy, bomb.vz * 0.3) - Math.PI/2; ctx.rotate(fallAngle + jet.roll * 0.5);
             ctx.fillStyle = '#1a252f'; ctx.beginPath(); ctx.ellipse(0, 0, bWidth / 2, bHeight / 2, 0, 0, Math.PI * 2); ctx.fill();
@@ -385,28 +343,22 @@
             if (hitTriggered || bomb.y <= -2500) { detonateMegaOreshnik(bomb.x, bomb.z, bProj.x, bProj.y); bombs.splice(i, 1); }
         }
 
-        // Огненные куполы взрывов
         for (let i = explosions.length - 1; i >= 0; i--) {
-            let exp = explosions[i]; exp.r += exp.speed; exp.y -= exp.speed * 0.25; exp.alpha -= 0.012; 
+            let exp = explosions[i]; exp.r += exp.speed; exp.y -= exp.speed * 0.2; exp.alpha -= 0.015; 
             if (exp.alpha <= 0 || exp.r >= exp.maxR) { explosions.splice(i, 1); continue; }
 
             let grad = ctx.createRadialGradient(exp.x, exp.y, exp.r * 0.05, exp.x, exp.y, exp.r);
             grad.addColorStop(0, 'rgba(255, 255, 255, ' + exp.alpha + ')');
-            grad.addColorStop(0.2, 'rgba(255, 180, 0, ' + exp.alpha + ')');
-            grad.addColorStop(0.6, 'rgba(230, 30, 0, ' + (exp.alpha * 0.8) + ')');
+            grad.addColorStop(0.3, 'rgba(255, 150, 0, ' + exp.alpha + ')');
             grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
             ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(exp.x, exp.y, exp.r, 0, Math.PI * 2); ctx.fill();
         }
 
-        // Самолёт
         let screenJetX = (canvas.width / 2) + (jet.x * 0.18); let screenJetY = (canvas.height * 0.55) - (jet.y * 0.25);
         ctx.save(); ctx.translate(screenJetX, screenJetY); ctx.rotate(jet.roll);
-        if (muzzleFlash > 0) {
-            muzzleFlash--; ctx.fillStyle = '#ffffff';
-            ctx.beginPath(); ctx.arc(-25, 5, 12, 0, Math.PI*2); ctx.arc(25, 5, 12, 0, Math.PI*2); ctx.fill();
-        }
-        ctx.fillStyle = 'rgba(255, 90, 0, 0.85)'; ctx.fillRect(-12, 38, 5, 14); ctx.fillRect(7, 38, 5, 14);
-        const imgSize = 160; ctx.drawImage(jetImage, -imgSize / 2, -imgSize / 2, imgSize, imgSize); ctx.restore();
+        
+        ctx.fillStyle = 'rgba(255, 90, 0, 0.85)'; ctx.fillRect(-8, 25, 4, 10); ctx.fillRect(4, 25, 4, 10);
+        const imgSize = 110; ctx.drawImage(jetImage, -imgSize / 2, -imgSize / 2, imgSize, imgSize); ctx.restore();
 
         document.getElementById('speed-out').innerText = Math.floor(jet.speed);
     }
