@@ -3,103 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D JET FIGHTER SIMULATOR</title>
+    <title>3D Истребитель: Вид от 3-го лица</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background: #000; color: #00ff00; font-family: 'Courier New', monospace; overflow: hidden; }
+        body { background: #010409; color: #00ff66; font-family: 'Consolas', monospace; overflow: hidden; }
 
-        #screen {
+        #game-container {
             position: relative;
             width: 100vw;
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
 
         canvas {
-            position: absolute;
-            top: 0; left: 0;
             width: 100%; height: 100%;
-            background: #020813;
+            display: block;
+            background: linear-gradient(to bottom, #071330 0%, #0c2852 40%, #1a4575 70%, #0d203d 100%);
         }
 
-        /* Наложение кабины и HUD */
-        #hud-overlay {
+        /* Интерфейс пилота */
+        #ui-layer {
             position: absolute;
-            width: 100%; height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 30px;
-            box-shadow: inset 0 0 100px rgba(0,255,0,0.2);
+            padding: 25px;
         }
 
-        .hud-panel { background: rgba(0, 10, 0, 0.6); border: 2px solid #00ff00; border-radius: 5px; padding: 15px; box-shadow: 0 0 15px rgba(0,255,0,0.4); }
-        .flex-row { display: flex; justify-content: space-between; width: 100%; }
-        
-        .param { font-size: 18px; font-weight: bold; margin: 5px 0; text-shadow: 0 0 5px #00ff00; }
-        .value { color: #fff; }
+        .glass-panel {
+            background: rgba(4, 18, 36, 0.75);
+            border: 2px solid #00ff66;
+            border-radius: 6px;
+            padding: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
+            font-size: 16px;
+            text-shadow: 0 0 5px #00ff66;
+        }
 
-        /* Элементы управления внизу */
-        #controls-hint {
-            position: absolute;
-            bottom: 25px;
+        .flex-space { display: flex; justify-content: space-between; width: 100%; }
+        .hud-val { color: #fff; font-weight: bold; }
+
+        #controls-bar {
+            align-self: center;
             background: rgba(0,0,0,0.8);
-            border: 1px solid #00ff00;
-            padding: 10px 20px;
-            border-radius: 4px;
+            border: 1px solid #00ff66;
+            padding: 10px 25px;
+            border-radius: 30px;
             font-size: 13px;
-            text-align: center;
             pointer-events: auto;
-        }
-
-        /* Эффект форсажа */
-        #afterburner-fx {
-            position: absolute;
-            width: 100%; height: 100%;
-            pointer-events: none;
-            box-shadow: inset 0 0 0px rgba(255,100,0,0);
-            transition: box-shadow 0.2s;
-        }
-        body.afterburner-active #afterburner-fx {
-            box-shadow: inset 0 0 80px rgba(255, 68, 0, 0.6);
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
 
-<div id="screen">
-    <!-- 3D Мир -->
-    <canvas id="skyCanvas"></canvas>
-    <div id="afterburner-fx"></div>
+<div id="game-container">
+    <canvas id="stage"></canvas>
 
-    <!-- Тактический ИЛС (HUD) -->
-    <div id="hud-overlay">
-        <!-- Верхняя панель приборов -->
-        <div class="flex-row">
-            <div class="hud-panel">
-                <div class="param">СКОРОСТЬ (СПД): <span class="value" id="ui-speed">450</span> км/ч</div>
-                <div class="param">ВЫСОТА (ВСТ): <span class="value" id="ui-alt">2500</span> м</div>
-                <div class="param">ТЯГА (РУД): <span class="value" id="ui-throttle">60%</span></div>
+    <div id="ui-layer">
+        <div class="flex-space">
+            <div class="glass-panel">
+                <div>СКОРОСТЬ: <span class="hud-val" id="speed-out">550</span> КМ/Ч</div>
+                <div>ВЫСОТА: <span class="hud-val" id="alt-out">1800</span> М</div>
+                <div>ТЯГА ДВИГАТЕЛЯ: <span class="hud-val" id="throttle-out">70%</span></div>
             </div>
-            <div class="hud-panel" style="text-align: right;">
-                <div class="param">РЕЖИМ: <span class="value" id="ui-mode" style="color: #00ff00;">NAV / ВОЗДУХ</span></div>
-                <div class="param">ПЕРЕГРУЗКА: <span class="value" id="ui-g">1.0 G</span></div>
-                <div class="param">ТОПЛИВО: <span class="value" style="color: #ffcc00;">84%</span></div>
+            <div class="glass-panel" style="text-align: right;">
+                <div>РЕЖИМ КАМЕРЫ: <span class="hud-val" style="color:#00ffff;">3RD PERSON</span></div>
+                <div>УГОЛ АТАКИ: <span class="hud-val" id="pitch-out">0°</span></div>
+                <div>ФОРСАЖ: <span class="hud-val" id="burn-out" style="color:#ff5500;">ВЫКЛ</span></div>
             </div>
         </div>
 
-        <!-- Подсказка по клавишам -->
-        <div id="controls-hint">
-            <b>Управление СУ-57:</b> Мышь — Крен и Тангаж (поворот) | <b>W / S</b> — Шаг тяги (Руд) | <b>Пробел</b> — Сверхзвуковой ФОРСАЖ
+        <div id="controls-bar">
+            🛩️ <b>Управление:</b> Двигай мышь для маневров (крен/тангаж) | <b>W / S</b> — Изменение тяги | <b>Зажми Пробел</b> — Форсаж
         </div>
     </div>
 </div>
 
 <script>
-    const canvas = document.getElementById('skyCanvas');
+    const canvas = document.getElementById('stage');
     const ctx = canvas.getContext('2d');
 
     function resize() {
@@ -109,233 +92,236 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // Физика и параметры полета истребителя
+    // Состояние полета
     let jet = {
-        pitch: 0,       // Тангаж (вверх/вниз)
-        roll: 0,        // Крен (наклон влево/вправо)
-        yaw: 0,         // Рыскание (компас)
-        speed: 450,     // Скорость в км/ч
-        altitude: 2500, // Высота полета
-        throttle: 60,   // Процент тяги
-        gForce: 1.0,    // Перегрузка
-        afterburner: false
+        x: 0, y: 50,          // Положение на экране
+        pitch: 0, roll: 0,     // Углы самолета
+        targetRoll: 0, targetPitch: 0,
+        speed: 550, altitude: 1800,
+        throttle: 70, afterburner: false
     };
 
-    // Генерируем 3D точки на земле (сетка аэродромов/гор)
-    let groundPoints = [];
-    for(let x = -50; x <= 50; x += 5) {
-        for(let z = 5; z <= 100; z += 5) {
-            groundPoints.push({ x: x * 1000, y: -2000, z: z * 1000 });
+    // 3D точки рельефа земли (холмы)
+    let terrainGrid = [];
+    for (let x = -20; x <= 20; x += 2) {
+        for (let z = 2; z <= 40; z += 2) {
+            terrainGrid.push({
+                x: x * 800,
+                y: -1200 + (Math.sin(x) * Math.cos(z) * 300), // Неровности
+                z: z * 800
+            });
         }
     }
 
-    // Звуковой движок реактивного двигателя СУ-57
-    let audioCtx = null, engineNoise = null, engineGain = null;
-
-    function initAudio() {
+    // Звуковой движок
+    let audioCtx = null, noiseNode = null, noiseGain = null;
+    function startAudio() {
         if (audioCtx) return;
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // Создаем симуляцию гула турбины через белый шум и низкочастотный фильтр
-        let bufferSize = audioCtx.sampleRate * 2;
-        let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        let data = buffer.getChannelData(0);
+        let bufferSize = audioCtx.sampleRate * 2, buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate), data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
-
-        engineNoise = audioCtx.createBufferSource();
-        engineNoise.buffer = buffer;
-        engineNoise.loop = true;
-
-        let filter = audioCtx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(200, audioCtx.currentTime);
-
-        engineGain = audioCtx.createGain();
-        engineGain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-
-        engineNoise.connect(filter); filter.connect(engineGain);
-        engineGain.connect(audioCtx.destination);
-        engineNoise.start();
+        noiseNode = audioCtx.createBufferSource(); noiseNode.buffer = buffer; noiseNode.loop = true;
+        let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.setValueAtTime(160, audioCtx.currentTime);
+        noiseGain = audioCtx.createGain(); noiseGain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        noiseNode.connect(filter); filter.connect(noiseGain); noiseGain.connect(audioCtx.destination);
+        noiseNode.start();
     }
 
-    // Считывание мыши (Штурвал)
-    let mouseX = 0, mouseY = 0;
+    // Мышь управляет направлением полета
     window.addEventListener('mousemove', (e) => {
-        mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
-        mouseY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+        let nX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+        let nY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+        
+        jet.targetRoll = nX * 1.2;     // Наклон до 70 градусов
+        jet.targetPitch = nY * 0.6;   // Тангаж вверх/вниз
     });
 
-    // Считывание клавиатуры
     window.addEventListener('keydown', (e) => {
-        initAudio();
+        startAudio();
         if (e.key === 'w' || e.key === 'W' || e.key === 'ц' || e.key === 'Ц') jet.throttle = Math.min(100, jet.throttle + 5);
-        if (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') jet.throttle = Math.max(10, jet.throttle - 5);
-        if (e.key === ' ') {
-            jet.afterburner = true;
-            document.body.classList.add('afterburner-active');
-        }
+        if (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') jet.throttle = Math.max(20, jet.throttle - 5);
+        if (e.key === ' ') jet.afterburner = true;
     });
 
     window.addEventListener('keyup', (e) => {
-        if (e.key === ' ') {
-            jet.afterburner = false;
-            document.body.classList.remove('afterburner-active');
-        }
+        if (e.key === ' ') jet.afterburner = false;
     });
 
-    // Матричные 3D трансформации (Ось вращения истребителя)
+    // 3D Проекция для земли
     function project3D(x, y, z, pitch, roll) {
-        // Вращение по крену (Roll)
+        // Симуляция движения камеры за самолетом с учетом наклонов
         let x1 = x * Math.cos(roll) - y * Math.sin(roll);
         let y1 = x * Math.sin(roll) + y * Math.cos(roll);
-
-        // Вращение по тангажу (Pitch)
         let y2 = y1 * Math.cos(pitch) - z * Math.sin(pitch);
         let z2 = y1 * Math.sin(pitch) + z * Math.cos(pitch);
 
-        // Перспективная проекция на ИЛС
-        if (z2 <= 0) z2 = 0.01; 
-        const fov = 600; 
-        let cx = (window.innerWidth / 2) + (x1 * fov / z2);
-        let cy = (window.innerHeight / 2) + (y2 * fov / z2);
-
-        return { x: cx, y: cy, visible: z2 > 0 };
+        const fov = 700;
+        return {
+            x: (window.innerWidth / 2) + (x1 * fov / (z2 + 2000)),
+            y: (window.innerHeight * 0.6) + (y2 * fov / (z2 + 2000)),
+            visible: z2 + 2000 > 0
+        };
     }
 
-    // Главный цикл рендеринга полета
-    function loop() {
-        // 1. Аэродинамика и управление штурвалом
-        jet.roll += mouseX * 0.05;
-        jet.pitch += mouseY * 0.04;
-        jet.yaw += jet.roll * 0.01; // Сваливание по крену
+    // Отрисовка 3D модели истребителя СУ-57 (набор вершин)
+    function drawFighterJet(cx, cy, roll, pitch, afterburner) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(roll);
+        ctx.scale(1 - pitch * 0.2, 1 - pitch * 0.2); // Эффект отдаления/приближения носа
 
-        // Эффект стабилизации крыла
-        jet.roll *= 0.98;
+        // Цвета обшивки (Военный камуфляж)
+        let mainColor = '#2c3e50';
+        let wingColor = '#34495e';
+        let strokeColor = '#00ff66';
 
-        // Расчет перегрузок G-Force на виражах
-        jet.gForce = 1.0 + Math.abs(mouseY * 6) + (jet.speed * 0.002);
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2;
 
-        // Логика скорости и форсажа
-        let targetSpeed = jet.throttle * 8;
-        if (jet.afterburner) {
-            targetSpeed = 1450; // Сверхзвук!
-            jet.speed += 15;
-            if (engineGain) engineGain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        // 1. Огненный выхлоп форсажа (если активен)
+        if (afterburner) {
+            let grad = ctx.createLinearGradient(0, 15, 0, 70);
+            grad.addColorStop(0, '#fff');
+            grad.addColorStop(0.3, '#ff6600');
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(-15, 15); ctx.lineTo(0, 85); ctx.lineTo(15, 15);
+            ctx.closePath(); ctx.fill();
         } else {
-            jet.speed += (targetSpeed - jet.speed) * 0.05;
-            if (engineGain) engineGain.gain.setValueAtTime(0.1 + (jet.throttle * 0.002), audioCtx.currentTime);
+            // Обычный реактивный след
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+            ctx.fillRect(-10, 15, 6, 15); ctx.fillRect(4, 15, 6, 15);
         }
 
-        // Изменение высоты в зависимости от угла тангажа
-        jet.altitude += Math.sin(-jet.pitch) * (jet.speed * 0.05);
-        if (jet.altitude < 0) jet.altitude = 0; // Крушение о землю
+        // 2. Крылья (Левое и правое)
+        ctx.fillStyle = wingColor;
+        ctx.beginPath();
+        ctx.moveTo(0, -10);
+        ctx.lineTo(-95, 10);  // Левое крыло наружу
+        ctx.lineTo(-75, 25);  // Закрылок
+        ctx.lineTo(0, 10);
+        ctx.lineTo(75, 25);   // Правое крыло наружу
+        ctx.lineTo(95, 10);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
 
-        // Смещение ландшафта под весом истребителя
-        let speedMult = jet.speed * 0.1;
+        // 3. Фюзеляж (Тело самолета)
+        ctx.fillStyle = mainColor;
+        ctx.beginPath();
+        ctx.moveTo(0, -55);       // Носовой обтекатель
+        ctx.lineTo(-15, -15);
+        ctx.lineTo(-15, 25);      // Левый борт
+        ctx.lineTo(15, 25);       // Правый борт
+        ctx.lineTo(15, -15);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
 
-        // 2. РЕНДЕРИНГ НЕБА И ЗЕМЛИ
+        // 4. Хвостовое оперение (стабилизаторы)
+        ctx.fillStyle = wingColor;
+        ctx.beginPath();
+        ctx.moveTo(-10, 25);
+        ctx.lineTo(-40, 45);
+        ctx.lineTo(-30, 50);
+        ctx.lineTo(0, 30);
+        ctx.lineTo(30, 50);
+        ctx.lineTo(40, 45);
+        ctx.lineTo(10, 25);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+
+        // 5. Остекление кабины пилота (вид сверху-сзади)
+        ctx.fillStyle = '#00ffff';
+        ctx.beginPath();
+        ctx.ellipse(0, -15, 6, 18, 0, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+
+        ctx.restore();
+    }
+
+    // Игровой цикл
+    function gameLoop() {
+        // Плавное следование за штурвалом (инерция самолета)
+        jet.roll += (jet.targetRoll - jet.roll) * 0.1;
+        jet.pitch += (jet.targetPitch - jet.pitch) * 0.1;
+
+        // Физика скорости
+        let baseSpeed = jet.throttle * 9;
+        if (jet.afterburner) {
+            jet.speed += (1500 - jet.speed) * 0.08;
+            jet.altitude += Math.sin(-jet.pitch) * 22;
+            if (noiseGain) noiseGain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        } else {
+            jet.speed += (baseSpeed - jet.speed) * 0.05;
+            jet.altitude += Math.sin(-jet.pitch) * (jet.speed * 0.02);
+            if (noiseGain) noiseGain.gain.setValueAtTime(0.05 + (jet.throttle * 0.002), audioCtx.currentTime);
+        }
+
+        if (jet.altitude < 0) jet.altitude = 0;
+
+        // Скорость движения земли под нами
+        let moveStep = jet.speed * 0.12;
+
+        // ОЧИСТКА И ОТРИСОВКА НЕБА/ЗЕМЛИ
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Рисуем горизонт
-        let horizonY = (window.innerHeight / 2) + Math.sin(jet.pitch) * 400;
-        
-        ctx.save();
-        ctx.translate(window.innerWidth / 2, window.innerHeight / 2);
-        ctx.rotate(-jet.roll);
-        ctx.translate(-window.innerWidth / 2, -window.innerHeight / 2);
+        // Линия горизонта в зависимости от тангажа и крена
+        let horizonY = (canvas.height * 0.55) + (jet.pitch * 300);
 
-        // Небо
-        ctx.fillStyle = '#020b1e';
-        ctx.fillRect(-window.innerWidth, -window.innerHeight * 2, window.innerWidth * 3, window.innerHeight * 2 + horizonY);
-        // Земля
-        ctx.fillStyle = '#051305';
-        ctx.fillRect(-window.innerWidth, horizonY, window.innerWidth * 3, window.innerHeight * 3);
+        // Земля (фон)
+        ctx.fillStyle = '#0a1d08';
+        ctx.fillRect(0, horizonY, canvas.width, canvas.height);
 
-        // Рисуем 3D сетку земли (Зеленые маркеры ландшафта)
-        ctx.strokeStyle = 'rgba(0, 255, 0, 0.15)';
-        ctx.beginPath();
-        groundPoints.forEach(p => {
-            // Двигаем точки навстречу самолету
-            p.z -= speedMult;
-            if (p.z <= 0) p.z = 80000; // Цикличность мира
+        // Отрисовка 3D сетки ландшафта под самолетом
+        ctx.strokeStyle = 'rgba(0, 255, 102, 0.12)';
+        ctx.lineWidth = 1;
+        terrainGrid.forEach(p => {
+            p.z -= moveStep; // Земля летит назад
+            if (p.z <= 0) p.z = 32000; // Возврат точек вдаль
 
             let proj = project3D(p.x, p.y - jet.altitude, p.z, jet.pitch, jet.roll);
             if (proj.visible) {
-                ctx.lineTo(proj.x, proj.y);
-                ctx.fillStyle = 'rgba(0, 255, 0, 0.4)';
-                ctx.fillRect(proj.x, proj.y, 3, 3);
+                ctx.fillStyle = 'rgba(0, 255, 102, 0.25)';
+                ctx.fillRect(proj.x, proj.y, 2, 2);
             }
         });
-        ctx.stroke();
-        ctx.restore();
 
-        // 3. ОТРИСОВКА ВОЕННОГО ИЛС (HUD) В ЦЕНТРЕ
-        ctx.strokeStyle = '#00ff00';
+        // Эффект облаков на скорости (белые стремительные линии)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
         ctx.lineWidth = 2;
-
-        // Прицельная сетка пушки
-        ctx.beginPath();
-        ctx.arc(window.innerWidth / 2, window.innerHeight / 2, 40, 0, Math.PI * 2);
-        ctx.moveTo(window.innerWidth / 2 - 60, window.innerHeight / 2);
-        ctx.lineTo(window.innerWidth / 2 - 40, window.innerHeight / 2);
-        ctx.moveTo(window.innerWidth / 2 + 40, window.innerHeight / 2);
-        ctx.lineTo(window.innerWidth / 2 + 60, window.innerHeight / 2);
-        ctx.moveTo(window.innerWidth / 2, window.innerHeight / 2 - 40);
-        ctx.lineTo(window.innerWidth / 2, window.innerHeight / 2 - 60);
-        ctx.stroke();
-
-        // Шкала авиагоризонта (тангаж)
-        ctx.save();
-        ctx.translate(window.innerWidth / 2, window.innerHeight / 2);
-        ctx.rotate(-jet.roll);
-        ctx.beginPath();
-        // Левое крыло горизонта
-        ctx.moveTo(-150, Math.sin(jet.pitch) * 200);
-        ctx.lineTo(-80, Math.sin(jet.pitch) * 200);
-        ctx.lineTo(-80, Math.sin(jet.pitch) * 200 + 10);
-        // Правое крыло горизонта
-        ctx.moveTo(150, Math.sin(jet.pitch) * 200);
-        ctx.lineTo(80, Math.sin(jet.pitch) * 200);
-        ctx.lineTo(80, Math.sin(jet.pitch) * 200 + 10);
-        ctx.stroke();
-        ctx.restore();
-
-        // Компас (Yaw) вверху шкалы ИЛС
-        let heading = Math.floor((jet.yaw * 180 / Math.PI) % 360);
-        if (heading < 0) heading += 360;
-        ctx.fillStyle = '#00ff00';
-        ctx.font = '20px Courier New';
-        ctx.fillText(`HDG: ${heading}°`, window.innerWidth / 2 - 40, 120);
-
-        // 4. ОБНОВЛЕНИЕ ДАТЧИКОВ ТЕКСТОМ ИНТЕРФЕЙСА
-        document.getElementById('ui-speed').innerText = Math.floor(jet.speed);
-        document.getElementById('ui-alt').innerText = Math.floor(jet.altitude);
-        document.getElementById('ui-throttle').innerText = jet.throttle + "%";
-        document.getElementById('ui-g').innerText = jet.gForce.toFixed(1) + " G";
-        
-        if (jet.afterburner) {
-            document.getElementById('ui-mode').innerText = "ФОРСАЖ МAХ";
-            document.getElementById('ui-mode').style.color = "#ff3300";
-        } else {
-            document.getElementById('ui-mode').innerText = "NAV / РЛС ВКЛ";
-            document.getElementById('ui-mode').style.color = "#00ff00";
+        for (let i = 0; i < 5; i++) {
+            let lineY = (horizonY - 200) + (i * 40);
+            ctx.beginPath();
+            ctx.moveTo(0, lineY);
+            ctx.lineTo(canvas.width, lineY);
+            ctx.stroke();
         }
 
-        // Проверка столкновения с землей
+        // ОТРИСОВКА САМОЛЕТА (Центр экрана с легким смещением от маневров)
+        let planeX = (canvas.width / 2) + (jet.roll * 60);
+        let planeY = (canvas.height * 0.65) + (jet.pitch * 50);
+
+        drawFighterJet(planeX, planeY, jet.roll, jet.pitch, jet.afterburner);
+
+        // ОБНОВЛЕНИЕ ТЕКСТОВ HUD
+        document.getElementById('speed-out').innerText = Math.floor(jet.speed);
+        document.getElementById('alt-out').innerText = Math.floor(jet.altitude);
+        document.getElementById('throttle-out').innerText = jet.throttle + "%";
+        document.getElementById('pitch-out').innerText = Math.floor(-jet.pitch * 50) + "°";
+        document.getElementById('burn-out').innerText = jet.afterburner ? "АКТИВЕН" : "ВЫКЛ";
+        document.getElementById('burn-out').style.color = jet.afterburner ? "#ff5500" : "#00ff66";
+
+        // Проверка падения
         if (jet.altitude <= 5) {
-            ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
-            ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-            ctx.fillStyle = '#fff';
-            ctx.font = '40px Courier New';
-            ctx.fillText("КРАШ: СТОЛКНОВЕНИЕ С ЗЕМЛЕЙ", window.innerWidth / 2 - 300, window.innerHeight / 2);
-            jet.speed = 0;
-            return; // Стоп игра
+            ctx.fillStyle = 'rgba(20, 0, 0, 0.9)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ff3333';
+            ctx.font = 'bold 30px Consolas';
+            ctx.fillText("CRASH: САМОЛЕТ СТОЛКНУЛСЯ С ЗЕМЛЕЙ", canvas.width / 2 - 270, canvas.height / 2);
+            return;
         }
 
-        requestAnimationFrame(loop);
+        requestAnimationFrame(gameLoop);
     }
 
-    loop();
+    gameLoop();
 </script>
 </body>
 </html>
