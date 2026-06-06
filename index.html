@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Авиасимулятор: Умное Самонаведение</title>
+    <title>3D Авиасимулятор: Умное Самонаведение (mig.png)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body { background: #010409; color: #00ff66; font-family: 'Consolas', monospace; overflow: hidden; }
@@ -81,6 +81,10 @@
     const canvas = document.getElementById('stage');
     const ctx = canvas.getContext('2d');
 
+    // Загрузка твоего изображения истребителя
+    const jetImage = new Image();
+    jetImage.src = 'mig.png';
+
     function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
     window.addEventListener('resize', resize);
     resize();
@@ -141,12 +145,11 @@
     // Огонь
     window.addEventListener('keydown', (e) => {
         if (e.key === ' ' || e.code === 'Space') {
-            // Пуск ракеты прямо по вектору движения
             missiles.push({ 
                 x: jet.roll * 50, 
                 y: -50, 
                 z: 100, 
-                speed: 120 // Увеличенная скорость ракеты (гиперзвук)
+                speed: 120 
             });
             playCombatSound('missile');
         }
@@ -169,12 +172,21 @@
         };
     }
 
-    function drawOurJet(x, y, roll) {
-        ctx.save(); ctx.translate(x, y); ctx.rotate(roll);
-        ctx.strokeStyle = '#00ff66'; ctx.lineWidth = 2; ctx.fillStyle = '#0b192e';
-        ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(-100, 15); ctx.lineTo(-70, 30); ctx.lineTo(0, 12); ctx.lineTo(70, 30); ctx.lineTo(100, 15); ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, -45); ctx.lineTo(-12, -5); ctx.lineTo(-12, 30); ctx.lineTo(12, 30); ctx.lineTo(12, -5); ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = 'rgba(255, 100, 0, 0.6)'; ctx.fillRect(-7, 30, 3, 10); ctx.fillRect(4, 30, 3, 10);
+    // Отрисовка текстуры твоего самолета (вид сзади) с поддержкой вращения
+    function drawOurJetImage(x, y, roll) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(roll);
+
+        // Отрисовка огня форсажа позади картинки
+        ctx.fillStyle = 'rgba(255, 100, 0, 0.7)';
+        ctx.fillRect(-15, 45, 8, 20);
+        ctx.fillRect(7, 45, 8, 20);
+
+        // Масштабируем и центрируем mig.png (размер 200x200 пикселей)
+        const imgSize = 200;
+        ctx.drawImage(jetImage, -imgSize / 2, -imgSize / 2, imgSize, imgSize);
+
         ctx.restore();
     }
 
@@ -210,7 +222,7 @@
             enemy.t += 0.025;
             enemy.x = Math.sin(enemy.t) * 700;
             enemy.y = 300 + Math.cos(enemy.t * 1.3) * 250;
-            enemy.z -= (speedMult - 45); // Скорость сближения
+            enemy.z -= (speedMult - 45); 
 
             if (enemy.z < -200) { enemy.z = 4000; enemy.alive = true; }
 
@@ -247,8 +259,6 @@
             m.z += m.speed;
 
             if (enemy.alive) {
-                // Мощное угловое наведение: ракета корректирует траекторию точно на врага
-                // Добавлено плавное донаведение (догон)
                 m.x += (enemy.x - m.x) * 0.22; 
                 m.y += ((enemy.y - jet.altitude) - m.y) * 0.22;
             }
@@ -256,15 +266,12 @@
             let mProj = project3D(m.x, m.y, m.z, jet.pitch, jet.roll);
 
             if (mProj.visible && m.z < 6000) {
-                // Инверсионный след ракеты
                 ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(mProj.x, mProj.y, 4, 0, Math.PI*2); ctx.fill();
                 ctx.strokeStyle = 'rgba(255, 150, 0, 0.6)'; ctx.lineWidth = 3;
                 ctx.beginPath(); ctx.moveTo(mProj.x, mProj.y); ctx.lineTo(mProj.x, mProj.y + 15); ctx.stroke();
 
-                // Расчет расстояния (3D радиус)
                 let dist = Math.sqrt(Math.pow(m.x - enemy.x, 2) + Math.pow(m.y - (enemy.y - jet.altitude), 2) + Math.pow(m.z - enemy.z, 2));
                 
-                // Бесконтактный радиус взрыва увеличен до 300 единиц (теперь ракета точно зацепит цель!)
                 if (dist < 300 && enemy.alive) {
                     enemy.alive = false;
                     missiles.splice(i, 1);
@@ -272,7 +279,6 @@
                     score++;
                     document.getElementById('score-out').innerText = score;
 
-                    // Отрисовка взрыва на ИЛС
                     ctx.fillStyle = '#ff3300'; ctx.beginPath(); ctx.arc(mProj.x, mProj.y, 90, 0, Math.PI*2); ctx.fill();
                     ctx.fillStyle = '#ffcc00'; ctx.beginPath(); ctx.arc(mProj.x, mProj.y, 50, 0, Math.PI*2); ctx.fill();
                     continue;
@@ -282,10 +288,10 @@
             }
         }
 
-        // Отрисовка нашего истребителя
+        // Вызов отрисовки твоего изображения вместо старых векторных линий
         let myX = (canvas.width / 2) + (jet.roll * 60);
         let myY = (canvas.height * 0.65) + (jet.pitch * 40);
-        drawOurJet(myX, myY, jet.roll);
+        drawOurJetImage(myX, myY, jet.roll);
 
         document.getElementById('alt-out').innerText = Math.floor(jet.altitude);
 
