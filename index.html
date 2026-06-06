@@ -3,78 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Штурмовик: Радиоперехват Орешника</title>
+    <title>3D Штурмовик: Работайте, Братья!</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background: #010409; color: #ff3333; font-family: 'Consolas', monospace; overflow: hidden; }
+        body { background: #010409; color: #ff3333; font-family: 'Consolas', monospace; overflow: hidden; width: 100vw; height: 100vh; }
 
-        #game-container { position: relative; width: 100vw; height: 100vh; }
+        #game-container { position: relative; width: 100vw; height: 100vh; display: none; }
         canvas { width: 100%; height: 100%; display: block; background: linear-gradient(to bottom, #010206 0%, #030611 60%, #070b19 100%); }
 
+        /* ЭКРАН ВСТУПЛЕНИЯ */
+        #intro-screen {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle, #0c0404 0%, #020000 100%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100; padding: 20px; text-align: center;
+            border: 4px solid #330000; box-shadow: inset 0 0 100px rgba(255,0,0,0.3);
+            transition: opacity 0.6s ease-out;
+        }
+
+        .matrix-text { color: #551111; font-size: 14px; margin-bottom: 20px; font-weight: bold; letter-spacing: 2px; animation: blink 1.5s infinite alternate; }
+        
+        .main-slogan {
+            font-size: 56px; font-weight: 900; color: #ffffff;
+            text-shadow: 0 0 10px #ff0000, 0 0 30px #ff0000, 0 0 50px #ff3300;
+            letter-spacing: 6px; margin-bottom: 10px;
+            animation: shake 0.3s infinite alternate;
+        }
+
+        .sub-slogan { font-size: 20px; color: #ff3333; letter-spacing: 4px; margin-bottom: 40px; text-shadow: 0 0 5px #ff0000; }
+
+        .start-btn {
+            background: transparent; border: 2px solid #ff3333; color: #ffffff;
+            padding: 15px 45px; font-family: 'Consolas', monospace; font-size: 18px; font-weight: bold;
+            cursor: pointer; border-radius: 4px; letter-spacing: 2px;
+            box-shadow: 0 0 15px rgba(255, 51, 51, 0.4);
+            transition: all 0.2s ease; pointer-events: auto;
+        }
+        .start-btn:hover { background: #ff3333; color: #000; box-shadow: 0 0 30px #ff3333; transform: scale(1.05); }
+
+        /* ИГРОВОЙ ИНТЕРФЕЙС */
         #ui-layer {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 20px;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column;
+            justify-content: space-between; padding: 20px;
         }
 
         .glass-panel {
-            background: rgba(5, 9, 20, 0.9);
-            border: 2px solid #ff1111;
-            border-radius: 6px;
-            padding: 12px 20px;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
-            font-size: 15px;
-            text-shadow: 0 0 5px #ff3333;
+            background: rgba(5, 9, 20, 0.9); border: 2px solid #ff1111; border-radius: 6px;
+            padding: 12px 20px; box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+            font-size: 15px; text-shadow: 0 0 5px #ff3333;
         }
 
         .flex-space { display: flex; justify-content: space-between; width: 100%; }
         .hud-val { color: #fff; font-weight: bold; }
         .alert-ui { color: #ff1111; animation: blink 0.2s infinite alternate; font-weight: bold; }
 
-        /* Экраны радиоперехвата */
         #radio-intercept {
-            position: absolute;
-            bottom: 80px;
-            left: 20px;
-            background: rgba(0, 5, 15, 0.85);
-            border: 1px dashed #00ff66;
-            color: #00ff66;
-            padding: 10px 15px;
-            font-size: 13px;
-            border-radius: 4px;
-            max-width: 350px;
-            text-shadow: 0 0 4px #00ff66;
-            opacity: 0;
-            transition: opacity 0.3s;
+            position: absolute; bottom: 80px; left: 20px;
+            background: rgba(0, 5, 15, 0.85); border: 1px dashed #00ff66; color: #00ff66;
+            padding: 10px 15px; font-size: 13px; border-radius: 4px; max-width: 350px;
+            text-shadow: 0 0 4px #00ff66; opacity: 0; transition: opacity 0.3s;
         }
 
         #controls-bar {
-            align-self: center;
-            background: rgba(0,0,0,0.95);
-            border: 2px solid #ff0000;
-            padding: 12px 30px;
-            border-radius: 30px;
-            font-size: 14px;
-            pointer-events: auto;
-            margin-bottom: 10px;
-            color: #fff;
-            text-shadow: 0 0 5px #ff0000;
+            align-self: center; background: rgba(0,0,0,0.95); border: 2px solid #ff0000;
+            padding: 12px 30px; border-radius: 30px; font-size: 14px; pointer-events: auto;
+            margin-bottom: 10px; color: #fff; text-shadow: 0 0 5px #ff0000;
             box-shadow: 0 0 25px rgba(255, 0, 0, 0.6);
         }
 
-        #nuclear-flash {
-            position: absolute; top:0; left:0; width:100%; height:100%;
-            background: #ffffff; pointer-events: none; opacity: 0;
-        }
+        /* Экраны вспышек */
+        #nuclear-flash { position: absolute; top:0; left:0; width:100%; height:100%; background: #ffffff; pointer-events: none; opacity: 0; z-index: 50; }
 
+        /* АНИМАЦИИ */
         @keyframes blink { from { opacity: 0.3; } to { opacity: 1; } }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            100% { transform: translate(-1px, -1px) rotate(0.5deg); }
+        }
     </style>
 </head>
 <body>
+
+<div id="intro-screen">
+    <div class="matrix-text">СИСТЕМА БУК-М3 // ПОДКЛЮЧЕНИЕ К ОРТК "ОРЕШНИК" // КОРРЕКЦИЯ ТРАЕКТОРИИ ББ... ПОДТВЕРЖДЕНО.</div>
+    <div class="main-slogan">РАБОТАЙТЕ, БРАТЬЯ!</div>
+    <div class="sub-slogan">ГИПЕРЗВУКОВОЙ ТЕКТОНИЧЕСКИЙ УДАР СВЕРХВЫСОКОЙ МОЩНОСТИ</div>
+    <button class="start-btn" onclick="launchGameWithTransition()">ЗАПУСК СИСТЕМ</button>
+</div>
 
 <div id="game-container">
     <canvas id="stage"></canvas>
@@ -84,8 +100,8 @@
         <div class="flex-space">
             <div class="glass-panel">
                 <div>СКОРОСТЬ: <span class="hud-val" id="speed-out">550</span> КМ/Ч</div>
-                <div>ОРУЖИЕ: <span class="hud-val" style="color:#ff3300; text-shadow: 0 0 10px #ff0000;">ОРТК "ОРЕШНИК"</span></div>
-                <div style="color: #ff9900;">РАДИОПЕРЕХВАТ: <span class="hud-val" style="color:#00ff66;">ОНЛАЙН</span></div>
+                <div>ОРУЖИЕ: <span class="hud-val" style="color:#ff3300; text-shadow: 0 0 10px #ff0000;">ОРТК "ОРЕШНИК" [АД]</span></div>
+                <div style="color: #ff9900;">РАДИОПЕРЕХВАТ: <span class="hud-val" style="color:#00ff66;">АКТИВЕН</span></div>
             </div>
             
             <div class="glass-panel" style="text-align: right;">
@@ -95,15 +111,17 @@
             </div>
         </div>
 
-        <div id="radio-intercept">📻 [РАДИОПЕРЕХВАТ ПРЕСЕЧЕН]: ...</div>
+        <div id="radio-intercept">📻 [РАДИОПЕРЕХВАТ]: ПРОВЕРКА ЧАСТОТЫ...</div>
 
         <div id="controls-bar">
-            🔊 <b>ВКЛЮЧЕН СЛУХОВОЙ ПЕРЕХВАТ ВРАГА:</b> Зажми ПРОБЕЛ. Слушай панику вражеских раций при уничтожении кварталов!
+            ☢️ ЗАЖМИ <b>ПРОБЕЛ</b> ДЛЯ КАЛЬКУЛЯЦИИ ГИПЕРЗВУКОВЫХ УДАРОВ ПО КВАРТАЛАМ!
         </div>
     </div>
 </div>
 
 <script>
+    const introScreen = document.getElementById('intro-screen');
+    const gameContainer = document.getElementById('game-container');
     const canvas = document.getElementById('stage');
     const ctx = canvas.getContext('2d');
     const flashEl = document.getElementById('nuclear-flash');
@@ -118,10 +136,10 @@
 
     let jet = { x: 0, y: 0, roll: 0, pitch: 0, targetX: 0, targetY: 0, speed: 550 };
     let bombs = []; let explosions = []; let buildings = []; let enemies = [];     
-    let enemyProjectiles = []; let scoreVehicles = 0; let scoreBuildings = 0;
+    let scoreVehicles = 0; let scoreBuildings = 0;
     let isSpacePressed = false; let bombTimer = 0; let muzzleFlash = 0; 
+    let isGameRunning = false;
 
-    // Варианты панических докладов врага для озвучки
     const radioPhrases = [
         "Внимание! Зафиксирован разделяющийся гиперзвуковой блок!",
         "Первый сектор полностью уничтожен! Связи нет!",
@@ -131,6 +149,40 @@
         "Катастрофические разрушения в секторе Браво!",
         "Потеряна связь с батальоном ПВО! Нас выжигают!"
     ];
+
+    // КРАСИВЫЙ ПЕРЕХОД ИЗ ИНТРО В ИГРУ
+    function launchGameWithTransition() {
+        // Игра инициализируется звуками
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Глитч-звук старта двигателей
+        let osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(40, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(300, audioCtx.currentTime + 0.5);
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+
+        // Эффект вспышки перехода
+        introScreen.style.opacity = '0';
+        setTimeout(() => {
+            introScreen.style.display = 'none';
+            gameContainer.style.display = 'block';
+            resize();
+            
+            // Ослепительная вспышка при входе в игру
+            flashEl.style.opacity = '1';
+            let initialFade = setInterval(() => {
+                flashEl.style.opacity = parseFloat(flashEl.style.opacity) - 0.04;
+                if (flashEl.style.opacity <= 0) { flashEl.style.opacity = '0'; clearInterval(initialFade); }
+            }, 30);
+
+            isGameRunning = true;
+            // Первая реплика в рации сразу на старте
+            setTimeout(speakRadio, 600);
+        }, 600);
+    }
 
     function initWorld() {
         buildings = []; enemies = [];
@@ -173,32 +225,26 @@
         }
     }
 
-    // НОВОЕ: Система синтеза речи для имитации радиоперехвата
     function speakRadio() {
-        if ('speechSynthesis' in window) {
-            // Чтобы фразы не наслаивались кашей, прерываем предыдущую
+        if ('speechSynthesis' in window && isGameRunning) {
             window.speechSynthesis.cancel(); 
-
             let phrase = radioPhrases[Math.floor(Math.random() * radioPhrases.length)];
             
-            // Выводим текст на интерфейс
             radioEl.innerText = `📻 [ПЕРЕХВАТ]: "${phrase.toUpperCase()}"`;
             radioEl.style.opacity = '1';
             
             let utterance = new SpeechSynthesisUtterance(phrase);
             utterance.lang = 'ru-RU';
-            utterance.pitch = 0.6; // Низкий, хриплый мужской голос
-            utterance.rate = 1.15; // Слегка ускоренный от паники
+            utterance.pitch = 0.55; 
+            utterance.rate = 1.15; 
 
-            utterance.onend = () => {
-                setTimeout(() => { radioEl.style.opacity = '0'; }, 1500);
-            };
-
+            utterance.onend = () => { setTimeout(() => { radioEl.style.opacity = '0'; }, 1500); };
             window.speechSynthesis.speak(utterance);
         }
     }
 
     window.addEventListener('mousemove', (e) => {
+        if (!isGameRunning) return;
         let nX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
         let nY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
         jet.roll = nX * 0.9; jet.pitch = nY * 0.3;
@@ -237,8 +283,6 @@
     function detonateMegaOreshnik(targetX, targetZ, screenX, screenY) {
         triggerOreshnikFlash();
         playSound('oreshnik');
-        
-        // Запускаем перехват испуганного голоса из рации
         speakRadio();
 
         const blastRadiusX = 3500; const blastRadiusZ = 3000;
@@ -257,6 +301,7 @@
         document.getElementById('b-score-out').innerText = scoreBuildings;
         document.getElementById('score-out').innerText = scoreVehicles;
 
+        // Взрывной купол (500% размеров)
         explosions.push({ x: screenX, y: screenY, r: 20, maxR: 450 + Math.random() * 200, speed: 10, alpha: 1.0 });
         for(let i=0; i<8; i++) {
             explosions.push({ x: screenX + (Math.random() * 300 - 150), y: screenY + (Math.random() * 100 - 50), r: 10, maxR: 150 + Math.random() * 150, speed: 6, alpha: 0.9 });
@@ -264,6 +309,9 @@
     }
 
     function loop() {
+        requestAnimationFrame(loop);
+        if (!isGameRunning) return;
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         jet.x += (jet.targetX - jet.x) * 0.08; jet.y += (jet.targetY - jet.y) * 0.08;
         let speedMult = jet.speed * 0.2;
@@ -277,6 +325,7 @@
         ctx.fillStyle = '#010206'; ctx.fillRect(0, 0, canvas.width, horizonY);
         ctx.fillStyle = '#020511'; ctx.fillRect(0, horizonY, canvas.width, canvas.height);
 
+        // Отрисовка зданий и остовов
         buildings.forEach(b => {
             b.z -= speedMult; if (b.z <= -600) { b.z = 25000; b.alive = true; }
             let bottomProj = project3D(b.x, b.y, b.z); let topProj = project3D(b.x, b.y + b.h, b.z);
@@ -300,6 +349,7 @@
             }
         });
 
+        // Враги
         enemies.forEach(e => {
             e.z -= speedMult; if (e.z <= -600) { e.z = 25000; e.alive = true; }
             if (e.alive) {
@@ -313,6 +363,7 @@
             }
         });
 
+        // Бомбы
         for (let i = bombs.length - 1; i >= 0; i--) {
             let bomb = bombs[i]; bomb.x += bomb.vx; bomb.y += bomb.vy; bomb.z += bomb.vz; bomb.vy -= 1.4; 
             let bProj = project3D(bomb.x, bomb.y, bomb.z);
@@ -334,6 +385,7 @@
             if (hitTriggered || bomb.y <= -2500) { detonateMegaOreshnik(bomb.x, bomb.z, bProj.x, bProj.y); bombs.splice(i, 1); }
         }
 
+        // Огненные куполы взрывов
         for (let i = explosions.length - 1; i >= 0; i--) {
             let exp = explosions[i]; exp.r += exp.speed; exp.y -= exp.speed * 0.25; exp.alpha -= 0.012; 
             if (exp.alpha <= 0 || exp.r >= exp.maxR) { explosions.splice(i, 1); continue; }
@@ -346,6 +398,7 @@
             ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(exp.x, exp.y, exp.r, 0, Math.PI * 2); ctx.fill();
         }
 
+        // Самолёт
         let screenJetX = (canvas.width / 2) + (jet.x * 0.18); let screenJetY = (canvas.height * 0.55) - (jet.y * 0.25);
         ctx.save(); ctx.translate(screenJetX, screenJetY); ctx.rotate(jet.roll);
         if (muzzleFlash > 0) {
@@ -356,7 +409,6 @@
         const imgSize = 160; ctx.drawImage(jetImage, -imgSize / 2, -imgSize / 2, imgSize, imgSize); ctx.restore();
 
         document.getElementById('speed-out').innerText = Math.floor(jet.speed);
-        requestAnimationFrame(loop);
     }
     loop();
 </script>
