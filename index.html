@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Штурмовик: Апокалипсис Орешника +500%</title>
+    <title>3D Штурмовик: Исправленный Апокалипсис 500%</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body { background: #010409; color: #ff3333; font-family: 'Consolas', monospace; overflow: hidden; }
@@ -11,7 +11,6 @@
         #game-container { position: relative; width: 100vw; height: 100vh; }
         canvas { width: 100%; height: 100%; display: block; background: linear-gradient(to bottom, #010206 0%, #040813 60%, #0d1324 100%); }
 
-        /* HUD Панель */
         #ui-layer {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -50,7 +49,6 @@
             box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
         }
 
-        /* Ослепительная термобарическая вспышка */
         #nuclear-flash {
             position: absolute; top:0; left:0; width:100%; height:100%;
             background: #ffffff; pointer-events: none; opacity: 0;
@@ -69,19 +67,19 @@
         <div class="flex-space">
             <div class="glass-panel" style="border-color: #ff0000;">
                 <div>СКОРОСТЬ: <span class="hud-val" id="speed-out">550</span> КМ/Ч</div>
-                <div>МОЩНОСТЬ УДАРА: <span class="hud-val" style="color:#ff3300; text-shadow: 0 0 10px #ff0000;">+500% АНИГИЛЯЦИЯ</span></div>
-                <div style="color: #ff9900;">РАДИУС ВЗРЫВА: <span class="hud-val" style="color:#ff9900;">АНТИКВАРТАЛ СВЕРХМАКСИМУМ</span></div>
+                <div>МОЩНОСТЬ УДАРА: <span class="hud-val" style="color:#ff3300; text-shadow: 0 0 10px #ff0000;">ЖЕСТКАЯ АННИГИЛЯЦИЯ</span></div>
+                <div style="color: #ff9900;">КОЛЛИЗИЯ ВЗРЫВА: <span class="hud-val" style="color:#ff9900;">ИСПРАВЛЕНО НА 100%</span></div>
             </div>
             
             <div class="glass-panel" style="text-align: right; border-color: #ff0000;">
                 <div>СПО «БЕРЕЗА»: <span class="alert-ui" id="pvo-warn">ПОИСК ЦЕЛЕЙ</span></div>
-                <div>СТЕРТО С ЛИЦА ЗЕМЛИ ТЕХНИКИ: <span id="score-out" class="hud-val" style="color: #ffcc00;">0</span></div>
-                <div style="color: #00ffff;">ИСПАРЕНО СЕКТОРОВ ГОРОДА: <span id="b-score-out" class="hud-val">0</span></div>
+                <div>УНИЧТОЖЕНО ТЕХНИКИ: <span id="score-out" class="hud-val" style="color: #ffcc00;">0</span></div>
+                <div style="color: #00ffff;">РАЗРУШЕНО ЗДАНИЙ: <span id="b-score-out" class="hud-val">0</span></div>
             </div>
         </div>
 
         <div id="controls-bar">
-            ☢️ <b>ПРИМЕНЕН ГИПЕРЗВУКОВОЙ «ОРЕШНИК» (+500%):</b> Зажми ПРОБЕЛ. Каскад плазменных волн выжигает ВСЁ до самого горизонта!
+            ☢️ <b>ИСПРАВЛЕНО:</b> Зажми ПРОБЕЛ. Теперь бомбы гарантированно взрываются при встрече с домами и сносят целые кварталы!
         </div>
     </div>
 </div>
@@ -116,29 +114,32 @@
     let bombTimer = 0;          
     let muzzleFlash = 0; 
 
+    // Генерация мира с фиксированной высотой
     function initWorld() {
         buildings = [];
         enemies = [];
         
-        // Генерируем сверхплотный мегаполис
-        for (let x = -15; x <= 15; x += 1.8) {
-            for (let z = 3; z <= 30; z += 3) {
-                let worldX = x * 1400 + (Math.random() * 200 - 100);
-                let worldZ = z * 1100;
+        for (let x = -12; x <= 12; x += 2) {
+            for (let z = 3; z <= 26; z += 3) {
+                let worldX = x * 1500 + (Math.random() * 200 - 100);
+                let worldZ = z * 1200;
+                let bHeight = 600 + Math.random() * 1400; // Высота здания вверх от земли
                 
                 buildings.push({
-                    x: worldX, y: -2500, z: worldZ,
-                    w: 420, h: 500 + Math.random() * 1200,
+                    x: worldX,
+                    y: -2500, // Уровень земли
+                    h: bHeight,
+                    w: 450,
                     alive: true
                 });
 
-                if (Math.random() < 0.7) {
+                if (Math.random() < 0.6) {
                     enemies.push({
-                        x: worldX + (Math.random() * 400 - 200),
+                        x: worldX + (Math.random() * 300 - 150),
                         y: -2500,
-                        z: worldZ + 50,
+                        z: worldZ + 100,
                         type: Math.random() > 0.4 ? 'tank' : 'pvo',
-                        w: 95, h: 55,
+                        w: 100, h: 60,
                         alive: true,
                         shootCooldown: Math.floor(Math.random() * 50),
                         moveDir: Math.random() > 0.5 ? 1 : -1
@@ -156,18 +157,17 @@
         osc.connect(gain); gain.connect(audioCtx.destination);
 
         if (type === 'whistle') {
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(700, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.9);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.9);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.9);
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.8);
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.8);
         } else if (type === 'oreshnik') {
-            // Тектонический грохот взрыва
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(35, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(1, audioCtx.currentTime + 2.0);
-            gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 2.0);
-            osc.start(); osc.stop(audioCtx.currentTime + 2.0);
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(40, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(1, audioCtx.currentTime + 1.8);
+            gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 1.8);
+            osc.start(); osc.stop(audioCtx.currentTime + 1.8);
         } else if (type === 'fire') {
             osc.type = 'square'; osc.frequency.setValueAtTime(140, audioCtx.currentTime);
             osc.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.1);
@@ -196,17 +196,21 @@
     function triggerOreshnikFlash() {
         flashEl.style.opacity = '1';
         let fade = setInterval(() => {
-            flashEl.style.opacity = parseFloat(flashEl.style.opacity) - 0.03;
+            flashEl.style.opacity = parseFloat(flashEl.style.opacity) - 0.04;
             if (flashEl.style.opacity <= 0) { flashEl.style.opacity = '0'; clearInterval(fade); }
-        }, 40);
+        }, 30);
     }
 
     function spawnOreshnik() {
         bombs.push({
-            x: jet.x, y: jet.y - 100, z: 400,               
-            vx: jet.roll * 12, vy: -5, vz: jet.speed * 0.22  
+            x: jet.x, 
+            y: jet.y - 120, 
+            z: 400,               
+            vx: jet.roll * 14, 
+            vy: -15, // Быстрое падение по диагонали вниз
+            vz: jet.speed * 0.25  
         });
-        muzzleFlash = 6; 
+        muzzleFlash = 5; 
         playSound('whistle');
     }
 
@@ -229,16 +233,16 @@
         };
     }
 
-    // ИСПРАВЛЕНО: Ударная волна увеличена на 500%! Уничтожает абсолютно всё в колоссальном радиусе
+    // РАДИУС И МАСШТАБ УВЕЛИЧЕНЫ НА 500%
     function detonateMegaOreshnik(targetX, targetZ, screenX, screenY) {
         triggerOreshnikFlash();
         playSound('oreshnik');
 
-        // РАДИУС УВЕЛИЧЕН НА 500% (Огромный масштаб зачистки в координатах мира)
-        const giantRadiusX = 15000; 
-        const giantRadiusZ = 12000;
+        // Огромная зона поражения в 3D мире (18 000 единиц вокруг эпицентра)
+        const giantRadiusX = 18000; 
+        const giantRadiusZ = 14000;
 
-        // Аннигиляция всех зданий в огромном секторе
+        // Фиксация тотального сноса
         buildings.forEach(b => {
             if (b.alive && Math.abs(b.x - targetX) < giantRadiusX && Math.abs(b.z - targetZ) < giantRadiusZ) {
                 b.alive = false;
@@ -246,7 +250,6 @@
             }
         });
 
-        // Аннигиляция всей техники врага
         enemies.forEach(e => {
             if (e.alive && Math.abs(e.x - targetX) < giantRadiusX && Math.abs(e.z - targetZ) < giantRadiusZ) {
                 e.alive = false;
@@ -257,16 +260,16 @@
         document.getElementById('b-score-out').innerText = scoreBuildings;
         document.getElementById('score-out').innerText = scoreVehicles;
 
-        // ГИГАНТСКИЙ КАСКАД ВЗРЫВОВ НА ПОЛ-ЭКРАНА (Увеличен на 500%)
-        for (let i = 0; i < 35; i++) {
-            let offsetX = (Math.random() * 800 - 400) * (i * 0.15);
-            let offsetY = (Math.random() * 400 - 200) * (i * 0.15);
+        // Огненные волны на ПОЛ-ЭКРАНА
+        for (let i = 0; i < 40; i++) {
+            let offsetX = (Math.random() * 1000 - 500) * (i * 0.12);
+            let offsetY = (Math.random() * 500 - 250) * (i * 0.12);
             explosions.push({
                 x: screenX + offsetX,
                 y: screenY + offsetY,
-                r: 40 + Math.random() * 50,
-                maxR: 550 + Math.random() * 450, // Экран полностью заполняется огненной плазмой
-                delay: i * 1.5                   // Сверхбыстрый испепеляющий каскад волн
+                r: 50,
+                maxR: 700 + Math.random() * 500, // Огненное испепеление
+                delay: i * 1
             });
         }
     }
@@ -281,7 +284,7 @@
 
         if (isSpacePressed) {
             bombTimer++;
-            if (bombTimer % 40 === 0) spawnOreshnik();
+            if (bombTimer % 35 === 0) spawnOreshnik();
         }
 
         let horizonY = (canvas.height * 0.45) - (jet.pitch * 350) + (jet.y * 0.2);
@@ -301,13 +304,13 @@
                 let h3d = bottomProj.y - topProj.y;
 
                 if (b.alive) {
-                    ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
-                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.4)';
+                    ctx.fillStyle = 'rgba(16, 25, 48, 0.95)';
+                    ctx.strokeStyle = '#ff3333';
                     ctx.lineWidth = 1.5;
                     ctx.fillRect(topProj.x - w3d/2, topProj.y, w3d, h3d);
                     ctx.strokeRect(topProj.x - w3d/2, topProj.y, w3d, h3d);
 
-                    ctx.fillStyle = '#ff9900';
+                    ctx.fillStyle = '#ffcc00';
                     let stepX = Math.max(10, w3d / 5);
                     let stepY = Math.max(12, h3d / 7);
                     for (let oy = topProj.y + 12; oy < bottomProj.y - 12; oy += stepY) {
@@ -316,14 +319,14 @@
                         }
                     }
                 } else {
-                    // ИСПРАВЛЕНО: Теперь на месте разрушенных зданий остаются явные тлеющие кратеры и пепел
-                    ctx.fillStyle = 'rgba(255, 30, 0, 0.15)'; 
+                    // Тлеющие кратеры разрушенных кварталов
+                    ctx.fillStyle = 'rgba(255, 40, 0, 0.2)'; 
                     ctx.beginPath();
-                    ctx.ellipse(bottomProj.x, bottomProj.y, w3d * 2, w3d * 0.5, 0, 0, Math.PI * 2);
+                    ctx.ellipse(bottomProj.x, bottomProj.y, w3d * 2.5, w3d * 0.6, 0, 0, Math.PI * 2);
                     ctx.fill();
 
-                    ctx.fillStyle = '#030305';
-                    ctx.fillRect(bottomProj.x - w3d * 0.8, bottomProj.y - 3, w3d * 1.6, 5);
+                    ctx.fillStyle = '#020204';
+                    ctx.fillRect(bottomProj.x - w3d, bottomProj.y - 4, w3d * 2, 6);
                 }
             }
         });
@@ -397,11 +400,11 @@
             ctx.fillRect(pProj.x - 2, pProj.y - 2, Math.max(3, pProj.scale * 10), Math.max(3, pProj.scale * 10));
         }
 
-        // 4. Движение снаряда Орешника до детонации
+        // 4. Логика полета бомбы и ИСПРАВЛЕННАЯ КОЛЛИЗИЯ С ДОМАМИ
         for (let i = bombs.length - 1; i >= 0; i--) {
             let bomb = bombs[i];
             bomb.x += bomb.vx; bomb.y += bomb.vy; bomb.z += bomb.vz;
-            bomb.vy -= 1.1; // Сверхзвуковое ускорение к земле
+            bomb.vy -= 1.3; // Дикое ускорение силы тяжести
 
             let bProj = project3D(bomb.x, bomb.y, bomb.z);
 
@@ -410,6 +413,7 @@
                 continue;
             }
 
+            // Визуал снаряда
             let bWidth = Math.max(12, bProj.scale * 35);
             let bHeight = Math.max(24, bProj.scale * 70);
 
@@ -417,35 +421,41 @@
             ctx.translate(bProj.x, bProj.y);
             let fallAngle = Math.atan2(-bomb.vy, bomb.vz * 0.3) - Math.PI/2;
             ctx.rotate(fallAngle + jet.roll * 0.5);
-
-            ctx.fillStyle = '#111e2e';
-            ctx.beginPath();
-            ctx.ellipse(0, 0, bWidth / 2, bHeight / 2, 0, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Пылающий хвост плазмы при входе в слои атмосферы
-            ctx.fillStyle = 'rgba(255, 30, 0, 0.8)';
+            ctx.fillStyle = '#1c2833';
+            ctx.beginPath(); ctx.ellipse(0, 0, bWidth / 2, bHeight / 2, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = 'rgba(255, 69, 0, 0.8)';
             ctx.fillRect(-bWidth/3, -bHeight, bWidth*0.66, bHeight/2);
             ctx.restore();
 
-            // Точка столкновения с поверхностью земли
-            if (bomb.y <= -2500) {
+            // ИСПРАВЛЕНО: Проверка триггера взрыва. Ищем любое живое здание на пути бомбы по оси Z
+            let hitTriggered = false;
+            
+            buildings.forEach(b => {
+                if (b.alive && Math.abs(bomb.x - b.x) < b.w * 1.2 && Math.abs(bomb.z - b.z) < 600) {
+                    // Если высота бомбы опустилась ниже крыши здания
+                    if (bomb.y <= b.y + b.h) {
+                        hitTriggered = true;
+                    }
+                }
+            });
+
+            // Взрыв при контакте с домом ИЛИ при достижении уровня земли (-2500)
+            if (hitTriggered || bomb.y <= -2500) {
                 detonateMegaOreshnik(bomb.x, bomb.z, bProj.x, bProj.y);
                 bombs.splice(i, 1);
             }
         }
 
-        // 5. Отрисовка ГИГАНТСКИХ каскадных мега-взрывов (+500% размеров)
+        // 5. Отрисовка ГИГАНТСКИХ взрывов (+500%)
         for (let i = explosions.length - 1; i >= 0; i--) {
             let exp = explosions[i];
             if (exp.delay > 0) { exp.delay--; continue; }
-            exp.r += 12; // Взрывная волна движется с бешеной скоростью
+            exp.r += 14; 
 
-            // Внешнее термобарическое огненное облако взрыва
-            let grad = ctx.createRadialGradient(exp.x, exp.y, exp.r * 0.1, exp.x, exp.y, exp.r);
+            let grad = ctx.createRadialGradient(exp.x, exp.y, exp.r * 0.05, exp.x, exp.y, exp.r);
             grad.addColorStop(0, 'rgba(255, 255, 255, ' + (1 - exp.r / exp.maxR) + ')');
-            grad.addColorStop(0.2, 'rgba(255, 140, 0, ' + (1 - exp.r / exp.maxR) + ')');
-            grad.addColorStop(0.6, 'rgba(200, 20, 0, ' + (0.8 * (1 - exp.r / exp.maxR)) + ')');
+            grad.addColorStop(0.15, 'rgba(255, 170, 0, ' + (1 - exp.r / exp.maxR) + ')');
+            grad.addColorStop(0.55, 'rgba(220, 10, 0, ' + (0.85 * (1 - exp.r / exp.maxR)) + ')');
             grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
             ctx.fillStyle = grad;
