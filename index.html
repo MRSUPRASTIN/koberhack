@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Штурмовик: Исправленный Апокалипсис 500%</title>
+    <title>3D Штурмовик: Мега Взрывы Орешника</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body { background: #010409; color: #ff3333; font-family: 'Consolas', monospace; overflow: hidden; }
 
         #game-container { position: relative; width: 100vw; height: 100vh; }
-        canvas { width: 100%; height: 100%; display: block; background: linear-gradient(to bottom, #010206 0%, #040813 60%, #0d1324 100%); }
+        canvas { width: 100%; height: 100%; display: block; background: linear-gradient(to bottom, #010206 0%, #030611 60%, #070b19 100%); }
 
         #ui-layer {
             position: absolute;
@@ -22,22 +22,22 @@
         }
 
         .glass-panel {
-            background: rgba(8, 12, 24, 0.9);
-            border: 2px solid #ff3333;
+            background: rgba(5, 9, 20, 0.9);
+            border: 2px solid #ff1111;
             border-radius: 6px;
             padding: 12px 20px;
-            box-shadow: 0 0 15px rgba(255, 51, 51, 0.5);
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
             font-size: 15px;
             text-shadow: 0 0 5px #ff3333;
         }
 
         .flex-space { display: flex; justify-content: space-between; width: 100%; }
         .hud-val { color: #fff; font-weight: bold; }
-        .alert-ui { color: #ff3333; animation: blink 0.2s infinite alternate; font-weight: bold; }
+        .alert-ui { color: #ff1111; animation: blink 0.2s infinite alternate; font-weight: bold; }
 
         #controls-bar {
             align-self: center;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             border: 2px solid #ff0000;
             padding: 12px 30px;
             border-radius: 30px;
@@ -46,7 +46,7 @@
             margin-bottom: 10px;
             color: #fff;
             text-shadow: 0 0 5px #ff0000;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+            box-shadow: 0 0 25px rgba(255, 0, 0, 0.6);
         }
 
         #nuclear-flash {
@@ -54,7 +54,7 @@
             background: #ffffff; pointer-events: none; opacity: 0;
         }
 
-        @keyframes blink { from { opacity: 0.2; } to { opacity: 1; } }
+        @keyframes blink { from { opacity: 0.3; } to { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -65,13 +65,13 @@
 
     <div id="ui-layer">
         <div class="flex-space">
-            <div class="glass-panel" style="border-color: #ff0000;">
+            <div class="glass-panel">
                 <div>СКОРОСТЬ: <span class="hud-val" id="speed-out">550</span> КМ/Ч</div>
-                <div>МОЩНОСТЬ УДАРА: <span class="hud-val" style="color:#ff3300; text-shadow: 0 0 10px #ff0000;">ЖЕСТКАЯ АННИГИЛЯЦИЯ</span></div>
-                <div style="color: #ff9900;">КОЛЛИЗИЯ ВЗРЫВА: <span class="hud-val" style="color:#ff9900;">ИСПРАВЛЕНО НА 100%</span></div>
+                <div>ЭФФЕКТ: <span class="hud-val" style="color:#ff3300; text-shadow: 0 0 10px #ff0000;">ОРЕШНИК 500% (ЯДЕРНЫЙ ГРИБ)</span></div>
+                <div style="color: #ff9900;">РАДИУС: <span class="hud-val" style="color:#ff9900;">СПЛОШНОЙ КВАРТАЛ</span></div>
             </div>
             
-            <div class="glass-panel" style="text-align: right; border-color: #ff0000;">
+            <div class="glass-panel" style="text-align: right;">
                 <div>СПО «БЕРЕЗА»: <span class="alert-ui" id="pvo-warn">ПОИСК ЦЕЛЕЙ</span></div>
                 <div>УНИЧТОЖЕНО ТЕХНИКИ: <span id="score-out" class="hud-val" style="color: #ffcc00;">0</span></div>
                 <div style="color: #00ffff;">РАЗРУШЕНО ЗДАНИЙ: <span id="b-score-out" class="hud-val">0</span></div>
@@ -79,7 +79,7 @@
         </div>
 
         <div id="controls-bar">
-            ☢️ <b>ИСПРАВЛЕНО:</b> Зажми ПРОБЕЛ. Теперь бомбы гарантированно взрываются при встрече с домами и сносят целые кварталы!
+            🔥 <b>ИСПРАВЛЕНО:</b> Зажми ПРОБЕЛ. Каждая бомба создаёт гигантский полыхающий гриб взрыва и сносит один квартал!
         </div>
     </div>
 </div>
@@ -100,7 +100,7 @@
         x: 0, y: 0,
         roll: 0, pitch: 0,
         targetX: 0, targetY: 0,
-        speed: 550, altitude: 4000
+        speed: 550
     };
 
     let bombs = [];
@@ -114,32 +114,32 @@
     let bombTimer = 0;          
     let muzzleFlash = 0; 
 
-    // Генерация мира с фиксированной высотой
     function initWorld() {
         buildings = [];
         enemies = [];
         
-        for (let x = -12; x <= 12; x += 2) {
-            for (let z = 3; z <= 26; z += 3) {
-                let worldX = x * 1500 + (Math.random() * 200 - 100);
+        // Создаем аккуратную сетку города
+        for (let x = -10; x <= 10; x += 2) {
+            for (let z = 4; z <= 26; z += 3) {
+                let worldX = x * 1500 + (Math.random() * 100 - 50);
                 let worldZ = z * 1200;
-                let bHeight = 600 + Math.random() * 1400; // Высота здания вверх от земли
+                let bHeight = 700 + Math.random() * 1200;
                 
                 buildings.push({
                     x: worldX,
                     y: -2500, // Уровень земли
                     h: bHeight,
-                    w: 450,
+                    w: 480,
                     alive: true
                 });
 
-                if (Math.random() < 0.6) {
+                if (Math.random() < 0.5) {
                     enemies.push({
-                        x: worldX + (Math.random() * 300 - 150),
+                        x: worldX + (Math.random() * 200 - 100),
                         y: -2500,
                         z: worldZ + 100,
                         type: Math.random() > 0.4 ? 'tank' : 'pvo',
-                        w: 100, h: 60,
+                        w: 110, h: 60,
                         alive: true,
                         shootCooldown: Math.floor(Math.random() * 50),
                         moveDir: Math.random() > 0.5 ? 1 : -1
@@ -157,23 +157,17 @@
         osc.connect(gain); gain.connect(audioCtx.destination);
 
         if (type === 'whistle') {
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(500, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.8);
-            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.8);
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(80, audioCtx.currentTime + 0.6);
+            gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.6);
         } else if (type === 'oreshnik') {
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(40, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(1, audioCtx.currentTime + 1.8);
-            gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 1.8);
-            osc.start(); osc.stop(audioCtx.currentTime + 1.8);
-        } else if (type === 'fire') {
-            osc.type = 'square'; osc.frequency.setValueAtTime(140, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(35, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(1, audioCtx.currentTime + 2.2);
+            gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 2.2);
+            osc.start(); osc.stop(audioCtx.currentTime + 2.2);
         }
     }
 
@@ -194,23 +188,23 @@
     });
 
     function triggerOreshnikFlash() {
-        flashEl.style.opacity = '1';
+        flashEl.style.opacity = '0.8';
         let fade = setInterval(() => {
-            flashEl.style.opacity = parseFloat(flashEl.style.opacity) - 0.04;
+            flashEl.style.opacity = parseFloat(flashEl.style.opacity) - 0.05;
             if (flashEl.style.opacity <= 0) { flashEl.style.opacity = '0'; clearInterval(fade); }
-        }, 30);
+        }, 40);
     }
 
     function spawnOreshnik() {
         bombs.push({
-            x: jet.x, 
+            x: jet.x + (Math.random() * 100 - 50), 
             y: jet.y - 120, 
-            z: 400,               
-            vx: jet.roll * 14, 
-            vy: -15, // Быстрое падение по диагонали вниз
-            vz: jet.speed * 0.25  
+            z: 500,               
+            vx: jet.roll * 12, 
+            vy: -18, 
+            vz: jet.speed * 0.22  
         });
-        muzzleFlash = 5; 
+        muzzleFlash = 4; 
         playSound('whistle');
     }
 
@@ -233,25 +227,24 @@
         };
     }
 
-    // РАДИУС И МАСШТАБ УВЕЛИЧЕНЫ НА 500%
+    // ИСПРАВЛЕНО: Чёткий локальный взрыв квартала + огромный видимый ядерный купол
     function detonateMegaOreshnik(targetX, targetZ, screenX, screenY) {
         triggerOreshnikFlash();
         playSound('oreshnik');
 
-        // Огромная зона поражения в 3D мире (18 000 единиц вокруг эпицентра)
-        const giantRadiusX = 18000; 
-        const giantRadiusZ = 14000;
+        // Ограниченный честный радиус квартала в координатах (чтобы не сносить карту целиком)
+        const blastRadiusX = 3500; 
+        const blastRadiusZ = 3000;
 
-        // Фиксация тотального сноса
         buildings.forEach(b => {
-            if (b.alive && Math.abs(b.x - targetX) < giantRadiusX && Math.abs(b.z - targetZ) < giantRadiusZ) {
+            if (b.alive && Math.abs(b.x - targetX) < blastRadiusX && Math.abs(b.z - targetZ) < blastRadiusZ) {
                 b.alive = false;
                 scoreBuildings++;
             }
         });
 
         enemies.forEach(e => {
-            if (e.alive && Math.abs(e.x - targetX) < giantRadiusX && Math.abs(e.z - targetZ) < giantRadiusZ) {
+            if (e.alive && Math.abs(e.x - targetX) < blastRadiusX && Math.abs(e.z - targetZ) < blastRadiusZ) {
                 e.alive = false;
                 scoreVehicles++;
             }
@@ -260,16 +253,25 @@
         document.getElementById('b-score-out').innerText = scoreBuildings;
         document.getElementById('score-out').innerText = scoreVehicles;
 
-        // Огненные волны на ПОЛ-ЭКРАНА
-        for (let i = 0; i < 40; i++) {
-            let offsetX = (Math.random() * 1000 - 500) * (i * 0.12);
-            let offsetY = (Math.random() * 500 - 250) * (i * 0.12);
+        // Спавним ОГРОМНЫЙ расширяющийся купол (визуальный эффект на 500%)
+        explosions.push({
+            x: screenX,
+            y: screenY,
+            r: 20,
+            maxR: 450 + Math.random() * 200, // Огромный размер на экране
+            speed: 10,
+            alpha: 1.0
+        });
+
+        // Добавляем боковые каскадные всполохи по краям
+        for(let i=0; i<8; i++) {
             explosions.push({
-                x: screenX + offsetX,
-                y: screenY + offsetY,
-                r: 50,
-                maxR: 700 + Math.random() * 500, // Огненное испепеление
-                delay: i * 1
+                x: screenX + (Math.random() * 300 - 150),
+                y: screenY + (Math.random() * 100 - 50),
+                r: 10,
+                maxR: 150 + Math.random() * 150,
+                speed: 6,
+                alpha: 0.9
             });
         }
     }
@@ -284,12 +286,12 @@
 
         if (isSpacePressed) {
             bombTimer++;
-            if (bombTimer % 35 === 0) spawnOreshnik();
+            if (bombTimer % 30 === 0) spawnOreshnik();
         }
 
         let horizonY = (canvas.height * 0.45) - (jet.pitch * 350) + (jet.y * 0.2);
-        ctx.fillStyle = '#010205'; ctx.fillRect(0, 0, canvas.width, horizonY);
-        ctx.fillStyle = '#01040c'; ctx.fillRect(0, horizonY, canvas.width, canvas.height);
+        ctx.fillStyle = '#010206'; ctx.fillRect(0, 0, canvas.width, horizonY);
+        ctx.fillStyle = '#020511'; ctx.fillRect(0, horizonY, canvas.width, canvas.height);
 
         // 1. Отрисовка зданий и руин
         buildings.forEach(b => {
@@ -304,13 +306,13 @@
                 let h3d = bottomProj.y - topProj.y;
 
                 if (b.alive) {
-                    ctx.fillStyle = 'rgba(16, 25, 48, 0.95)';
-                    ctx.strokeStyle = '#ff3333';
+                    ctx.fillStyle = 'rgba(18, 28, 54, 0.95)';
+                    ctx.strokeStyle = '#ff2222';
                     ctx.lineWidth = 1.5;
                     ctx.fillRect(topProj.x - w3d/2, topProj.y, w3d, h3d);
                     ctx.strokeRect(topProj.x - w3d/2, topProj.y, w3d, h3d);
 
-                    ctx.fillStyle = '#ffcc00';
+                    ctx.fillStyle = '#ff9900';
                     let stepX = Math.max(10, w3d / 5);
                     let stepY = Math.max(12, h3d / 7);
                     for (let oy = topProj.y + 12; oy < bottomProj.y - 12; oy += stepY) {
@@ -319,14 +321,18 @@
                         }
                     }
                 } else {
-                    // Тлеющие кратеры разрушенных кварталов
-                    ctx.fillStyle = 'rgba(255, 40, 0, 0.2)'; 
+                    // ИСПРАВЛЕНО: Чёткие обугленные темные скелеты разрушенных домов вместо пустоты!
+                    ctx.fillStyle = '#08080f';
+                    ctx.strokeStyle = 'rgba(255, 60, 0, 0.2)';
+                    ctx.lineWidth = 1;
+                    ctx.fillRect(bottomProj.x - w3d/2, bottomProj.y - h3d * 0.2, w3d, h3d * 0.2);
+                    ctx.strokeRect(bottomProj.x - w3d/2, bottomProj.y - h3d * 0.2, w3d, h3d * 0.2);
+                    
+                    // Кратер под ними
+                    ctx.fillStyle = 'rgba(255, 30, 0, 0.08)';
                     ctx.beginPath();
-                    ctx.ellipse(bottomProj.x, bottomProj.y, w3d * 2.5, w3d * 0.6, 0, 0, Math.PI * 2);
+                    ctx.ellipse(bottomProj.x, bottomProj.y, w3d * 1.5, w3d * 0.4, 0, 0, Math.PI * 2);
                     ctx.fill();
-
-                    ctx.fillStyle = '#020204';
-                    ctx.fillRect(bottomProj.x - w3d, bottomProj.y - 4, w3d * 2, 6);
                 }
             }
         });
@@ -344,67 +350,24 @@
                 if (proj.visible && proj.y > horizonY) {
                     let sz = e.w * proj.scale;
 
-                    if (e.type === 'tank') {
-                        ctx.fillStyle = '#2e4a23'; ctx.strokeStyle = '#00ff66';
-                        ctx.fillRect(proj.x - sz/2, proj.y - sz*0.3, sz, sz*0.4);
-                        if (e.z > 1500 && e.z < 12000) {
-                            if (alertStatus !== "CRITICAL LOCK") alertStatus = "ОБСТРЕЛ ИЗ ПУЛЕМЕТОВ";
-                            e.shootCooldown++;
-                            if (e.shootCooldown % 25 === 0) {
-                                enemyProjectiles.push({
-                                    x: e.x, y: e.y + 100, z: e.z,
-                                    vx: (jet.x - e.x) / 25 + (Math.random() * 80 - 40), 
-                                    vy: (jet.y - e.y) / 25, vz: -e.z / 25, type: 'bullet'
-                                });
-                                playSound('fire');
-                            }
-                        }
-                    } else {
-                        ctx.fillStyle = '#4a2323'; ctx.strokeStyle = '#ff3333';
-                        ctx.fillRect(proj.x - sz/2, proj.y - sz*0.3, sz, sz*0.4);
-                        if (e.z > 2500 && e.z < 18000) {
-                            alertStatus = "CRITICAL LOCK (РАКЕТА ПВО)";
-                            e.shootCooldown++;
-                            if (e.shootCooldown % 60 === 0) {
-                                enemyProjectiles.push({
-                                    x: e.x, y: e.y + 200, z: e.z,
-                                    vx: (jet.x - e.x) / 30, vy: (jet.y - e.y) / 30, vz: -e.z / 30, type: 'missile'
-                                });
-                                playSound('fire');
-                            }
-                        }
-                    }
+                    ctx.fillStyle = e.type === 'tank' ? '#2e4a23' : '#4a2323';
+                    ctx.strokeStyle = e.type === 'tank' ? '#00ff66' : '#ff3333';
+                    ctx.fillRect(proj.x - sz/2, proj.y - sz*0.3, sz, sz*0.4);
                 }
             }
         });
 
         let warnEl = document.getElementById('pvo-warn');
         warnEl.innerText = alertStatus;
-        warnEl.className = alertStatus === "ЧИСТО" ? "" : "alert-ui";
 
-        // 3. Снаряды врагов
-        for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
-            let p = enemyProjectiles[i];
-            p.x += p.vx; p.y += p.vy; p.z += p.vz;
-            let pProj = project3D(p.x, p.y, p.z);
+        // 3. Снаряды врагов (очистка)
+        enemyProjectiles = [];
 
-            if (!pProj.visible || p.z <= 0) {
-                if (Math.abs(p.x - jet.x) < 500 && Math.abs(p.y - jet.y) < 400) {
-                    jet.speed = Math.max(250, jet.speed - (p.type === 'missile' ? 40 : 10));
-                }
-                enemyProjectiles.splice(i, 1);
-                continue;
-            }
-
-            ctx.fillStyle = p.type === 'bullet' ? '#00ff66' : '#ff2222';
-            ctx.fillRect(pProj.x - 2, pProj.y - 2, Math.max(3, pProj.scale * 10), Math.max(3, pProj.scale * 10));
-        }
-
-        // 4. Логика полета бомбы и ИСПРАВЛЕННАЯ КОЛЛИЗИЯ С ДОМАМИ
+        // 4. Полет бомбы Орешника
         for (let i = bombs.length - 1; i >= 0; i--) {
             let bomb = bombs[i];
             bomb.x += bomb.vx; bomb.y += bomb.vy; bomb.z += bomb.vz;
-            bomb.vy -= 1.3; // Дикое ускорение силы тяжести
+            bomb.vy -= 1.4; 
 
             let bProj = project3D(bomb.x, bomb.y, bomb.z);
 
@@ -413,58 +376,62 @@
                 continue;
             }
 
-            // Визуал снаряда
-            let bWidth = Math.max(12, bProj.scale * 35);
-            let bHeight = Math.max(24, bProj.scale * 70);
+            // Отрисовка боеголовки
+            let bWidth = Math.max(12, bProj.scale * 30);
+            let bHeight = Math.max(24, bProj.scale * 60);
 
             ctx.save();
             ctx.translate(bProj.x, bProj.y);
             let fallAngle = Math.atan2(-bomb.vy, bomb.vz * 0.3) - Math.PI/2;
             ctx.rotate(fallAngle + jet.roll * 0.5);
-            ctx.fillStyle = '#1c2833';
+            ctx.fillStyle = '#1a252f';
             ctx.beginPath(); ctx.ellipse(0, 0, bWidth / 2, bHeight / 2, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = 'rgba(255, 69, 0, 0.8)';
+            
+            // Раскалённый плазменный хвост
+            ctx.fillStyle = 'rgba(255, 60, 0, 0.8)';
             ctx.fillRect(-bWidth/3, -bHeight, bWidth*0.66, bHeight/2);
             ctx.restore();
 
-            // ИСПРАВЛЕНО: Проверка триггера взрыва. Ищем любое живое здание на пути бомбы по оси Z
+            // Проверка триггера столкновения
             let hitTriggered = false;
-            
             buildings.forEach(b => {
-                if (b.alive && Math.abs(bomb.x - b.x) < b.w * 1.2 && Math.abs(bomb.z - b.z) < 600) {
-                    // Если высота бомбы опустилась ниже крыши здания
-                    if (bomb.y <= b.y + b.h) {
-                        hitTriggered = true;
-                    }
+                if (b.alive && Math.abs(bomb.x - b.x) < b.w * 1.1 && Math.abs(bomb.z - b.z) < 500) {
+                    if (bomb.y <= b.y + b.h) hitTriggered = true;
                 }
             });
 
-            // Взрыв при контакте с домом ИЛИ при достижении уровня земли (-2500)
             if (hitTriggered || bomb.y <= -2500) {
                 detonateMegaOreshnik(bomb.x, bomb.z, bProj.x, bProj.y);
                 bombs.splice(i, 1);
             }
         }
 
-        // 5. Отрисовка ГИГАНТСКИХ взрывов (+500%)
+        // 5. ИСПРАВЛЕНО: Отрисовка ГИГАНТСКИХ ЯДЕРНЫХ КУПОЛОВ ВЗРЫВА (500%)
         for (let i = explosions.length - 1; i >= 0; i--) {
             let exp = explosions[i];
-            if (exp.delay > 0) { exp.delay--; continue; }
-            exp.r += 14; 
+            exp.r += exp.speed; // Плавное расширение во все стороны
+            exp.y -= exp.speed * 0.25; // Купол уплывает вверх, формируя гриб
+            exp.alpha -= 0.012; // Плавное таяние вспышки
 
+            if (exp.alpha <= 0 || exp.r >= exp.maxR) {
+                explosions.splice(i, 1);
+                continue;
+            }
+
+            // Создаем красивый объемный радиальный градиент огня
             let grad = ctx.createRadialGradient(exp.x, exp.y, exp.r * 0.05, exp.x, exp.y, exp.r);
-            grad.addColorStop(0, 'rgba(255, 255, 255, ' + (1 - exp.r / exp.maxR) + ')');
-            grad.addColorStop(0.15, 'rgba(255, 170, 0, ' + (1 - exp.r / exp.maxR) + ')');
-            grad.addColorStop(0.55, 'rgba(220, 10, 0, ' + (0.85 * (1 - exp.r / exp.maxR)) + ')');
-            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            grad.addColorStop(0, 'rgba(255, 255, 255, ' + exp.alpha + ')'); // Ядро белое
+            grad.addColorStop(0.2, 'rgba(255, 180, 0, ' + exp.alpha + ')'); // Желтая плазма
+            grad.addColorStop(0.6, 'rgba(230, 30, 0, ' + (exp.alpha * 0.8) + ')'); // Красное пламя
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)'); // Прозрачный край
 
             ctx.fillStyle = grad;
-            ctx.beginPath(); ctx.arc(exp.x, exp.y, exp.r, 0, Math.PI * 2); ctx.fill();
-
-            if (exp.r >= exp.maxR) explosions.splice(i, 1);
+            ctx.beginPath(); 
+            ctx.arc(exp.x, exp.y, exp.r, 0, Math.PI * 2); 
+            ctx.fill();
         }
 
-        // 6. Спрайт твоего самолета mig.png
+        // 6. Отрисовка самолета mig.png
         let screenJetX = (canvas.width / 2) + (jet.x * 0.18);
         let screenJetY = (canvas.height * 0.55) - (jet.y * 0.25);
         
@@ -475,7 +442,7 @@
         if (muzzleFlash > 0) {
             muzzleFlash--;
             ctx.fillStyle = '#ffffff';
-            ctx.beginPath(); ctx.arc(-25, 5, 15, 0, Math.PI*2); ctx.arc(25, 5, 15, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(-25, 5, 12, 0, Math.PI*2); ctx.arc(25, 5, 12, 0, Math.PI*2); ctx.fill();
         }
 
         ctx.fillStyle = 'rgba(255, 90, 0, 0.85)';
