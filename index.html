@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Штурмовик: Встречный Бой</title>
+    <title>3D Штурмовик: Исправленное Вооружение</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
         body { background: #010409; color: #ff3333; font-family: 'Consolas', monospace; overflow: hidden; }
@@ -67,19 +67,19 @@
         <div class="flex-space">
             <div class="glass-panel">
                 <div>СКОРОСТЬ: <span class="hud-val" id="speed-out">550</span> КМ/Ч</div>
-                <div>ТЯГА ДВИГАТЕЛЯ: <span class="hud-val" style="color:#00ffff;">МАКСИМАЛКА</span></div>
-                <div style="color: #00ff66;">ОТВЕТНЫЙ ОГОНЬ: <span class="hud-val" style="color:#00ff66;">АКТИВЕН</span></div>
+                <div>ОРУЖИЕ: <span class="hud-val" style="color:#00ff66;">БЕСКОНЕЧНЫЕ ФАБ-500</span></div>
+                <div style="color: #00ff66;">ПРИВЯЗКА ОГНЯ: <span class="hud-val" style="color:#00ff66;">ТОЧНАЯ</span></div>
             </div>
             
             <div class="glass-panel" style="text-align: right;">
-                <div>УГРОЗА ОБСТРЕЛА: <span class="alert-ui" id="pvo-warn">ПОИСК ЦЕЛЕЙ</span></div>
-                <div>УНИЧТОЖЕНО ТАНКОВ/ПВО: <span id="score-out" class="hud-val" style="color: #ffcc00;">0</span></div>
+                <div>УГРОЗА: <span class="alert-ui" id="pvo-warn">ПОИСК ЦЕЛЕЙ</span></div>
+                <div>СБИТО ТАНКОВ/ПВО: <span id="score-out" class="hud-val" style="color: #ffcc00;">0</span></div>
                 <div style="color: #00ffff;">РАЗРУШЕНО ЗДАНИЙ: <span id="b-score-out" class="hud-val">0</span></div>
             </div>
         </div>
 
         <div id="controls-bar">
-            ⚔️ <b>ВРАГИ ВЕДУТ ОГОНЬ!</b> Танки косят очередями, ПВО пускает ракеты. Маневрируй мышкой, чтобы уйти от трассеров!
+            🚀 <b>ЗАЖМИ ПРОБЕЛ:</b> Бомбы теперь летят четко от самолета! Маневрируй мышкой для прицеливания и уклонения.
         </div>
     </div>
 </div>
@@ -108,11 +108,12 @@
     let explosions = [];
     let buildings = [];
     let enemies = [];     
-    let enemyProjectiles = []; // Снаряды и ракеты врагов
+    let enemyProjectiles = []; 
     let scoreVehicles = 0;
     let scoreBuildings = 0;
     let isSpacePressed = false; 
     let bombTimer = 0;          
+    let muzzleFlash = 0; // Таймер вспышки при сбросе
 
     function initWorld() {
         buildings = [];
@@ -194,15 +195,17 @@
         setTimeout(() => { flashEl.style.opacity = '0'; }, 60);
     }
 
+    // ИСПРАВЛЕНО: Бомба создается в реальных 3D-координатах самолета (jet.x и jet.y)
     function spawnBomb() {
         bombs.push({
-            x: jet.x,
-            y: jet.y - 120, 
-            z: 250,
-            vx: jet.roll * 22, 
-            vy: -4, 
-            vz: jet.speed * 0.16 
+            x: jet.x,             // Четкая привязка к X самолета
+            y: jet.y - 120,       // Вылет из-под фюзеляжа
+            z: 250,               // Дистанция старта перед камерой
+            vx: jet.roll * 24,    // Инерция крена
+            vy: -6,               // Скорость падения вниз
+            vz: jet.speed * 0.16  // Скорость полета вперед
         });
+        muzzleFlash = 3; // Активируем вспышку на 3 кадра
         playSound('whistle');
     }
 
@@ -233,7 +236,7 @@
 
         let speedMult = jet.speed * 0.2;
 
-        if (isSpacePressed && ++bombTimer % 6 === 0) spawnBomb();
+        if (isSpacePressed && ++bombTimer % 5 === 0) spawnBomb();
 
         let horizonY = (canvas.height * 0.45) - (jet.pitch * 350) + (jet.y * 0.2);
         ctx.fillStyle = '#010205'; ctx.fillRect(0, 0, canvas.width, horizonY);
@@ -273,7 +276,7 @@
             }
         });
 
-        // 2. Враги (Танки и ПВО) + логика ведения огня
+        // 2. Враги (Танки и ПВО)
         let alertStatus = "ЧИСТО";
         enemies.forEach(e => {
             e.z -= speedMult;
@@ -292,14 +295,13 @@
                         ctx.fillStyle = '#1c3015'; 
                         ctx.fillRect(proj.x - sz*0.2, proj.y - sz*0.5, sz*0.4, sz*0.25);
 
-                        // Танки поливают очередями на дистанциях от 1500 до 12000
                         if (e.z > 1500 && e.z < 12000) {
                             if (alertStatus !== "CRITICAL LOCK") alertStatus = "ОБСТРЕЛ ИЗ ПУЛЕМЕТОВ";
                             e.shootCooldown++;
-                            if (e.shootCooldown % 15 === 0) { // Высокий темп стрельбы танков
+                            if (e.shootCooldown % 15 === 0) {
                                 enemyProjectiles.push({
                                     x: e.x, y: e.y + 100, z: e.z,
-                                    vx: (jet.x - e.x) / 25 + (Math.random() * 80 - 40), // Разброс пуль
+                                    vx: (jet.x - e.x) / 25 + (Math.random() * 80 - 40), 
                                     vy: (jet.y - e.y) / 25,
                                     vz: -e.z / 25,
                                     type: 'bullet'
@@ -313,7 +315,6 @@
                         ctx.fillStyle = '#ffcc00'; 
                         ctx.fillRect(proj.x - sz*0.1, proj.y - sz*0.6, sz*0.2, sz*0.3);
 
-                        // Комплексы ПВО пускают зенитные ракеты
                         if (e.z > 2500 && e.z < 18000) {
                             alertStatus = "CRITICAL LOCK (РАКЕТА ПВО)";
                             e.shootCooldown++;
@@ -333,24 +334,21 @@
             }
         });
 
-        // Обновление СПО на интерфейсе
         let warnEl = document.getElementById('pvo-warn');
         warnEl.innerText = alertStatus;
         if (alertStatus === "ЧИСТО") warnEl.className = "";
         else warnEl.className = "alert-ui";
 
-        // 3. Обработка летящих снарядов врагов
+        // 3. Снаряды врагов
         for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
             let p = enemyProjectiles[i];
             p.x += p.vx; p.y += p.vy; p.z += p.vz;
 
             let pProj = project3D(p.x, p.y, p.z);
 
-            // Если снаряд долетел до плоскости самолета (z <= 0)
             if (!pProj.visible || p.z <= 0) {
                 if (Math.abs(p.x - jet.x) < 500 && Math.abs(p.y - jet.y) < 400) {
                     triggerFlash();
-                    // Зенитная ракета бьет сильнее, чем пулемет танка
                     let damage = p.type === 'missile' ? 60 : 15;
                     jet.speed = Math.max(250, jet.speed - damage);
                 }
@@ -358,12 +356,11 @@
                 continue;
             }
 
-            // Отрисовка трассеров
             if (p.type === 'bullet') {
-                ctx.fillStyle = '#00ff66'; // Зеленые пули танков
+                ctx.fillStyle = '#00ff66'; 
                 ctx.fillRect(pProj.x - 2, pProj.y - 2, Math.max(2, pProj.scale * 8), Math.max(2, pProj.scale * 8));
             } else {
-                ctx.fillStyle = '#ff2222'; // Красные опасные ракеты ПВО
+                ctx.fillStyle = '#ff2222'; 
                 ctx.beginPath(); ctx.arc(pProj.x, pProj.y, Math.max(4, pProj.scale * 20), 0, Math.PI * 2); ctx.fill();
             }
         }
@@ -381,8 +378,9 @@
                 continue;
             }
 
+            // Отрисовка летящей бомбы ФАБ-500
             ctx.fillStyle = '#8e9eab';
-            ctx.beginPath(); ctx.arc(bProj.x, bProj.y, Math.max(3, bProj.scale * 12), 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(bProj.x, bProj.y, Math.max(4, bProj.scale * 16), 0, Math.PI * 2); ctx.fill();
 
             buildings.forEach(b => {
                 if (b.alive && Math.abs(bomb.x - b.x) < b.w && Math.abs(bomb.z - b.z) < 400) {
@@ -433,6 +431,13 @@
         ctx.translate(screenJetX, screenJetY);
         ctx.rotate(jet.roll);
         
+        // Вспышки выстрелов под крыльями при сбросе бомб
+        if (muzzleFlash > 0) {
+            muzzleFlash--;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.arc(-35, 10, 15, 0, Math.PI*2); ctx.arc(35, 10, 15, 0, Math.PI*2); ctx.fill();
+        }
+
         ctx.fillStyle = 'rgba(255, 90, 0, 0.85)';
         ctx.fillRect(-12, 38, 5, 14); ctx.fillRect(7, 38, 5, 14);
 
